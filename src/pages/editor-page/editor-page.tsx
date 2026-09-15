@@ -27,6 +27,7 @@ import { useDiagramLoader } from './use-diagram-loader';
 import { DiffProvider } from '@/context/diff-context/diff-provider';
 import { TopNavbarMock } from './top-navbar/top-navbar-mock';
 import { DiagramFilterProvider } from '@/context/diagram-filter-context/diagram-filter-provider';
+import { SqllabSyncProvider } from '@/components/sqllab-sync/sqllab-sync-provider';
 
 const OPEN_STAR_US_AFTER_SECONDS = 30;
 const SHOW_STAR_US_AGAIN_AFTER_DAYS = 1;
@@ -125,6 +126,7 @@ export const EditorPage: React.FC = () => (
                             <RedoUndoStackProvider>
                                 <DiffProvider>
                                     <ChartDBProvider>
+                                        <SqllabSyncProvider />
                                         <DiagramFilterProvider>
                                             <HistoryProvider>
                                                 <ReactFlowProvider>

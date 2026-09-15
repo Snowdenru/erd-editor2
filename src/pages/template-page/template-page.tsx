@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect } from 'react';
-import ChartDBLogo from '@/assets/logo-light.png';
-import ChartDBDarkLogo from '@/assets/logo-dark.png';
+import ChartDBLogo from '@/assets/sqllab-logo-light.svg';
+import ChartDBDarkLogo from '@/assets/sqllab-logo-dark.svg';
 import { useTheme } from '@/hooks/use-theme';
 import { LocalConfigProvider } from '@/context/local-config-context/local-config-provider';
 import { ThemeProvider } from '@/context/theme-context/theme-provider';
@@ -136,19 +136,11 @@ const TemplatePageComponent: React.FC = () => {
                                             ? ChartDBLogo
                                             : ChartDBDarkLogo
                                     }
-                                    alt="chartDB"
+                                    alt="SQL Lab"
                                     className="h-4 max-w-fit"
                                 />
                             </a>
                         </div>
-                    </div>
-                    <div className="flex flex-1 justify-end">
-                        <iframe
-                            src={`https://ghbtns.com/github-btn.html?user=chartdb&repo=chartdb&type=star&size=large&text=false`}
-                            width="40"
-                            height="30"
-                            title="GitHub"
-                        ></iframe>
                     </div>
                 </nav>
                 {!template ? (

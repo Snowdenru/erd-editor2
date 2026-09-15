@@ -1,5 +1,5 @@
-import React, { useCallback } from 'react';
-import ChartDBLogo from '@/assets/logo-2.png';
+import React from 'react';
+import ChartDBLogo from '@/assets/sqllab-logo-light.svg';
 import { DiagramName } from './diagram-name';
 import { LanguageNav } from './language-nav/language-nav';
 import { Menu } from './menu/menu';
@@ -10,17 +10,6 @@ import { MenuIcon } from 'lucide-react';
 export interface TopNavbarMobileProps {}
 
 export const TopNavbarMobile: React.FC<TopNavbarMobileProps> = () => {
-    const renderStars = useCallback(() => {
-        return (
-            <iframe
-                src="https://ghbtns.com/github-btn.html?user=chartdb&repo=chartdb&type=star&size=small&text=false"
-                width="25"
-                height="20"
-                title="GitHub"
-            ></iframe>
-        );
-    }, []);
-
     const { toggleSidebar } = useSidebar();
 
     return (
@@ -42,14 +31,13 @@ export const TopNavbarMobile: React.FC<TopNavbarMobileProps> = () => {
                         >
                             <img
                                 src={ChartDBLogo}
-                                alt="chartDB"
+                                alt="SQL Lab"
                                 className="h-4 max-w-fit"
                             />
                         </a>
                     </div>
 
                     <div className="flex items-center gap-2">
-                        {renderStars()}
                         <LanguageNav />
                     </div>
                 </div>

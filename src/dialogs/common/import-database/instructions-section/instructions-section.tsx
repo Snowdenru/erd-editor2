@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import logo from '@/assets/logo-2.png';
+import logo from '@/assets/sqllab-logo-light.svg';
 import { ToggleGroup, ToggleGroupItem } from '@/components/toggle/toggle-group';
 import { DatabaseType } from '@/lib/domain/database-type';
 import { databaseSecondaryLogoMap } from '@/lib/databases';

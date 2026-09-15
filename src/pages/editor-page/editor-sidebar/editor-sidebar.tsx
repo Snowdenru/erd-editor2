@@ -23,8 +23,8 @@ import { useLayout } from '@/hooks/use-layout';
 import { useTranslation } from 'react-i18next';
 import { DiscordLogoIcon, TwitterLogoIcon } from '@radix-ui/react-icons';
 import { useBreakpoint } from '@/hooks/use-breakpoint';
-import ChartDBLogo from '@/assets/logo-light.png';
-import ChartDBDarkLogo from '@/assets/logo-dark.png';
+import ChartDBLogo from '@/assets/sqllab-logo-light.svg';
+import ChartDBDarkLogo from '@/assets/sqllab-logo-dark.svg';
 import { useTheme } from '@/hooks/use-theme';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { supportsCustomTypes } from '@/lib/domain/database-capabilities';
@@ -188,7 +188,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
                                     ? ChartDBLogo
                                     : ChartDBDarkLogo
                             }
-                            alt="chartDB"
+                            alt="SQL Lab"
                             className="h-4 max-w-fit"
                         />
                     </a>

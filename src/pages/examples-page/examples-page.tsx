@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
-import ChartDBLogo from '@/assets/logo-light.png';
-import ChartDBDarkLogo from '@/assets/logo-dark.png';
+import ChartDBLogo from '@/assets/sqllab-logo-light.svg';
+import ChartDBDarkLogo from '@/assets/sqllab-logo-dark.svg';
 import type { Example } from './examples-data/examples-data';
 import { examples } from './examples-data/examples-data';
 import { ExampleCard } from './example-card';
@@ -68,7 +68,7 @@ const ExamplesPageComponent: React.FC = () => {
                                             ? ChartDBLogo
                                             : ChartDBDarkLogo
                                     }
-                                    alt="chartDB"
+                                    alt="SQL Lab"
                                     className="h-4 max-w-fit"
                                 />
                             </a>

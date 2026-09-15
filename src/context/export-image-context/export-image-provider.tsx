@@ -6,8 +6,8 @@ import { useReactFlow } from '@xyflow/react';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { useFullScreenLoader } from '@/hooks/use-full-screen-spinner';
 import { useTheme } from '@/hooks/use-theme';
-import logoDark from '@/assets/logo-dark.png';
-import logoLight from '@/assets/logo-light.png';
+import logoDark from '@/assets/sqllab-logo-dark.svg';
+import logoLight from '@/assets/sqllab-logo-light.svg';
 import type { EffectiveTheme } from '../theme-context/theme-context';
 
 export const ExportImageProvider: React.FC<React.PropsWithChildren> = ({

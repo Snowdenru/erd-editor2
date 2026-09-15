@@ -2,6 +2,7 @@ import React, { Suspense, useEffect } from 'react';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { useDialog } from '@/hooks/use-dialog';
 import { Toaster } from '@/components/toast/toaster';
+import { SourceLink } from '@/components/source-link/source-link';
 import { useBreakpoint } from '@/hooks/use-breakpoint';
 import { useLocalConfig } from '@/hooks/use-local-config';
 import { FullScreenLoaderProvider } from '@/context/full-screen-spinner-context/full-screen-spinner-provider';
@@ -106,6 +107,9 @@ const EditorPageComponent: React.FC = () => {
                     )}
                 </Suspense>
             </section>
+            <div className="fixed bottom-1 left-1 z-10">
+                <SourceLink />
+            </div>
             <Toaster />
         </>
     );

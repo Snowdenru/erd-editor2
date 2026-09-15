@@ -11,6 +11,10 @@ function getRefreshToken(): string | null {
     return Cookies.get(REFRESH_KEY) ?? null;
 }
 
+function normalizeHeaders(input?: HeadersInit): Record<string, string> {
+    return Object.fromEntries(new Headers(input).entries());
+}
+
 async function refreshAccessToken(): Promise<string | null> {
     const refresh = getRefreshToken();
     if (!refresh) return null;
@@ -30,7 +34,7 @@ async function refreshAccessToken(): Promise<string | null> {
 
 export async function authFetch(url: string, init: RequestInit = {}): Promise<Response> {
     const token = getAccessToken();
-    const headers: Record<string, string> = { ...(init.headers as Record<string, string> | undefined) };
+    const headers: Record<string, string> = normalizeHeaders(init.headers);
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
     const res = await fetch(url, { ...init, headers });
@@ -39,7 +43,7 @@ export async function authFetch(url: string, init: RequestInit = {}): Promise<Re
     const newToken = await refreshAccessToken();
     if (!newToken) return res;
 
-    const retryHeaders: Record<string, string> = { ...(init.headers as Record<string, string> | undefined) };
+    const retryHeaders: Record<string, string> = normalizeHeaders(init.headers);
     retryHeaders['Authorization'] = `Bearer ${newToken}`;
     return fetch(url, { ...init, headers: retryHeaders });
 }

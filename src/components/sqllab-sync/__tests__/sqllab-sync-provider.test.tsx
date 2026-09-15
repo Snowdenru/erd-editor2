@@ -24,6 +24,7 @@ describe('SqllabSyncProvider', () => {
     });
 
     it('pushes the diagram to the backend 2s after it changes', async () => {
+        vi.spyOn(auth, 'getAccessToken').mockReturnValue('fake-access-token');
         const authFetchSpy = vi
             .spyOn(auth, 'authFetch')
             .mockResolvedValue(new Response(null, { status: 200 }));
@@ -53,6 +54,7 @@ describe('SqllabSyncProvider', () => {
     });
 
     it('does not push again if the diagram id is empty (no diagram open yet)', async () => {
+        vi.spyOn(auth, 'getAccessToken').mockReturnValue('fake-access-token');
         const authFetchSpy = vi
             .spyOn(auth, 'authFetch')
             .mockResolvedValue(new Response());
@@ -60,6 +62,30 @@ describe('SqllabSyncProvider', () => {
         render(
             <chartDBContext.Provider
                 value={{ diagramId: '', currentDiagram: baseDiagram } as never}
+            >
+                <SqllabSyncProvider />
+            </chartDBContext.Provider>
+        );
+
+        await vi.advanceTimersByTimeAsync(3000);
+
+        expect(authFetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('does not push and makes no network call when the user is not logged in', async () => {
+        vi.spyOn(auth, 'getAccessToken').mockReturnValue(null);
+        const authFetchSpy = vi
+            .spyOn(auth, 'authFetch')
+            .mockResolvedValue(new Response(null, { status: 200 }));
+
+        render(
+            <chartDBContext.Provider
+                value={
+                    {
+                        diagramId: 'diagram-1',
+                        currentDiagram: baseDiagram,
+                    } as never
+                }
             >
                 <SqllabSyncProvider />
             </chartDBContext.Provider>

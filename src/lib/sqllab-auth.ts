@@ -32,7 +32,10 @@ async function refreshAccessToken(): Promise<string | null> {
     return data.access;
 }
 
-export async function authFetch(url: string, init: RequestInit = {}): Promise<Response> {
+export async function authFetch(
+    url: string,
+    init: RequestInit = {}
+): Promise<Response> {
     const token = getAccessToken();
     const headers: Record<string, string> = normalizeHeaders(init.headers);
     if (token) headers['Authorization'] = `Bearer ${token}`;

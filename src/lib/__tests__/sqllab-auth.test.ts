@@ -20,7 +20,9 @@ describe('sqllab-auth', () => {
 
     it('authFetch attaches Authorization header from the cookie', async () => {
         Cookies.set('access_token', 'my-token');
-        const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValue(new Response(null, { status: 200 }));
         vi.stubGlobal('fetch', fetchMock);
 
         await authFetch('/api/erd2/diagrams/');
@@ -28,7 +30,9 @@ describe('sqllab-auth', () => {
         expect(fetchMock).toHaveBeenCalledWith(
             '/api/erd2/diagrams/',
             expect.objectContaining({
-                headers: expect.objectContaining({ Authorization: 'Bearer my-token' }),
+                headers: expect.objectContaining({
+                    Authorization: 'Bearer my-token',
+                }),
             })
         );
     });
@@ -41,9 +45,15 @@ describe('sqllab-auth', () => {
             .fn()
             .mockResolvedValueOnce(new Response(null, { status: 401 }))
             .mockResolvedValueOnce(
-                new Response(JSON.stringify({ access: 'new-token', refresh: 'new-refresh' }), {
-                    status: 200,
-                })
+                new Response(
+                    JSON.stringify({
+                        access: 'new-token',
+                        refresh: 'new-refresh',
+                    }),
+                    {
+                        status: 200,
+                    }
+                )
             )
             .mockResolvedValueOnce(new Response(null, { status: 200 }));
         vi.stubGlobal('fetch', fetchMock);

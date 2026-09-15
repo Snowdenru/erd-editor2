@@ -8,10 +8,7 @@ export const HelmetData: React.FC = () => (
             content="Free and Open-source database diagrams editor, visualize and design your database with a single query. Tool to help you draw your DB relationship diagrams and export DDL scripts."
         />
         <meta property="og:type" content="website" />
-        <meta
-            property="og:title"
-            content="ChartDB - Database schema diagrams visualizer"
-        />
+        <meta property="og:title" content="SQL Lab - ERD редактор баз данных" />
         <meta
             property="og:description"
             content="Free and Open-source database diagrams editor, visualize and design your database with a single query. Tool to help you draw your DB relationship diagrams and export DDL scripts."
@@ -24,7 +21,7 @@ export const HelmetData: React.FC = () => (
         <meta name="twitter:card" content="summary_large_image" />
         <meta
             name="twitter:title"
-            content="ChartDB - Database schema diagrams visualizer"
+            content="SQL Lab - ERD редактор баз данных"
         />
         <meta
             name="twitter:description"
@@ -34,6 +31,6 @@ export const HelmetData: React.FC = () => (
             name="twitter:image"
             content="https://github.com/chartdb/chartdb/raw/main/public/chartdb.png"
         />
-        <title>ChartDB - Database schema diagrams visualizer</title>
+        <title>SQL Lab - ERD редактор баз данных</title>
     </Helmet>
 );

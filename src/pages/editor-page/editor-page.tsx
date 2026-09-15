@@ -78,8 +78,8 @@ const EditorPageComponent: React.FC = () => {
             <Helmet>
                 <title>
                     {diagramName
-                        ? `ChartDB - ${diagramName} Diagram | Visualize Database Schemas`
-                        : 'ChartDB - Create & Visualize Database Schema Diagrams'}
+                        ? `SQL Lab - ${diagramName} | ERD редактор баз данных`
+                        : 'SQL Lab - ERD редактор баз данных'}
                 </title>
             </Helmet>
             <section

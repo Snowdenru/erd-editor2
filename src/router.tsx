@@ -28,6 +28,15 @@ const routes: RouteObject[] = [
         },
     },
     {
+        path: 'about',
+        async lazy() {
+            const { AboutPage } = await import('./pages/about-page/about-page');
+            return {
+                element: <AboutPage />,
+            };
+        },
+    },
+    {
         id: 'templates',
         path: 'templates',
         async lazy() {

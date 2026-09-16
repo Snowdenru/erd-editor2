@@ -16,20 +16,24 @@ export function useExampleDiagrams() {
                 return;
             }
             setLoadingExampleId(example.id);
-            const { diagram } = example;
-            const { id } = diagram;
+            try {
+                const { diagram } = example;
+                const { id } = diagram;
 
-            await deleteDiagram(id);
+                await deleteDiagram(id);
 
-            const now = new Date();
-            const diagramToAdd: Diagram = {
-                ...diagram,
-                createdAt: now,
-                updatedAt: now,
-            };
+                const now = new Date();
+                const diagramToAdd: Diagram = {
+                    ...diagram,
+                    createdAt: now,
+                    updatedAt: now,
+                };
 
-            await addDiagram({ diagram: diagramToAdd });
-            navigate(`/diagrams/${id}`);
+                await addDiagram({ diagram: diagramToAdd });
+                navigate(`/diagrams/${id}`);
+            } finally {
+                setLoadingExampleId(undefined);
+            }
         },
         [addDiagram, navigate, deleteDiagram, loadingExampleId]
     );

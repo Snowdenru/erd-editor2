@@ -13,9 +13,13 @@ export const ExampleDiagramsInline: React.FC = () => {
     const { closeCreateDiagramDialog } = useDialog();
     const { examples, loadingExampleId, utilizeExample } = useExampleDiagrams();
 
-    const handleClick = (example: Example) => {
-        closeCreateDiagramDialog();
-        void utilizeExample({ example });
+    const handleClick = async (example: Example) => {
+        try {
+            await utilizeExample({ example });
+            closeCreateDiagramDialog();
+        } catch (error) {
+            console.error('Failed to clone example diagram', error);
+        }
     };
 
     return (

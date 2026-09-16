@@ -47,6 +47,32 @@ describe('useExampleDiagrams', () => {
         );
     });
 
+    it('clears loadingExampleId even when deleteDiagram rejects', async () => {
+        const { result } = renderHook(() => useExampleDiagrams());
+        const example = result.current.examples[0];
+
+        mockDeleteDiagram.mockRejectedValueOnce(new Error('quota exceeded'));
+
+        await act(async () => {
+            await expect(
+                result.current.utilizeExample({ example })
+            ).rejects.toThrow('quota exceeded');
+        });
+
+        expect(result.current.loadingExampleId).toBeUndefined();
+        expect(mockAddDiagram).not.toHaveBeenCalled();
+
+        // A retry after the failure should not be blocked by a stuck
+        // loadingExampleId.
+        mockDeleteDiagram.mockResolvedValueOnce(undefined);
+        await act(async () => {
+            await result.current.utilizeExample({ example });
+        });
+
+        expect(mockDeleteDiagram).toHaveBeenCalledTimes(2);
+        expect(mockAddDiagram).toHaveBeenCalledTimes(1);
+    });
+
     it('ignores a second call while the first is still loading', async () => {
         const { result } = renderHook(() => useExampleDiagrams());
         const example = result.current.examples[0];

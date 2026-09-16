@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 // Side-effect import: initializes the global i18next singleton, same as
 // src/main.tsx does at app bootstrap. Without this, useTranslation() (used
 // without an I18nextProvider, matching how the component is actually
@@ -40,15 +40,40 @@ describe('ExampleDiagramsInline', () => {
         vi.clearAllMocks();
     });
 
-    it('closes the dialog and clones the example on click', () => {
+    it('clones the example and closes the dialog once cloning succeeds', async () => {
+        mockUtilizeExample.mockResolvedValue(undefined);
         render(<ExampleDiagramsInline />);
 
         fireEvent.click(screen.getByText('Employees schema'));
 
-        expect(mockCloseCreateDiagramDialog).toHaveBeenCalled();
         expect(mockUtilizeExample).toHaveBeenCalledWith({
             example: expect.objectContaining({ id: '1' }),
         });
+
+        await waitFor(() => {
+            expect(mockCloseCreateDiagramDialog).toHaveBeenCalled();
+        });
+    });
+
+    it('does not close the dialog if cloning the example fails', async () => {
+        const consoleErrorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        mockUtilizeExample.mockRejectedValue(new Error('storage quota exceeded'));
+        render(<ExampleDiagramsInline />);
+
+        fireEvent.click(screen.getByText('Employees schema'));
+
+        expect(mockUtilizeExample).toHaveBeenCalledWith({
+            example: expect.objectContaining({ id: '1' }),
+        });
+
+        await waitFor(() => {
+            expect(consoleErrorSpy).toHaveBeenCalled();
+        });
+        expect(mockCloseCreateDiagramDialog).not.toHaveBeenCalled();
+
+        consoleErrorSpy.mockRestore();
     });
 
     it('links to the full templates library', () => {

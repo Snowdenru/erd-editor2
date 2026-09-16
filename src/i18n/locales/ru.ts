@@ -6,10 +6,10 @@ export const ru: LanguageTranslation = {
             new_diagram: 'Новая',
             browse: 'Открыть',
             tables: 'Таблицы',
-            refs: 'Ссылки',
+            refs: 'Связи',
             dependencies: 'Зависимости',
             custom_types: 'Пользовательские типы',
-            visuals: 'Визуальные элементы',
+            visuals: 'Области',
         },
         menu: {
             actions: {
@@ -185,7 +185,7 @@ export const ru: LanguageTranslation = {
                 },
             },
             refs_section: {
-                refs: 'Ссылки',
+                refs: 'Связи',
                 filter: 'Фильтр',
                 collapse: 'Свернуть все',
                 add_relationship: 'Добавить отношение',

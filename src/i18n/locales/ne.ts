@@ -334,6 +334,11 @@ export const ne: LanguageTranslation = {
             import_database: {
                 title: 'तपाईंको डाटाबेस आयात गर्नुहोस्',
                 database_edition: 'डाटाबेस संस्करण:',
+                edition_regular: 'Regular',
+                import_method_label: 'How would you like to import?',
+                import_method_smart_query: 'Smart Query',
+                import_method_sql_script: 'SQL Script',
+                instructions_title: 'Instructions:',
                 step_1: 'तपाईंको डाटाबेसमा यो स्क्रिप्ट चलाउनुहोस्:',
                 step_2: 'यो स्क्रिप्ट परिणाम यहाँ पेस्ट गर्नुहोस् →',
                 script_results_placeholder: 'स्क्रिप्ट परिणाम यहाँ...',

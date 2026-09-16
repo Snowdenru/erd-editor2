@@ -332,6 +332,11 @@ export const vi: LanguageTranslation = {
             import_database: {
                 title: 'Nhập cơ sở dữ liệu của bạn',
                 database_edition: 'Loại:',
+                edition_regular: 'Regular',
+                import_method_label: 'How would you like to import?',
+                import_method_smart_query: 'Smart Query',
+                import_method_sql_script: 'SQL Script',
+                instructions_title: 'Instructions:',
                 step_1: 'Chạy lệnh này trong cơ sở dữ liệu của bạn:',
                 step_2: 'Dán kết quả vào đây →',
                 script_results_placeholder: 'Kết quả...',

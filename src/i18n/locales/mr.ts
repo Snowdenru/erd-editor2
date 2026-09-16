@@ -337,6 +337,11 @@ export const mr: LanguageTranslation = {
             import_database: {
                 title: 'तुमचा डेटाबेस आयात करा',
                 database_edition: 'डेटाबेस संस्करण:',
+                edition_regular: 'Regular',
+                import_method_label: 'How would you like to import?',
+                import_method_smart_query: 'Smart Query',
+                import_method_sql_script: 'SQL Script',
+                instructions_title: 'Instructions:',
                 step_1: 'तुमच्या डेटाबेसमध्ये हा स्क्रिप्ट चालवा:',
                 step_2: 'स्क्रिप्टचा परिणाम येथे पेस्ट करा →',
                 script_results_placeholder: 'स्क्रिप्ट परिणाम येथे...',

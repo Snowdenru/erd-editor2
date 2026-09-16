@@ -332,6 +332,11 @@ export const uk: LanguageTranslation = {
             import_database: {
                 title: 'Імпортуйте вашу базу даних',
                 database_edition: 'Варіант бази даних:',
+                edition_regular: 'Regular',
+                import_method_label: 'How would you like to import?',
+                import_method_smart_query: 'Smart Query',
+                import_method_sql_script: 'SQL Script',
+                instructions_title: 'Instructions:',
                 step_1: 'Запустіть цей сценарій у своїй базі даних:',
                 step_2: 'Вставте сюди результат сценарію →',
                 script_results_placeholder: 'Результати сценарію має бути тут…',

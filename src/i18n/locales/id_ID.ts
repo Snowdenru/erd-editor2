@@ -332,6 +332,11 @@ export const id_ID: LanguageTranslation = {
             import_database: {
                 title: 'Impor Database Anda',
                 database_edition: 'Edisi Database:',
+                edition_regular: 'Regular',
+                import_method_label: 'How would you like to import?',
+                import_method_smart_query: 'Smart Query',
+                import_method_sql_script: 'SQL Script',
+                instructions_title: 'Instructions:',
                 step_1: 'Jalankan skrip ini di database Anda:',
                 step_2: 'Tempel hasil skrip di sini →',
                 script_results_placeholder: 'Hasil skrip di sini...',

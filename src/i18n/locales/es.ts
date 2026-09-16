@@ -333,6 +333,11 @@ export const es: LanguageTranslation = {
             import_database: {
                 title: 'Importa tu Base de Datos',
                 database_edition: 'Edición de Base de Datos:',
+                edition_regular: 'Regular',
+                import_method_label: 'How would you like to import?',
+                import_method_smart_query: 'Smart Query',
+                import_method_sql_script: 'SQL Script',
+                instructions_title: 'Instructions:',
                 step_1: 'Ejecuta este script en tu base de datos:',
                 step_2: 'Pega el resultado del script aquí →',
                 script_results_placeholder: 'Resultados del script aquí...',

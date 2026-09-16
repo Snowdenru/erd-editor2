@@ -324,6 +324,11 @@ export const en = {
             import_database: {
                 title: 'Import your Database',
                 database_edition: 'Database Edition:',
+                edition_regular: 'Regular',
+                import_method_label: 'How would you like to import?',
+                import_method_smart_query: 'Smart Query',
+                import_method_sql_script: 'SQL Script',
+                instructions_title: 'Instructions:',
                 step_1: 'Run this script in your database:',
                 step_2: 'Paste the script result into this modal →',
                 script_results_placeholder: 'Script results here...',

@@ -331,6 +331,11 @@ export const ru: LanguageTranslation = {
             import_database: {
                 title: 'Импортируйте свою базу данных',
                 database_edition: 'Версия базы данных:',
+                edition_regular: 'Обычная',
+                import_method_label: 'Как вы хотите импортировать?',
+                import_method_smart_query: 'Умный запрос',
+                import_method_sql_script: 'SQL-скрипт',
+                instructions_title: 'Инструкция:',
                 step_1: 'Запустите этот скрипт в своей базе данных:',
                 step_2: 'Вставьте вывод скрипта сюда →',
                 script_results_placeholder: 'Вывод скрипта здесь...',

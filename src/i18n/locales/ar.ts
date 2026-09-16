@@ -327,6 +327,11 @@ export const ar: LanguageTranslation = {
             import_database: {
                 title: 'إسترد قاعدة بياناتك',
                 database_edition: ':إصدار قاعدة البيانات',
+                edition_regular: 'Regular',
+                import_method_label: 'How would you like to import?',
+                import_method_smart_query: 'Smart Query',
+                import_method_sql_script: 'SQL Script',
+                instructions_title: 'Instructions:',
                 step_1: ':قم بتشغيل هذا البرنامج النصي في قاعدة بياناتك',
                 step_2: ':إلصق نتيجة البرنامج النصي هنا →',
                 script_results_placeholder: '...نتيجة البرنامج النصي هنا',

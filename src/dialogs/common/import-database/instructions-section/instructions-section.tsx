@@ -96,11 +96,19 @@ export const InstructionsSection: React.FC<InstructionsSectionProps> = ({
                             <Avatar className="size-4 rounded-none">
                                 <AvatarImage
                                     src={databaseSecondaryLogoMap[databaseType]}
-                                    alt="Regular"
+                                    alt={t(
+                                        'new_diagram_dialog.import_database.edition_regular'
+                                    )}
                                 />
-                                <AvatarFallback>Regular</AvatarFallback>
+                                <AvatarFallback>
+                                    {t(
+                                        'new_diagram_dialog.import_database.edition_regular'
+                                    )}
+                                </AvatarFallback>
                             </Avatar>
-                            Regular
+                            {t(
+                                'new_diagram_dialog.import_database.edition_regular'
+                            )}
                         </ToggleGroupItem>
                         {databaseTypeToEditionMap[databaseType].map(
                             (edition) => (
@@ -137,7 +145,9 @@ export const InstructionsSection: React.FC<InstructionsSectionProps> = ({
 
             <div className="flex flex-col gap-1">
                 <p className="text-sm leading-6 text-primary">
-                    How would you like to import?
+                    {t(
+                        'new_diagram_dialog.import_database.import_method_label'
+                    )}
                 </p>
                 <ToggleGroup
                     type="single"
@@ -160,9 +170,15 @@ export const InstructionsSection: React.FC<InstructionsSectionProps> = ({
                         >
                             <Avatar className="h-3 w-4 rounded-none">
                                 <AvatarImage src={logo} alt="query" />
-                                <AvatarFallback>Query</AvatarFallback>
+                                <AvatarFallback>
+                                    {t(
+                                        'new_diagram_dialog.import_database.import_method_smart_query'
+                                    )}
+                                </AvatarFallback>
                             </Avatar>
-                            Smart Query
+                            {t(
+                                'new_diagram_dialog.import_database.import_method_smart_query'
+                            )}
                         </ToggleGroupItem>
                     )}
                     {showDDL &&
@@ -177,7 +193,9 @@ export const InstructionsSection: React.FC<InstructionsSectionProps> = ({
                                 <Avatar className="size-4 rounded-none">
                                     <FileCode size={16} />
                                 </Avatar>
-                                SQL Script
+                                {t(
+                                    'new_diagram_dialog.import_database.import_method_sql_script'
+                                )}
                             </ToggleGroupItem>
                         )}
                     {showDBML && (
@@ -196,7 +214,9 @@ export const InstructionsSection: React.FC<InstructionsSectionProps> = ({
             </div>
 
             <div className="flex flex-col gap-2">
-                <div className="text-sm font-semibold">Instructions:</div>
+                <div className="text-sm font-semibold">
+                    {t('new_diagram_dialog.import_database.instructions_title')}
+                </div>
                 {importMethod === 'query' && showSmartQuery ? (
                     <SmartQueryInstructions
                         databaseType={databaseType}

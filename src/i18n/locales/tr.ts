@@ -328,6 +328,11 @@ export const tr: LanguageTranslation = {
             import_database: {
                 title: 'Veritabanını İçe Aktar',
                 database_edition: 'Veritabanı Sürümü:',
+                edition_regular: 'Regular',
+                import_method_label: 'How would you like to import?',
+                import_method_smart_query: 'Smart Query',
+                import_method_sql_script: 'SQL Script',
+                instructions_title: 'Instructions:',
                 step_1: 'Bu komut dosyasını veritabanınızda çalıştırın:',
                 step_2: 'Komut dosyası sonucunu buraya yapıştırın →',
                 script_results_placeholder: 'Komut dosyası sonuçları burada...',

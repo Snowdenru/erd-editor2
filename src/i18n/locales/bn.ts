@@ -335,6 +335,11 @@ export const bn: LanguageTranslation = {
             import_database: {
                 title: 'আপনার ডাটাবেস আমদানি করুন',
                 database_edition: 'ডাটাবেস সংস্করণ:',
+                edition_regular: 'Regular',
+                import_method_label: 'How would you like to import?',
+                import_method_smart_query: 'Smart Query',
+                import_method_sql_script: 'SQL Script',
+                instructions_title: 'Instructions:',
                 step_1: 'আপনার ডাটাবেসে এই স্ক্রিপ্ট চালান:',
                 step_2: 'স্ক্রিপ্টের ফলাফল এখানে পেস্ট করুন →',
                 script_results_placeholder: 'স্ক্রিপ্টের ফলাফল এখানে...',

@@ -334,6 +334,11 @@ export const ja: LanguageTranslation = {
             import_database: {
                 title: 'データベースをインポート',
                 database_edition: 'データベースエディション:',
+                edition_regular: 'Regular',
+                import_method_label: 'How would you like to import?',
+                import_method_smart_query: 'Smart Query',
+                import_method_sql_script: 'SQL Script',
+                instructions_title: 'Instructions:',
                 step_1: 'このスクリプトをデータベースで実行してください:',
                 step_2: 'ここにスクリプトの結果を貼り付けてください →',
                 script_results_placeholder: 'ここにスクリプトの結果...',

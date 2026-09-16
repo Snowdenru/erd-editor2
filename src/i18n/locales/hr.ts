@@ -328,6 +328,11 @@ export const hr: LanguageTranslation = {
             import_database: {
                 title: 'Uvezite svoju bazu podataka',
                 database_edition: 'Verzija baze podataka:',
+                edition_regular: 'Regular',
+                import_method_label: 'How would you like to import?',
+                import_method_smart_query: 'Smart Query',
+                import_method_sql_script: 'SQL Script',
+                instructions_title: 'Instructions:',
                 step_1: 'Pokrenite ovu skriptu u svojoj bazi podataka:',
                 step_2: 'Zalijepite rezultat skripte u ovaj dio →',
                 script_results_placeholder: 'Rezultati skripte ovdje...',

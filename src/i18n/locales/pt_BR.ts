@@ -334,6 +334,11 @@ export const pt_BR: LanguageTranslation = {
             import_database: {
                 title: 'Importe seu Banco de Dados',
                 database_edition: 'Edição do Banco de Dados:',
+                edition_regular: 'Regular',
+                import_method_label: 'How would you like to import?',
+                import_method_smart_query: 'Smart Query',
+                import_method_sql_script: 'SQL Script',
+                instructions_title: 'Instructions:',
                 step_1: 'Execute este script no seu banco de dados:',
                 step_2: 'Cole o resultado do script aqui →',
                 script_results_placeholder: 'Resultados do script aqui...',

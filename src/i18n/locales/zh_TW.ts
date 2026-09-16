@@ -325,6 +325,11 @@ export const zh_TW: LanguageTranslation = {
             import_database: {
                 title: '匯入資料庫',
                 database_edition: '資料庫版本:',
+                edition_regular: 'Regular',
+                import_method_label: 'How would you like to import?',
+                import_method_smart_query: 'Smart Query',
+                import_method_sql_script: 'SQL Script',
+                instructions_title: 'Instructions:',
                 step_1: '請在資料庫中執行以下腳本:',
                 step_2: '將腳本結果貼到此處 →',
                 script_results_placeholder: '在此處貼上腳本結果...',

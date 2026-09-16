@@ -325,6 +325,11 @@ export const zh_CN: LanguageTranslation = {
             import_database: {
                 title: '导入您的数据库',
                 database_edition: '数据库类型：',
+                edition_regular: 'Regular',
+                import_method_label: 'How would you like to import?',
+                import_method_smart_query: 'Smart Query',
+                import_method_sql_script: 'SQL Script',
+                instructions_title: 'Instructions:',
                 step_1: '在您的数据库中执行以下脚本：',
                 step_2: '将结果粘贴于此 →',
                 script_results_placeholder: '结果...',

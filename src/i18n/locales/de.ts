@@ -335,6 +335,11 @@ export const de: LanguageTranslation = {
             import_database: {
                 title: 'Datenbank importieren',
                 database_edition: 'Datenbank Edition:',
+                edition_regular: 'Regular',
+                import_method_label: 'How would you like to import?',
+                import_method_smart_query: 'Smart Query',
+                import_method_sql_script: 'SQL Script',
+                instructions_title: 'Instructions:',
                 step_1: 'Führen Sie dieses Skript in Ihrer Datenbank aus:',
                 step_2: 'Fügen Sie das Skriptergebnis hier ein →',
                 script_results_placeholder: 'Skriptergebnisse hier...',

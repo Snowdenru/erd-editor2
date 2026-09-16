@@ -332,6 +332,11 @@ export const ko_KR: LanguageTranslation = {
             import_database: {
                 title: '당신의 데이터베이스를 가져오세요',
                 database_edition: '데이터베이스 세부 종류:',
+                edition_regular: 'Regular',
+                import_method_label: 'How would you like to import?',
+                import_method_smart_query: 'Smart Query',
+                import_method_sql_script: 'SQL Script',
+                instructions_title: 'Instructions:',
                 step_1: '데이터베이스에서 아래의 SQL을 실행해주세요:',
                 step_2: '이곳에 결과를 붙여넣어주세요 →',
                 script_results_placeholder: '이곳에 스크립트 결과를 입력...',

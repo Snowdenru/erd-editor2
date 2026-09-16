@@ -25,7 +25,7 @@ export const TopNavbarMobile: React.FC<TopNavbarMobileProps> = () => {
                             <MenuIcon className="size-5" />
                         </Button>
                         <a
-                            href="https://chartdb.io"
+                            href="https://sqllab.ru"
                             className="cursor-pointer"
                             rel="noreferrer"
                         >

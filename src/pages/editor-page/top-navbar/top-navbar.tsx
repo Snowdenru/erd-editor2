@@ -17,7 +17,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = () => {
             <div className="flex flex-1 flex-col justify-between gap-x-1 md:flex-row md:justify-normal">
                 <div className="flex items-center justify-between pt-[8px] font-primary md:py-[10px]">
                     <a
-                        href="https://chartdb.io"
+                        href="https://sqllab.ru"
                         className="cursor-pointer"
                         rel="noreferrer"
                     >

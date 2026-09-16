@@ -66,12 +66,6 @@ const TemplatePageComponent: React.FC = () => {
             <Helmet>
                 {template ? (
                     <>
-                        {HOST_URL !== 'https://chartdb.io' ? (
-                            <link
-                                rel="canonical"
-                                href={`https://chartdb.io/templates/${templateSlug}`}
-                            />
-                        ) : null}
                         <title>
                             {`Database schema diagram for - ${template.name} | ChartDB`}
                         </title>
@@ -126,7 +120,7 @@ const TemplatePageComponent: React.FC = () => {
                     <div className="flex flex-1 justify-start gap-x-3">
                         <div className="flex items-center font-primary">
                             <a
-                                href="https://chartdb.io"
+                                href="https://sqllab.ru"
                                 className="cursor-pointer"
                                 rel="noreferrer"
                             >

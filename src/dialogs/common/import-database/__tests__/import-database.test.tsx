@@ -88,6 +88,24 @@ CREATE TABLE users (id INT PRIMARY KEY);
 CREATE TABLE orders (id INT PRIMARY KEY, user_id INT REFERENCES users(id));
 `;
 
+// MySQL-flavored DDL used specifically for the "broken DDL" test below.
+// Postgres' importer (used by every other test in this file) is
+// deliberately fault-tolerant: unrecognized text is classified as an
+// "other" statement and silently dropped rather than raising a parse
+// error, so garbage appended to Postgres DDL never actually reaches
+// import-database.tsx's `!result.success` branch - the promise just
+// resolves successfully again with the same tables. MySQL's importer,
+// by contrast, deterministically rejects inline `REFERENCES` in a column
+// definition (it requires an explicit FOREIGN KEY constraint instead),
+// which gives us a genuine, reproducible parse failure to synchronize on.
+const validMysqlDdlWithRelationship = `
+CREATE TABLE users (id INT PRIMARY KEY);
+CREATE TABLE orders (id INT PRIMARY KEY, user_id INT, FOREIGN KEY (user_id) REFERENCES users(id));
+`;
+const mysqlDdlWithInlineReferences =
+    validMysqlDdlWithRelationship +
+    '\nCREATE TABLE broken (id INT, other_id INT REFERENCES users(id));';
+
 function typeInEditor(value: string) {
     fireEvent.change(screen.getByTestId('mock-editor'), {
         target: { value },
@@ -119,9 +137,11 @@ describe('ImportDatabase - DDL live preview lifecycle', () => {
     });
 
     it('keeps the last valid preview on screen after the DDL is broken', async () => {
-        render(<TestWrapper importMethod="ddl" />);
+        render(
+            <TestWrapper importMethod="ddl" databaseType={DatabaseType.MYSQL} />
+        );
 
-        typeInEditor(validDdlWithRelationship);
+        typeInEditor(validMysqlDdlWithRelationship);
 
         await waitFor(
             () => {
@@ -132,16 +152,22 @@ describe('ImportDatabase - DDL live preview lifecycle', () => {
             { timeout: 3000 }
         );
 
-        // Break the DDL by appending garbage that won't parse.
-        typeInEditor(validDdlWithRelationship + '\nTHIS IS NOT VALID SQL {{{');
+        // Break the DDL: MySQL's importer rejects inline REFERENCES in a
+        // column definition, so this statement makes the async
+        // parseSQLError(...).then(...) chain in import-database.tsx
+        // resolve with success: false and a real, deterministic error.
+        typeInEditor(mysqlDdlWithInlineReferences);
 
-        // Give the (now-invalid) input time to run through validation/debounce.
+        // Wait for the actual error UI to appear. Unlike waiting on the
+        // editor's value (which only proves the debounce flushed the text
+        // into state), this only becomes true once the parse promise has
+        // resolved and taken the `!result.success` branch - a genuine
+        // synchronization point on the async chain actually completing.
         await waitFor(
             () => {
-                expect(screen.getByTestId('mock-editor')).toHaveValue(
-                    validDdlWithRelationship +
-                        '\nTHIS IS NOT VALID SQL {{{'
-                );
+                expect(
+                    screen.getByText(/does not support inline REFERENCES/i)
+                ).toBeInTheDocument();
             },
             { timeout: 3000 }
         );
@@ -178,5 +204,43 @@ describe('ImportDatabase - DDL live preview lifecycle', () => {
                 screen.queryByTestId('ddl-live-preview-empty')
             ).not.toBeInTheDocument();
         });
+    });
+
+    it('clears the live preview when the editor is emptied', async () => {
+        render(<TestWrapper importMethod="ddl" />);
+
+        typeInEditor(validDdlWithRelationship);
+
+        await waitFor(
+            () => {
+                expect(
+                    screen.getAllByTestId('ddl-live-preview-table')
+                ).toHaveLength(2);
+            },
+            { timeout: 3000 }
+        );
+
+        // Empty out the editor entirely, driving input the same way the
+        // other tests do (via the mocked editor's onChange).
+        typeInEditor('');
+
+        // Wait for the actual DOM change - the preview swaps from the
+        // rendered svg to the "empty" placeholder - rather than an
+        // arbitrary timer.
+        await waitFor(
+            () => {
+                expect(
+                    screen.getByTestId('ddl-live-preview-empty')
+                ).toBeInTheDocument();
+            },
+            { timeout: 3000 }
+        );
+
+        expect(
+            screen.queryByTestId('ddl-live-preview')
+        ).not.toBeInTheDocument();
+        expect(
+            screen.queryByTestId('ddl-live-preview-table')
+        ).not.toBeInTheDocument();
     });
 });

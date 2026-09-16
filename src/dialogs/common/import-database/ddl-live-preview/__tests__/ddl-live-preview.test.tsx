@@ -25,7 +25,9 @@ function buildTable(
     };
 }
 
-function buildField(overrides: Partial<DBField> & { id: string; name: string }): DBField {
+function buildField(
+    overrides: Partial<DBField> & { id: string; name: string }
+): DBField {
     return {
         type: { id: 'text', name: 'text' },
         primaryKey: false,
@@ -36,7 +38,10 @@ function buildField(overrides: Partial<DBField> & { id: string; name: string }):
     };
 }
 
-function buildDiagram(tables: DBTable[], relationships: DBRelationship[] = []): Diagram {
+function buildDiagram(
+    tables: DBTable[],
+    relationships: DBRelationship[] = []
+): Diagram {
     return {
         id: 'd1',
         name: 'Test',
@@ -55,7 +60,9 @@ describe('DdlLivePreview', () => {
                 <DdlLivePreview diagram={undefined} />
             </I18nextProvider>
         );
-        expect(screen.getByTestId('ddl-live-preview-empty')).toBeInTheDocument();
+        expect(
+            screen.getByTestId('ddl-live-preview-empty')
+        ).toBeInTheDocument();
     });
 
     it('shows the empty placeholder when the diagram has zero tables', () => {
@@ -64,7 +71,9 @@ describe('DdlLivePreview', () => {
                 <DdlLivePreview diagram={buildDiagram([])} />
             </I18nextProvider>
         );
-        expect(screen.getByTestId('ddl-live-preview-empty')).toBeInTheDocument();
+        expect(
+            screen.getByTestId('ddl-live-preview-empty')
+        ).toBeInTheDocument();
     });
 
     it('renders one card per table and one line per relationship, with PK/FK badges', () => {
@@ -73,7 +82,15 @@ describe('DdlLivePreview', () => {
             name: 'users',
             x: 0,
             y: 0,
-            fields: [buildField({ id: 'users_id', name: 'id', primaryKey: true, unique: true, nullable: false })],
+            fields: [
+                buildField({
+                    id: 'users_id',
+                    name: 'id',
+                    primaryKey: true,
+                    unique: true,
+                    nullable: false,
+                }),
+            ],
         });
         const ordersTable = buildTable({
             id: 'orders',
@@ -97,13 +114,18 @@ describe('DdlLivePreview', () => {
         render(
             <I18nextProvider i18n={i18n}>
                 <DdlLivePreview
-                    diagram={buildDiagram([usersTable, ordersTable], [relationship])}
+                    diagram={buildDiagram(
+                        [usersTable, ordersTable],
+                        [relationship]
+                    )}
                 />
             </I18nextProvider>
         );
 
         expect(screen.getAllByTestId('ddl-live-preview-table')).toHaveLength(2);
-        expect(screen.getAllByTestId('ddl-live-preview-relationship')).toHaveLength(1);
+        expect(
+            screen.getAllByTestId('ddl-live-preview-relationship')
+        ).toHaveLength(1);
         expect(screen.getByText('users')).toBeInTheDocument();
         expect(screen.getByText('orders')).toBeInTheDocument();
         expect(screen.getByText('id (PK)')).toBeInTheDocument();
@@ -144,11 +166,15 @@ describe('DdlLivePreview', () => {
 
         render(
             <I18nextProvider i18n={i18n}>
-                <DdlLivePreview diagram={buildDiagram([table], [relationship])} />
+                <DdlLivePreview
+                    diagram={buildDiagram([table], [relationship])}
+                />
             </I18nextProvider>
         );
 
         expect(screen.getAllByTestId('ddl-live-preview-table')).toHaveLength(1);
-        expect(screen.queryByTestId('ddl-live-preview-relationship')).not.toBeInTheDocument();
+        expect(
+            screen.queryByTestId('ddl-live-preview-relationship')
+        ).not.toBeInTheDocument();
     });
 });

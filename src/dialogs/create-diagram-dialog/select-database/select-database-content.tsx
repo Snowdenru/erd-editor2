@@ -1,9 +1,4 @@
-import React, {
-    Suspense,
-    useCallback,
-    useMemo,
-    useState,
-} from 'react';
+import React, { Suspense, useCallback, useMemo, useState } from 'react';
 import { ToggleGroup } from '@/components/toggle/toggle-group';
 import { DatabaseType } from '@/lib/domain/database-type';
 import { DatabaseOption } from './database-option';

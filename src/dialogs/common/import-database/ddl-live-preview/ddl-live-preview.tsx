@@ -27,8 +27,11 @@ export interface DdlLivePreviewProps {
 
 export const DdlLivePreview: React.FC<DdlLivePreviewProps> = ({ diagram }) => {
     const { t } = useTranslation();
-    const tables = diagram?.tables ?? [];
-    const relationships = diagram?.relationships ?? [];
+    const tables = useMemo(() => diagram?.tables ?? [], [diagram]);
+    const relationships = useMemo(
+        () => diagram?.relationships ?? [],
+        [diagram]
+    );
 
     const referencedFieldIds = useMemo(
         () =>
@@ -133,7 +136,11 @@ export const DdlLivePreview: React.FC<DdlLivePreviewProps> = ({ diagram }) => {
                             strokeWidth={1}
                             className="fill-background stroke-border"
                         />
-                        <text x={8} y={18} className="fill-foreground text-[13px] font-semibold">
+                        <text
+                            x={8}
+                            y={18}
+                            className="fill-foreground text-[13px] font-semibold"
+                        >
                             {table.name}
                         </text>
                         {visibleFields.map((field, index) => {
@@ -147,7 +154,11 @@ export const DdlLivePreview: React.FC<DdlLivePreviewProps> = ({ diagram }) => {
                                 <text
                                     key={field.id}
                                     x={8}
-                                    y={CARD_HEADER_HEIGHT + index * CARD_ROW_HEIGHT + 14}
+                                    y={
+                                        CARD_HEADER_HEIGHT +
+                                        index * CARD_ROW_HEIGHT +
+                                        14
+                                    }
                                     className="fill-muted-foreground text-[11px]"
                                 >
                                     {field.name}
@@ -166,7 +177,9 @@ export const DdlLivePreview: React.FC<DdlLivePreviewProps> = ({ diagram }) => {
                                 className="fill-muted-foreground text-[11px] italic"
                             >
                                 +{hiddenCount}{' '}
-                                {t('new_diagram_dialog.import_database.live_preview.more_fields')}
+                                {t(
+                                    'new_diagram_dialog.import_database.live_preview.more_fields'
+                                )}
                             </text>
                         ) : null}
                     </g>

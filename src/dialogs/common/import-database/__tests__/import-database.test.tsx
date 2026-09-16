@@ -131,9 +131,7 @@ describe('ImportDatabase - DDL live preview lifecycle', () => {
             { timeout: 3000 }
         );
 
-        expect(
-            screen.getAllByTestId('ddl-live-preview-table')
-        ).toHaveLength(2);
+        expect(screen.getAllByTestId('ddl-live-preview-table')).toHaveLength(2);
     });
 
     it('keeps the last valid preview on screen after the DDL is broken', async () => {
@@ -175,9 +173,7 @@ describe('ImportDatabase - DDL live preview lifecycle', () => {
         // The previously-rendered preview must still be there - it should
         // never be cleared just because the latest input fails to parse.
         expect(screen.getByTestId('ddl-live-preview')).toBeInTheDocument();
-        expect(
-            screen.getAllByTestId('ddl-live-preview-table')
-        ).toHaveLength(2);
+        expect(screen.getAllByTestId('ddl-live-preview-table')).toHaveLength(2);
     });
 
     it('removes the live preview when switching away from ddl/dbml', async () => {

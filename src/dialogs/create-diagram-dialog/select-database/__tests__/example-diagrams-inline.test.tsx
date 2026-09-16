@@ -59,7 +59,9 @@ describe('ExampleDiagramsInline', () => {
         const consoleErrorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
-        mockUtilizeExample.mockRejectedValue(new Error('storage quota exceeded'));
+        mockUtilizeExample.mockRejectedValue(
+            new Error('storage quota exceeded')
+        );
         render(<ExampleDiagramsInline />);
 
         fireEvent.click(screen.getByText('Employees schema'));

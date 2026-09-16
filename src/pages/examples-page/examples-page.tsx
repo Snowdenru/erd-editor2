@@ -2,50 +2,20 @@ import React, { useCallback } from 'react';
 import ChartDBLogo from '@/assets/sqllab-logo-light.svg';
 import ChartDBDarkLogo from '@/assets/sqllab-logo-dark.svg';
 import type { Example } from './examples-data/examples-data';
-import { examples } from './examples-data/examples-data';
 import { ExampleCard } from './example-card';
 import { useTheme } from '@/hooks/use-theme';
 import { LocalConfigProvider } from '@/context/local-config-context/local-config-provider';
 import { StorageProvider } from '@/context/storage-context/storage-provider';
 import { ThemeProvider } from '@/context/theme-context/theme-provider';
 import { Helmet } from 'react-helmet-async';
-import { useNavigate } from 'react-router-dom';
-import { useStorage } from '@/hooks/use-storage';
-import type { Diagram } from '@/lib/domain/diagram';
+import { useExampleDiagrams } from '@/hooks/use-example-diagrams';
 
 const ExamplesPageComponent: React.FC = () => {
     const { effectiveTheme } = useTheme();
-    const navigate = useNavigate();
-    const { addDiagram, deleteDiagram } = useStorage();
-    const [loadingExampleId, setLoadingExampleId] = React.useState<string>();
-    const utilizeExample = useCallback(
-        async ({ example }: { example: Example }) => {
-            if (loadingExampleId) {
-                return;
-            }
-            setLoadingExampleId(example.id);
-            const { diagram } = example;
-            const { id } = diagram;
-
-            await deleteDiagram(id);
-
-            const now = new Date();
-            const diagramToAdd: Diagram = {
-                ...diagram,
-                createdAt: now,
-                updatedAt: now,
-            };
-
-            await addDiagram({ diagram: diagramToAdd });
-            navigate(`/diagrams/${id}`);
-        },
-        [
-            addDiagram,
-            navigate,
-            deleteDiagram,
-            loadingExampleId,
-            setLoadingExampleId,
-        ]
+    const { examples, loadingExampleId, utilizeExample } = useExampleDiagrams();
+    const handleUtilizeExample = useCallback(
+        (example: Example) => utilizeExample({ example }),
+        [utilizeExample]
     );
 
     return (
@@ -94,7 +64,7 @@ const ExamplesPageComponent: React.FC = () => {
                                 key={example.id}
                                 example={example}
                                 utilizeExample={() =>
-                                    utilizeExample({ example })
+                                    handleUtilizeExample(example)
                                 }
                                 loading={loadingExampleId === example.id}
                             />

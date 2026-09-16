@@ -82,7 +82,12 @@ i18n.use(LanguageDetector)
         interpolation: {
             escapeValue: false,
         },
-        fallbackLng: enMetadata.code,
+        // SQL Lab — русскоязычная платформа: по умолчанию открываем на русском,
+        // а не на определённом по браузеру языке (переключатель в интерфейсе
+        // по-прежнему доступен и переключает язык на лету через changeLanguage()).
+        // Явный `lng` отключает автоопределение при инициализации i18next.
+        lng: ruMetadata.code,
+        fallbackLng: ruMetadata.code,
         debug: false,
     });
 

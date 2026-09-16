@@ -480,7 +480,7 @@ export const uk: LanguageTranslation = {
             error: {
                 title: 'Помилка експорут діаграми',
                 description:
-                    'Щось пішло не так. Потрібна допомога? support@chartdb.io',
+                    'Щось пішло не так. Потрібна допомога? sqllab@yandex.ru',
             },
         },
         import_diagram_dialog: {
@@ -491,7 +491,7 @@ export const uk: LanguageTranslation = {
             error: {
                 title: 'Помилка імпорту діаграми',
                 description:
-                    'JSON діаграми є неправильним. Будь ласка, перевірте JSON і спробуйте ще раз. Потрібна допомога? support@chartdb.io',
+                    'JSON діаграми є неправильним. Будь ласка, перевірте JSON і спробуйте ще раз. Потрібна допомога? sqllab@yandex.ru',
             },
         },
         // TODO: Translate

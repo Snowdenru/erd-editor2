@@ -63,7 +63,7 @@ const calculateIsLargeFile = (content: string): boolean => {
 };
 
 const errorScriptOutputMessage =
-    'Invalid JSON. Please correct it or contact us at support@chartdb.io for help.';
+    'Invalid JSON. Please correct it or contact us at sqllab@yandex.ru for help.';
 
 export interface ImportDatabaseProps {
     goBack?: () => void;

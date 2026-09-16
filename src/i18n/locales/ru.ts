@@ -480,7 +480,7 @@ export const ru: LanguageTranslation = {
             error: {
                 title: 'Ошибка экспортирования диаграммы',
                 description:
-                    'Что-то пошло не так. Если вам нужна помощь, напишите нам: support@chartdb.io',
+                    'Что-то пошло не так. Если вам нужна помощь, напишите нам: sqllab@yandex.ru',
             },
         },
         import_diagram_dialog: {
@@ -491,7 +491,7 @@ export const ru: LanguageTranslation = {
             error: {
                 title: 'Ошибка при импорте диаграммы',
                 description:
-                    'Код JSON диаграммы некорректен. Проверьте, пожалуйста, код и попробуйте снова. Проблема не решается? Напишите нам: support@chartdb.io',
+                    'Код JSON диаграммы некорректен. Проверьте, пожалуйста, код и попробуйте снова. Проблема не решается? Напишите нам: sqllab@yandex.ru',
             },
         },
         import_dbml_dialog: {

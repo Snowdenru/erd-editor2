@@ -471,7 +471,7 @@ export const zh_CN: LanguageTranslation = {
             error: {
                 title: 'Error exporting diagram',
                 description:
-                    'Something went wrong. Need help? support@chartdb.io',
+                    'Something went wrong. Need help? sqllab@yandex.ru',
             },
         },
 
@@ -483,7 +483,7 @@ export const zh_CN: LanguageTranslation = {
             error: {
                 title: '导入关系图时出错',
                 description:
-                    '关系图 JSON 无效，请检查 JSON 后重试。需要帮助？ 联系 support@chartdb.io',
+                    '关系图 JSON 无效，请检查 JSON 后重试。需要帮助？ 联系 sqllab@yandex.ru',
             },
         },
         // TODO: Translate

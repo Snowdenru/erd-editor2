@@ -475,7 +475,7 @@ export const hr: LanguageTranslation = {
             error: {
                 title: 'Greška pri izvozu dijagrama',
                 description:
-                    'Nešto je pošlo po zlu. Trebate pomoć? support@chartdb.io',
+                    'Nešto je pošlo po zlu. Trebate pomoć? sqllab@yandex.ru',
             },
         },
 
@@ -487,7 +487,7 @@ export const hr: LanguageTranslation = {
             error: {
                 title: 'Greška pri uvozu dijagrama',
                 description:
-                    'JSON dijagrama je nevažeći. Molimo provjerite JSON i pokušajte ponovno. Trebate pomoć? support@chartdb.io',
+                    'JSON dijagrama je nevažeći. Molimo provjerite JSON i pokušajte ponovno. Trebate pomoć? sqllab@yandex.ru',
             },
         },
 

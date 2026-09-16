@@ -204,7 +204,7 @@ export const ExportSQLDialog: React.FC<ExportSQLDialogProps> = ({
                             components={[
                                 <a
                                     key={0}
-                                    href="mailto:support@chartdb.io"
+                                    href="mailto:sqllab@yandex.ru"
                                     target="_blank"
                                     className="text-pink-600 hover:underline"
                                     rel="noreferrer"

@@ -331,6 +331,10 @@ export const uk: LanguageTranslation = {
 
             import_database: {
                 title: 'Імпортуйте вашу базу даних',
+                live_preview: {
+                    empty: 'Your schema will appear here as you type',
+                    more_fields: 'more',
+                },
                 database_edition: 'Варіант бази даних:',
                 edition_regular: 'Regular',
                 import_method_label: 'How would you like to import?',

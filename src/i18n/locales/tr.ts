@@ -327,6 +327,10 @@ export const tr: LanguageTranslation = {
             },
             import_database: {
                 title: 'Veritabanını İçe Aktar',
+                live_preview: {
+                    empty: 'Your schema will appear here as you type',
+                    more_fields: 'more',
+                },
                 database_edition: 'Veritabanı Sürümü:',
                 edition_regular: 'Regular',
                 import_method_label: 'How would you like to import?',

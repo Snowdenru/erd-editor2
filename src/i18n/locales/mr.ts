@@ -336,6 +336,10 @@ export const mr: LanguageTranslation = {
 
             import_database: {
                 title: 'तुमचा डेटाबेस आयात करा',
+                live_preview: {
+                    empty: 'Your schema will appear here as you type',
+                    more_fields: 'more',
+                },
                 database_edition: 'डेटाबेस संस्करण:',
                 edition_regular: 'Regular',
                 import_method_label: 'How would you like to import?',

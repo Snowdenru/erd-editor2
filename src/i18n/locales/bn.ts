@@ -334,6 +334,10 @@ export const bn: LanguageTranslation = {
 
             import_database: {
                 title: 'আপনার ডাটাবেস আমদানি করুন',
+                live_preview: {
+                    empty: 'Your schema will appear here as you type',
+                    more_fields: 'more',
+                },
                 database_edition: 'ডাটাবেস সংস্করণ:',
                 edition_regular: 'Regular',
                 import_method_label: 'How would you like to import?',

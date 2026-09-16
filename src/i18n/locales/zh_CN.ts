@@ -324,6 +324,10 @@ export const zh_CN: LanguageTranslation = {
 
             import_database: {
                 title: '导入您的数据库',
+                live_preview: {
+                    empty: 'Your schema will appear here as you type',
+                    more_fields: 'more',
+                },
                 database_edition: '数据库类型：',
                 edition_regular: 'Regular',
                 import_method_label: 'How would you like to import?',

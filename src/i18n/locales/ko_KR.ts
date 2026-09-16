@@ -331,6 +331,10 @@ export const ko_KR: LanguageTranslation = {
 
             import_database: {
                 title: '당신의 데이터베이스를 가져오세요',
+                live_preview: {
+                    empty: 'Your schema will appear here as you type',
+                    more_fields: 'more',
+                },
                 database_edition: '데이터베이스 세부 종류:',
                 edition_regular: 'Regular',
                 import_method_label: 'How would you like to import?',

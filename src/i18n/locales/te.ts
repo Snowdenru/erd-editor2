@@ -332,6 +332,10 @@ export const te: LanguageTranslation = {
 
             import_database: {
                 title: 'మీ డేటాబేస్‌ను దిగుమతి చేసుకోండి',
+                live_preview: {
+                    empty: 'Your schema will appear here as you type',
+                    more_fields: 'more',
+                },
                 database_edition: 'డేటాబేస్ ఎడిషన్:',
                 edition_regular: 'Regular',
                 import_method_label: 'How would you like to import?',

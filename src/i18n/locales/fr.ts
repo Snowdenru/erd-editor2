@@ -329,6 +329,10 @@ export const fr: LanguageTranslation = {
 
             import_database: {
                 title: 'Importer votre Base de Données',
+                live_preview: {
+                    empty: 'Your schema will appear here as you type',
+                    more_fields: 'more',
+                },
                 database_edition: 'Édition de la Base de Données :',
                 edition_regular: 'Regular',
                 import_method_label: 'How would you like to import?',

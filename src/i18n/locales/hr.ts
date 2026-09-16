@@ -327,6 +327,10 @@ export const hr: LanguageTranslation = {
 
             import_database: {
                 title: 'Uvezite svoju bazu podataka',
+                live_preview: {
+                    empty: 'Your schema will appear here as you type',
+                    more_fields: 'more',
+                },
                 database_edition: 'Verzija baze podataka:',
                 edition_regular: 'Regular',
                 import_method_label: 'How would you like to import?',

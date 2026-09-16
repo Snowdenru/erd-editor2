@@ -331,6 +331,10 @@ export const vi: LanguageTranslation = {
 
             import_database: {
                 title: 'Nhập cơ sở dữ liệu của bạn',
+                live_preview: {
+                    empty: 'Your schema will appear here as you type',
+                    more_fields: 'more',
+                },
                 database_edition: 'Loại:',
                 edition_regular: 'Regular',
                 import_method_label: 'How would you like to import?',

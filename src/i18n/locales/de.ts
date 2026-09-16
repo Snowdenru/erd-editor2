@@ -334,6 +334,10 @@ export const de: LanguageTranslation = {
 
             import_database: {
                 title: 'Datenbank importieren',
+                live_preview: {
+                    empty: 'Your schema will appear here as you type',
+                    more_fields: 'more',
+                },
                 database_edition: 'Datenbank Edition:',
                 edition_regular: 'Regular',
                 import_method_label: 'How would you like to import?',

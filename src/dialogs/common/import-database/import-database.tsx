@@ -48,6 +48,8 @@ import { detectImportMethod } from '@/lib/import-method/detect-import-method';
 import { verifyDBML } from '@/lib/dbml/dbml-import/verify-dbml';
 import { importDBMLToDiagram } from '@/lib/dbml/dbml-import/dbml-import';
 import { sqlImportToDiagram } from '@/lib/data/sql-import';
+import type { Diagram } from '@/lib/domain/diagram';
+import { DdlLivePreview } from './ddl-live-preview/ddl-live-preview';
 import {
     clearErrorHighlight,
     highlightErrorLine,
@@ -116,6 +118,7 @@ export const ImportDatabase: React.FC<ImportDatabaseProps> = ({
     );
     const [isAutoFixing, setIsAutoFixing] = useState(false);
     const [showAutoFixButton, setShowAutoFixButton] = useState(false);
+    const [previewDiagram, setPreviewDiagram] = useState<Diagram | undefined>();
 
     const clearDecorations = useCallback(() => {
         clearErrorHighlight(decorationsCollection.current);
@@ -126,6 +129,7 @@ export const ImportDatabase: React.FC<ImportDatabaseProps> = ({
         setErrorMessage('');
         setShowCheckJsonButton(false);
         setJsonCheckAttempts(0);
+        setPreviewDiagram(undefined);
     }, [importMethod, setScriptResult]);
 
     // Check if the ddl or dbml is valid
@@ -141,6 +145,7 @@ export const ImportDatabase: React.FC<ImportDatabaseProps> = ({
             setSqlValidation(null);
             setShowAutoFixButton(false);
             setErrorMessage('');
+            setPreviewDiagram(undefined);
             return;
         }
 
@@ -157,6 +162,7 @@ export const ImportDatabase: React.FC<ImportDatabaseProps> = ({
                             scriptResult,
                             { databaseType }
                         );
+                        setPreviewDiagram(diagram);
                         setSqlValidation({
                             isValid: true,
                             errors: [],
@@ -239,6 +245,7 @@ export const ImportDatabase: React.FC<ImportDatabaseProps> = ({
                         targetDatabaseType: databaseType,
                     });
 
+                    setPreviewDiagram(diagram);
                     setSqlValidation({
                         ...validation,
                         tableCount: diagram.tables?.length ?? 0,
@@ -544,6 +551,10 @@ export const ImportDatabase: React.FC<ImportDatabaseProps> = ({
                     </Suspense>
                 </div>
 
+                {importMethod === 'ddl' || importMethod === 'dbml' ? (
+                    <DdlLivePreview diagram={previewDiagram} />
+                ) : null}
+
                 {errorMessage ||
                 ((importMethod === 'ddl' || importMethod === 'dbml') &&
                     sqlValidation) ? (
@@ -567,6 +578,7 @@ export const ImportDatabase: React.FC<ImportDatabaseProps> = ({
             sqlValidation,
             isAutoFixing,
             handleErrorClick,
+            previewDiagram,
         ]
     );
 

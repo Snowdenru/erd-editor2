@@ -326,6 +326,10 @@ export const ar: LanguageTranslation = {
 
             import_database: {
                 title: 'إسترد قاعدة بياناتك',
+                live_preview: {
+                    empty: 'Your schema will appear here as you type',
+                    more_fields: 'more',
+                },
                 database_edition: ':إصدار قاعدة البيانات',
                 edition_regular: 'Regular',
                 import_method_label: 'How would you like to import?',

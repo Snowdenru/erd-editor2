@@ -333,6 +333,10 @@ export const ne: LanguageTranslation = {
 
             import_database: {
                 title: 'तपाईंको डाटाबेस आयात गर्नुहोस्',
+                live_preview: {
+                    empty: 'Your schema will appear here as you type',
+                    more_fields: 'more',
+                },
                 database_edition: 'डाटाबेस संस्करण:',
                 edition_regular: 'Regular',
                 import_method_label: 'How would you like to import?',

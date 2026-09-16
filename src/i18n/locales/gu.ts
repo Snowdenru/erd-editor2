@@ -331,6 +331,10 @@ export const gu: LanguageTranslation = {
 
             import_database: {
                 title: 'તમારું ડેટાબેસ આયાત કરો',
+                live_preview: {
+                    empty: 'Your schema will appear here as you type',
+                    more_fields: 'more',
+                },
                 database_edition: 'ડેટાબેસ આવૃત્તિ:',
                 edition_regular: 'Regular',
                 import_method_label: 'How would you like to import?',

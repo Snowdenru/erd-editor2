@@ -331,6 +331,10 @@ export const id_ID: LanguageTranslation = {
 
             import_database: {
                 title: 'Impor Database Anda',
+                live_preview: {
+                    empty: 'Your schema will appear here as you type',
+                    more_fields: 'more',
+                },
                 database_edition: 'Edisi Database:',
                 edition_regular: 'Regular',
                 import_method_label: 'How would you like to import?',

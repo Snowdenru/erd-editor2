@@ -333,6 +333,10 @@ export const ja: LanguageTranslation = {
 
             import_database: {
                 title: 'データベースをインポート',
+                live_preview: {
+                    empty: 'Your schema will appear here as you type',
+                    more_fields: 'more',
+                },
                 database_edition: 'データベースエディション:',
                 edition_regular: 'Regular',
                 import_method_label: 'How would you like to import?',

@@ -333,6 +333,10 @@ export const pt_BR: LanguageTranslation = {
 
             import_database: {
                 title: 'Importe seu Banco de Dados',
+                live_preview: {
+                    empty: 'Your schema will appear here as you type',
+                    more_fields: 'more',
+                },
                 database_edition: 'Edição do Banco de Dados:',
                 edition_regular: 'Regular',
                 import_method_label: 'How would you like to import?',

@@ -323,6 +323,10 @@ export const en = {
 
             import_database: {
                 title: 'Import your Database',
+                live_preview: {
+                    empty: 'Your schema will appear here as you type',
+                    more_fields: 'more',
+                },
                 database_edition: 'Database Edition:',
                 edition_regular: 'Regular',
                 import_method_label: 'How would you like to import?',

@@ -330,6 +330,10 @@ export const ru: LanguageTranslation = {
 
             import_database: {
                 title: 'Импортируйте свою базу данных',
+                live_preview: {
+                    empty: 'Схема появится здесь по мере ввода',
+                    more_fields: 'ещё',
+                },
                 database_edition: 'Версия базы данных:',
                 edition_regular: 'Обычная',
                 import_method_label: 'Как вы хотите импортировать?',

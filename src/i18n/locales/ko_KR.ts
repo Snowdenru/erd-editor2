@@ -327,6 +327,8 @@ export const ko_KR: LanguageTranslation = {
                     '각 데이터베이스에는 고유한 기능과 특징이 있습니다.',
                 check_examples_long: '예제 확인',
                 check_examples_short: '예제들',
+                quick_start_examples: 'Or start from a ready-made database',
+                more_templates: 'More templates →',
             },
 
             import_database: {

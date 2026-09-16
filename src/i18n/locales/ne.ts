@@ -329,6 +329,8 @@ export const ne: LanguageTranslation = {
                     'प्रत्येक डाटाबेसलाई आफ्नो विशेषता र क्षमताहरू छन्।',
                 check_examples_long: 'उदाहरणहरू हेर्नुहोस्',
                 check_examples_short: 'उदाहरणहरू',
+                quick_start_examples: 'Or start from a ready-made database',
+                more_templates: 'More templates →',
             },
 
             import_database: {

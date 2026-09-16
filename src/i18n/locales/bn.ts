@@ -330,6 +330,8 @@ export const bn: LanguageTranslation = {
                     'প্রত্যেক ডাটাবেসের নিজস্ব বৈশিষ্ট্য এবং ক্ষমতা রয়েছে।',
                 check_examples_long: 'উদাহরণ দেখুন',
                 check_examples_short: 'উদাহরণ',
+                quick_start_examples: 'Or start from a ready-made database',
+                more_templates: 'More templates →',
             },
 
             import_database: {

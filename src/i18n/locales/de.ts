@@ -330,6 +330,8 @@ export const de: LanguageTranslation = {
                     'Jede Datenbank hat ihre eigenen Funktionen und Möglichkeiten.',
                 check_examples_long: 'Beispiele ansehen',
                 check_examples_short: 'Beispiele',
+                quick_start_examples: 'Or start from a ready-made database',
+                more_templates: 'More templates →',
             },
 
             import_database: {

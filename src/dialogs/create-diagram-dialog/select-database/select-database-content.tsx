@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { ToggleGroup } from '@/components/toggle/toggle-group';
 import { DatabaseType } from '@/lib/domain/database-type';
 import { DatabaseOption } from './database-option';
-import { ExampleOption } from './example-option';
+import { ExampleDiagramsInline } from './example-diagrams-inline';
 import { Button } from '@/components/button/button';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import {
@@ -129,7 +129,7 @@ export const SelectDatabaseContent: React.FC<SelectDatabaseContentProps> = ({
                             )}
                         </Button>
                     ) : null}
-                    <ExampleOption />
+                    <ExampleDiagramsInline />
                 </div>
             </div>
         ),

@@ -332,6 +332,8 @@ export const mr: LanguageTranslation = {
                     'प्रत्येक डेटाबेसचे स्वतःचे युनिक वैशिष्ट्ये आणि क्षमता आहेत.',
                 check_examples_long: 'उदाहरणे तपासा',
                 check_examples_short: 'उदाहरणे',
+                quick_start_examples: 'Or start from a ready-made database',
+                more_templates: 'More templates →',
             },
 
             import_database: {

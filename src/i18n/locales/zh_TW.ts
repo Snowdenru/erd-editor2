@@ -320,6 +320,8 @@ export const zh_TW: LanguageTranslation = {
                 description: '每種資料庫都有其獨特的功能和能力。',
                 check_examples_long: '查看範例',
                 check_examples_short: '範例',
+                quick_start_examples: 'Or start from a ready-made database',
+                more_templates: 'More templates →',
             },
 
             import_database: {

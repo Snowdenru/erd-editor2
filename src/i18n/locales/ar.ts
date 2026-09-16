@@ -322,6 +322,8 @@ export const ar: LanguageTranslation = {
                     'تتمتع كل قاعدة بيانات بمميزاتها وقدراتها الفريدة.',
                 check_examples_long: 'ألقي نظرة على الأمثلة',
                 check_examples_short: 'أمثلة',
+                quick_start_examples: 'Or start from a ready-made database',
+                more_templates: 'More templates →',
             },
 
             import_database: {

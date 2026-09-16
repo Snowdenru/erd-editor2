@@ -323,6 +323,8 @@ export const hr: LanguageTranslation = {
                     'Svaka baza podataka ima svoje jedinstvene značajke i mogućnosti.',
                 check_examples_long: 'Pogledaj primjere',
                 check_examples_short: 'Primjeri',
+                quick_start_examples: 'Or start from a ready-made database',
+                more_templates: 'More templates →',
             },
 
             import_database: {

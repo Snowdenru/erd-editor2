@@ -324,6 +324,8 @@ export const tr: LanguageTranslation = {
                     'Her veritabanının kendine özgü özellikleri ve yetenekleri vardır.',
                 check_examples_long: 'Örnekleri Kontrol Et',
                 check_examples_short: 'Örnekler',
+                quick_start_examples: 'Or start from a ready-made database',
+                more_templates: 'More templates →',
             },
             import_database: {
                 title: 'Veritabanını İçe Aktar',

@@ -327,6 +327,8 @@ export const vi: LanguageTranslation = {
                     'Mỗi cơ sở dữ liệu có những tính năng và khả năng riêng biệt.',
                 check_examples_long: 'Xem ví dụ',
                 check_examples_short: 'Ví dụ',
+                quick_start_examples: 'Or start from a ready-made database',
+                more_templates: 'More templates →',
             },
 
             import_database: {

@@ -329,6 +329,8 @@ export const ja: LanguageTranslation = {
                 description: '各データベースには独自の機能と能力があります。',
                 check_examples_long: '例を確認',
                 check_examples_short: '例',
+                quick_start_examples: 'Or start from a ready-made database',
+                more_templates: 'More templates →',
             },
 
             import_database: {

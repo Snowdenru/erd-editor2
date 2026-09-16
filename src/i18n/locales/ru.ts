@@ -326,6 +326,8 @@ export const ru: LanguageTranslation = {
                     'Каждая база данных имеет свои уникальные функции и возможности.',
                 check_examples_long: 'Открыть примеры',
                 check_examples_short: 'Примеры',
+                quick_start_examples: 'Или начните с готовой базы',
+                more_templates: 'Больше шаблонов →',
             },
 
             import_database: {

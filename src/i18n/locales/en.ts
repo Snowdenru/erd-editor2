@@ -319,6 +319,8 @@ export const en = {
                     'Each database has its own unique features and capabilities.',
                 check_examples_long: 'Check Examples',
                 check_examples_short: 'Examples',
+                quick_start_examples: 'Or start from a ready-made database',
+                more_templates: 'More templates →',
             },
 
             import_database: {

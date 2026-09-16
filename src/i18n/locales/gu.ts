@@ -327,6 +327,8 @@ export const gu: LanguageTranslation = {
                 description: 'દરેક ડેટાબેસની પોતાની ખાસિયતો અને ક્ષમતા હોય છે.',
                 check_examples_long: 'ઉદાહરણ જુઓ',
                 check_examples_short: 'ઉદાહરણ',
+                quick_start_examples: 'Or start from a ready-made database',
+                more_templates: 'More templates →',
             },
 
             import_database: {

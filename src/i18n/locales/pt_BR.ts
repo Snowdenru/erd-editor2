@@ -329,6 +329,8 @@ export const pt_BR: LanguageTranslation = {
                     'Cada banco de dados possui recursos e capacidades únicas.',
                 check_examples_long: 'Ver Exemplos',
                 check_examples_short: 'Exemplos',
+                quick_start_examples: 'Or start from a ready-made database',
+                more_templates: 'More templates →',
             },
 
             import_database: {

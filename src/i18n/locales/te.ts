@@ -328,6 +328,8 @@ export const te: LanguageTranslation = {
                     'ప్రతి డేటాబేస్‌కు ప్రత్యేక లక్షణాలు మరియు సామర్థ్యాలు ఉంటాయి.',
                 check_examples_long: 'ఉదాహరణలు చూడండి',
                 check_examples_short: 'ఉదాహరణలు',
+                quick_start_examples: 'Or start from a ready-made database',
+                more_templates: 'More templates →',
             },
 
             import_database: {

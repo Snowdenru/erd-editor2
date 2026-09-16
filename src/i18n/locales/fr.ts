@@ -325,6 +325,8 @@ export const fr: LanguageTranslation = {
                     'Chaque base de données a ses propres fonctionnalités et capacités uniques.',
                 check_examples_long: 'Voir les Exemples',
                 check_examples_short: 'Exemples',
+                quick_start_examples: 'Or start from a ready-made database',
+                more_templates: 'More templates →',
             },
 
             import_database: {

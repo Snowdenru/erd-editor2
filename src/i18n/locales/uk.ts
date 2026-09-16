@@ -327,6 +327,8 @@ export const uk: LanguageTranslation = {
                     'Кожна база даних має свої унікальні особливості та можливості.',
                 check_examples_long: 'Подивіться приклади',
                 check_examples_short: 'Приклади',
+                quick_start_examples: 'Or start from a ready-made database',
+                more_templates: 'More templates →',
             },
 
             import_database: {

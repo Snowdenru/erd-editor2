@@ -327,6 +327,8 @@ export const id_ID: LanguageTranslation = {
                     'Setiap database memiliki fitur dan kemampuan unik.',
                 check_examples_long: 'Lihat Contoh',
                 check_examples_short: 'Contoh',
+                quick_start_examples: 'Or start from a ready-made database',
+                more_templates: 'More templates →',
             },
 
             import_database: {

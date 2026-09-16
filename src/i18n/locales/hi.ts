@@ -329,6 +329,8 @@ export const hi: LanguageTranslation = {
                     'प्रत्येक डेटाबेस की अपनी अनूठी विशेषताएँ और क्षमताएँ होती हैं।',
                 check_examples_long: 'उदाहरण देखें',
                 check_examples_short: 'उदाहरण',
+                quick_start_examples: 'Or start from a ready-made database',
+                more_templates: 'More templates →',
             },
 
             import_database: {

@@ -1,10 +1,10 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { useTheme } from '@/hooks/use-theme';
 import { useDialog } from '@/hooks/use-dialog';
 import { useExampleDiagrams } from '@/hooks/use-example-diagrams';
 import { Spinner } from '@/components/spinner/spinner';
-import { Link } from '@/components/link/link';
 import type { Example } from '@/pages/examples-page/examples-data/examples-data';
 
 export const ExampleDiagramsInline: React.FC = () => {
@@ -56,7 +56,7 @@ export const ExampleDiagramsInline: React.FC = () => {
                 ))}
             </div>
             <Link
-                href="/templates"
+                to="/templates"
                 className="text-center text-xs text-primary hover:underline"
             >
                 {t('new_diagram_dialog.database_selection.more_templates')}

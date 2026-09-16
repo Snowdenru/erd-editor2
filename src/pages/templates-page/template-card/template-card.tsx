@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { randomColor } from '@/lib/colors';
 import {
     databaseSecondaryLogoMap,
@@ -20,7 +21,7 @@ export interface TemplateCardProps {
 export const TemplateCard: React.FC<TemplateCardProps> = ({ template }) => {
     const { effectiveTheme } = useTheme();
     return (
-        <a href={`/templates/${template.slug}`}>
+        <Link to={`/templates/${template.slug}`}>
             <div className="flex h-80 w-full cursor-pointer flex-col rounded-lg border-2 border-slate-500 bg-slate-50 shadow-sm transition duration-300 ease-in-out hover:scale-[102%] hover:border-pink-600 dark:border-slate-700 dark:bg-slate-950">
                 <div
                     className="h-2 rounded-t-[6px]"
@@ -80,6 +81,6 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({ template }) => {
                     ))}
                 </div>
             </div>
-        </a>
+        </Link>
     );
 };

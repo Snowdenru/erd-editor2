@@ -1,6 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 // Side-effect import: initializes the global i18next singleton, same as
 // src/main.tsx does at app bootstrap. Without this, useTranslation() (used
 // without an I18nextProvider, matching how the component is actually
@@ -42,7 +43,14 @@ describe('ExampleDiagramsInline', () => {
 
     it('clones the example and closes the dialog once cloning succeeds', async () => {
         mockUtilizeExample.mockResolvedValue(undefined);
-        render(<ExampleDiagramsInline />);
+        render(
+            <MemoryRouter
+                basename="/tools/erd2"
+                initialEntries={['/tools/erd2/']}
+            >
+                <ExampleDiagramsInline />
+            </MemoryRouter>
+        );
 
         fireEvent.click(screen.getByText('Employees schema'));
 
@@ -62,7 +70,14 @@ describe('ExampleDiagramsInline', () => {
         mockUtilizeExample.mockRejectedValue(
             new Error('storage quota exceeded')
         );
-        render(<ExampleDiagramsInline />);
+        render(
+            <MemoryRouter
+                basename="/tools/erd2"
+                initialEntries={['/tools/erd2/']}
+            >
+                <ExampleDiagramsInline />
+            </MemoryRouter>
+        );
 
         fireEvent.click(screen.getByText('Employees schema'));
 
@@ -78,11 +93,18 @@ describe('ExampleDiagramsInline', () => {
         consoleErrorSpy.mockRestore();
     });
 
-    it('links to the full templates library', () => {
-        render(<ExampleDiagramsInline />);
+    it('links to the full templates library, respecting the app basename', () => {
+        render(
+            <MemoryRouter
+                basename="/tools/erd2"
+                initialEntries={['/tools/erd2/']}
+            >
+                <ExampleDiagramsInline />
+            </MemoryRouter>
+        );
         const link = screen.getByText('Больше шаблонов →', {
             selector: 'a',
         });
-        expect(link).toHaveAttribute('href', '/templates');
+        expect(link).toHaveAttribute('href', '/tools/erd2/templates');
     });
 });

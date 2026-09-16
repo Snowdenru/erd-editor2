@@ -6,7 +6,12 @@ import { LocalConfigProvider } from '@/context/local-config-context/local-config
 import { ThemeProvider } from '@/context/theme-context/theme-provider';
 import { Button } from '@/components/button/button';
 import { CloudDownload } from 'lucide-react';
-import { useLoaderData, useNavigate, useParams } from 'react-router-dom';
+import {
+    Link as RouterLink,
+    useLoaderData,
+    useNavigate,
+    useParams,
+} from 'react-router-dom';
 import type { Template } from '../../templates-data/templates-data';
 import {
     Breadcrumb,
@@ -144,16 +149,20 @@ const TemplatePageComponent: React.FC = () => {
                         <Breadcrumb className="mb-2">
                             <BreadcrumbList>
                                 <BreadcrumbItem>
-                                    <BreadcrumbLink href={`/templates`}>
-                                        Templates
+                                    <BreadcrumbLink asChild>
+                                        <RouterLink to="/templates">
+                                            Templates
+                                        </RouterLink>
                                     </BreadcrumbLink>
                                 </BreadcrumbItem>
                                 <BreadcrumbSeparator />
                                 <BreadcrumbItem>
-                                    <BreadcrumbLink
-                                        href={`/templates/${templateSlug}`}
-                                    >
-                                        {templateSlug}
+                                    <BreadcrumbLink asChild>
+                                        <RouterLink
+                                            to={`/templates/${templateSlug}`}
+                                        >
+                                            {templateSlug}
+                                        </RouterLink>
                                     </BreadcrumbLink>
                                 </BreadcrumbItem>
                             </BreadcrumbList>

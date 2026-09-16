@@ -51,7 +51,7 @@ const ExamplesPageComponent: React.FC = () => {
     return (
         <>
             <Helmet>
-                <title>ChartDB - Example Database Diagrams & Schemas</title>
+                <title>SQL Lab - примеры ER-диаграмм</title>
             </Helmet>
             <section className="flex w-screen flex-col bg-background">
                 <nav className="flex h-12 flex-row items-center justify-between border-b px-4">
@@ -83,7 +83,7 @@ const ExamplesPageComponent: React.FC = () => {
                     </h1>
                     <h2 className="mt-1 font-primary text-base text-muted-foreground">
                         A collection of examples to help you get started with
-                        ChartDB.
+                        SQL Lab.
                     </h2>
                     <h2 className="mt-1 text-base font-semibold">
                         Click on one 😀

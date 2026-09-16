@@ -67,7 +67,7 @@ const TemplatePageComponent: React.FC = () => {
                 {template ? (
                     <>
                         <title>
-                            {`Database schema diagram for - ${template.name} | ChartDB`}
+                            {`Database schema diagram for - ${template.name} | SQL Lab`}
                         </title>
                         <meta
                             name="description"
@@ -75,7 +75,7 @@ const TemplatePageComponent: React.FC = () => {
                         />
                         <meta
                             property="og:title"
-                            content={`Database schema diagram for - ${template.name} | ChartDB`}
+                            content={`Database schema diagram for - ${template.name} | SQL Lab`}
                         />
                         <meta
                             property="og:url"
@@ -90,10 +90,10 @@ const TemplatePageComponent: React.FC = () => {
                             content={`${HOST_URL}${template.image}`}
                         />
                         <meta property="og:type" content="website" />
-                        <meta property="og:site_name" content="ChartDB" />
+                        <meta property="og:site_name" content="SQL Lab" />
                         <meta
                             name="twitter:title"
-                            content={`Database schema for - ${template.name} | ChartDB`}
+                            content={`Database schema for - ${template.name} | SQL Lab`}
                         />
                         <meta
                             name="twitter:description"
@@ -111,7 +111,7 @@ const TemplatePageComponent: React.FC = () => {
                         <meta name="twitter:creator" content="@ChartDB_io" />
                     </>
                 ) : (
-                    <title>Database Schema Diagram | ChartDB</title>
+                    <title>Database Schema Diagram | SQL Lab</title>
                 )}
             </Helmet>
 

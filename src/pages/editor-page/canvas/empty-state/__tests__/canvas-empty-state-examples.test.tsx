@@ -8,7 +8,7 @@ import { MemoryRouter } from 'react-router-dom';
 // mounted in the app) has no instance to read translations from.
 import '@/i18n/i18n';
 
-const mockUtilizeExample = vi.fn();
+const mockUtilizeExample = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('@/hooks/use-example-diagrams', () => ({
     useExampleDiagrams: () => ({
@@ -49,6 +49,35 @@ describe('CanvasEmptyStateExamples', () => {
         expect(mockUtilizeExample).toHaveBeenCalledWith({
             example: expect.objectContaining({ id: '1' }),
         });
+    });
+
+    it('logs an error and does not throw when cloning the example rejects', async () => {
+        const consoleErrorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        const failure = new Error('IndexedDB write failed');
+        mockUtilizeExample.mockRejectedValueOnce(failure);
+
+        render(
+            <MemoryRouter
+                basename="/tools/erd2"
+                initialEntries={['/tools/erd2/diagrams/x']}
+            >
+                <CanvasEmptyStateExamples />
+            </MemoryRouter>
+        );
+
+        fireEvent.click(screen.getByText('Employees schema'));
+
+        // Позволяем промису из onClick отклониться и .catch() отработать.
+        await vi.waitFor(() => {
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                'Failed to clone example diagram',
+                failure
+            );
+        });
+
+        consoleErrorSpy.mockRestore();
     });
 
     it('links to the full templates library, respecting the app basename', () => {

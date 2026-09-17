@@ -12,7 +12,9 @@ export const CanvasEmptyStateExamples: React.FC = () => {
     const { examples, loadingExampleId, utilizeExample } = useExampleDiagrams();
 
     const handleClick = (example: Example) => {
-        void utilizeExample({ example });
+        utilizeExample({ example }).catch((error: unknown) => {
+            console.error('Failed to clone example diagram', error);
+        });
     };
 
     return (

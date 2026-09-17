@@ -78,7 +78,7 @@ const FEATURES: Array<{
         icon: LayoutTemplate,
         title: 'Готовые примеры и шаблоны',
         description:
-            'Начните с классических учебных баз (Employees, Bike Stores, DVD Rental) или выберите из 52 готовых схем реальных проектов.',
+            'Начните с классических учебных баз (Employees, Bike Stores, DVD Rental) или выберите из 50 готовых схем реальных проектов.',
     },
 ];
 
@@ -89,7 +89,7 @@ const FAQ_ITEMS: Array<{ question: string; answer: string }> = [
     },
     {
         question: 'Как быстрее всего начать?',
-        answer: 'Нажмите «Импорт из вашей БД», выберите тип базы и вставьте DDL или DBML — или начните с одного из готовых примеров либо из 52 шаблонов.',
+        answer: 'Нажмите «Импорт из вашей БД», выберите тип базы и вставьте DDL или DBML — или начните с одного из готовых примеров либо из 50 шаблонов.',
     },
     {
         question: 'Чем Free отличается от Pro?',
@@ -224,6 +224,7 @@ const AboutPageComponent: React.FC = () => {
                         ограничений.
                     </p>
                     <Button asChild variant="outline">
+                        {/* /plans живёт вне SPA (на sql-platform, basename /tools/erd2 не применяется) — Link дал бы неверный /tools/erd2/plans */}
                         <a href="/plans">Тарифы</a>
                     </Button>
                 </div>

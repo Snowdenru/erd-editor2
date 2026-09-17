@@ -1,9 +1,8 @@
-import React, { Suspense, useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ToggleGroup } from '@/components/toggle/toggle-group';
 import { DatabaseType } from '@/lib/domain/database-type';
 import { DatabaseOption } from './database-option';
 import { Button } from '@/components/button/button';
-import { Spinner } from '@/components/spinner/spinner';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import {
     Tabs,
@@ -12,11 +11,6 @@ import {
     TabsTrigger,
 } from '@/components/tabs/tabs';
 
-const ExampleDiagramsInline = React.lazy(() =>
-    import('./example-diagrams-inline').then((module) => ({
-        default: module.ExampleDiagramsInline,
-    }))
-);
 export interface SelectDatabaseContentProps {
     databaseType: DatabaseType;
     setDatabaseType: React.Dispatch<React.SetStateAction<DatabaseType>>;
@@ -135,9 +129,6 @@ export const SelectDatabaseContent: React.FC<SelectDatabaseContentProps> = ({
                             )}
                         </Button>
                     ) : null}
-                    <Suspense fallback={<Spinner size="small" />}>
-                        <ExampleDiagramsInline />
-                    </Suspense>
                 </div>
             </div>
         ),

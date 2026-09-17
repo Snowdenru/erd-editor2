@@ -322,6 +322,12 @@ export const hi: LanguageTranslation = {
             filter: 'टेबल फ़िल्टर करें',
         },
 
+        canvas_empty_state: {
+            title: 'Where would you like to start?',
+            import_from_database: 'Import from your database',
+            new_table: 'New table',
+        },
+
         new_diagram_dialog: {
             database_selection: {
                 title: 'आपका डेटाबेस क्या है?',

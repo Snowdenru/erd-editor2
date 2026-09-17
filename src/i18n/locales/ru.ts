@@ -319,6 +319,12 @@ export const ru: LanguageTranslation = {
             filter: 'Фильтровать таблицы',
         },
 
+        canvas_empty_state: {
+            title: 'С чего начнём?',
+            import_from_database: 'Импорт из вашей БД',
+            new_table: 'Новая таблица',
+        },
+
         new_diagram_dialog: {
             database_selection: {
                 title: 'Какова ваша база данных?',

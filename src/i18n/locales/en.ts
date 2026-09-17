@@ -312,6 +312,12 @@ export const en = {
             filter: 'Filter Tables',
         },
 
+        canvas_empty_state: {
+            title: 'Where would you like to start?',
+            import_from_database: 'Import from your database',
+            new_table: 'New table',
+        },
+
         new_diagram_dialog: {
             database_selection: {
                 title: 'What is your Database?',

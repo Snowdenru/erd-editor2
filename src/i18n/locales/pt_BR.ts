@@ -322,6 +322,12 @@ export const pt_BR: LanguageTranslation = {
             filter: 'Filtrar Tabelas',
         },
 
+        canvas_empty_state: {
+            title: 'Where would you like to start?',
+            import_from_database: 'Import from your database',
+            new_table: 'New table',
+        },
+
         new_diagram_dialog: {
             database_selection: {
                 title: 'Qual é o seu Banco de Dados?',

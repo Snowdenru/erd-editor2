@@ -1901,7 +1901,10 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                     {showFilter ? (
                         <CanvasFilter onClose={() => setShowFilter(false)} />
                     ) : null}
-                    {tables.length === 0 && <CanvasEmptyState />}
+                    {tables.length === 0 &&
+                        areas.length === 0 &&
+                        notes.length === 0 &&
+                        !readonly && <CanvasEmptyState />}
                 </ReactFlow>
                 <MarkerDefinitions />
             </div>

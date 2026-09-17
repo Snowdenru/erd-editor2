@@ -67,6 +67,10 @@ export const SqllabSyncProvider: React.FC = () => {
         if (!diagramId) return;
         // Не залогинен — синхронизировать нечего, не заводим даже таймер.
         if (!getAccessToken()) return;
+        // Пустая диаграмма (без единой таблицы) не расходует квоту тарифа —
+        // синхронизация начнётся только после первой добавленной таблицы.
+        if (!currentDiagram.tables || currentDiagram.tables.length === 0)
+            return;
 
         if (timerRef.current) clearTimeout(timerRef.current);
         timerRef.current = setTimeout(() => {

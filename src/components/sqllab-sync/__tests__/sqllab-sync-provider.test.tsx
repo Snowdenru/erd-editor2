@@ -6,6 +6,7 @@ import { SqllabSyncProvider } from '../sqllab-sync-provider';
 import * as auth from '@/lib/sqllab-auth';
 import { DatabaseType } from '@/lib/domain/database-type';
 import type { Diagram } from '@/lib/domain/diagram';
+import type { DBTable } from '@/lib/domain/db-table';
 
 const baseDiagram: Diagram = {
     id: 'diagram-1',
@@ -15,6 +16,23 @@ const baseDiagram: Diagram = {
     relationships: [],
     createdAt: new Date(),
     updatedAt: new Date(),
+};
+
+const fakeTable: DBTable = {
+    id: 'table-1',
+    name: 'users',
+    x: 0,
+    y: 0,
+    fields: [],
+    indexes: [],
+    color: '#000000',
+    isView: false,
+    createdAt: Date.now(),
+};
+
+const diagramWithTable: Diagram = {
+    ...baseDiagram,
+    tables: [fakeTable],
 };
 
 describe('SqllabSyncProvider', () => {
@@ -34,7 +52,7 @@ describe('SqllabSyncProvider', () => {
                 value={
                     {
                         diagramId: 'diagram-1',
-                        currentDiagram: baseDiagram,
+                        currentDiagram: diagramWithTable,
                     } as never
                 }
             >
@@ -51,6 +69,73 @@ describe('SqllabSyncProvider', () => {
         const body = JSON.parse(String(authFetchSpy.mock.calls[0][1]?.body));
         expect(body.id).toBe('diagram-1');
         expect(body.title).toBe('Test Diagram');
+    });
+
+    it('does not push an empty diagram (zero tables) — free-tier quota guard', async () => {
+        vi.spyOn(auth, 'getAccessToken').mockReturnValue('fake-access-token');
+        const authFetchSpy = vi
+            .spyOn(auth, 'authFetch')
+            .mockResolvedValue(new Response(null, { status: 200 }));
+
+        render(
+            <chartDBContext.Provider
+                value={
+                    {
+                        diagramId: 'diagram-1',
+                        currentDiagram: baseDiagram,
+                    } as never
+                }
+            >
+                <SqllabSyncProvider />
+            </chartDBContext.Provider>
+        );
+
+        await vi.advanceTimersByTimeAsync(3000);
+
+        expect(authFetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('resumes pushing once the diagram gets its first table', async () => {
+        vi.spyOn(auth, 'getAccessToken').mockReturnValue('fake-access-token');
+        const authFetchSpy = vi
+            .spyOn(auth, 'authFetch')
+            .mockResolvedValue(new Response(null, { status: 200 }));
+
+        const { rerender } = render(
+            <chartDBContext.Provider
+                value={
+                    {
+                        diagramId: 'diagram-1',
+                        currentDiagram: baseDiagram,
+                    } as never
+                }
+            >
+                <SqllabSyncProvider />
+            </chartDBContext.Provider>
+        );
+
+        await vi.advanceTimersByTimeAsync(3000);
+        expect(authFetchSpy).not.toHaveBeenCalled();
+
+        rerender(
+            <chartDBContext.Provider
+                value={
+                    {
+                        diagramId: 'diagram-1',
+                        currentDiagram: diagramWithTable,
+                    } as never
+                }
+            >
+                <SqllabSyncProvider />
+            </chartDBContext.Provider>
+        );
+
+        await vi.advanceTimersByTimeAsync(2000);
+
+        expect(authFetchSpy).toHaveBeenCalledWith(
+            '/api/erd2/diagrams/diagram-1/',
+            expect.objectContaining({ method: 'PATCH' })
+        );
     });
 
     it('does not push again if the diagram id is empty (no diagram open yet)', async () => {

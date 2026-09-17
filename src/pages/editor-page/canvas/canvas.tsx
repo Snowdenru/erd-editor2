@@ -69,6 +69,7 @@ import {
 } from '@/components/tooltip/tooltip';
 import { MarkerDefinitions } from './marker-definitions';
 import { CanvasContextMenu } from './canvas-context-menu';
+import { CanvasEmptyState } from './empty-state/canvas-empty-state';
 import { areFieldTypesCompatible } from '@/lib/data/data-types/data-types';
 import {
     calcTableHeight,
@@ -1900,6 +1901,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                     {showFilter ? (
                         <CanvasFilter onClose={() => setShowFilter(false)} />
                     ) : null}
+                    {tables.length === 0 && <CanvasEmptyState />}
                 </ReactFlow>
                 <MarkerDefinitions />
             </div>

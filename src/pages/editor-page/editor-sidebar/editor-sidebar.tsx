@@ -19,6 +19,7 @@ import ChartDBDarkLogo from '@/assets/sqllab-logo-dark.svg';
 import { useTheme } from '@/hooks/use-theme';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { supportsCustomTypes } from '@/lib/domain/database-capabilities';
+import { useCreateEmptyDiagram } from '@/hooks/use-create-empty-diagram';
 import { useDialog } from '@/hooks/use-dialog';
 import { Separator } from '@/components/separator/separator';
 
@@ -43,7 +44,8 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
     const { isMd: isDesktop } = useBreakpoint('md');
     const { effectiveTheme } = useTheme();
     const { databaseType } = useChartDB();
-    const { openCreateDiagramDialog, openOpenDiagramDialog } = useDialog();
+    const { openOpenDiagramDialog } = useDialog();
+    const { createEmptyDiagram } = useCreateEmptyDiagram();
 
     const diagramItems: SidebarItem[] = useMemo(
         () => [
@@ -51,7 +53,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
                 title: t('editor_sidebar.new_diagram'),
                 icon: Plus,
                 onClick: () => {
-                    openCreateDiagramDialog();
+                    void createEmptyDiagram();
                 },
                 active: false,
             },
@@ -64,7 +66,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
                 active: false,
             },
         ],
-        [t, openCreateDiagramDialog, openOpenDiagramDialog]
+        [t, createEmptyDiagram, openOpenDiagramDialog]
     );
 
     const baseItems: SidebarItem[] = useMemo(

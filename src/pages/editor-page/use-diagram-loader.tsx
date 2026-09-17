@@ -1,5 +1,6 @@
 import { useChartDB } from '@/hooks/use-chartdb';
 import { useConfig } from '@/hooks/use-config';
+import { useCreateEmptyDiagram } from '@/hooks/use-create-empty-diagram';
 import { useDialog } from '@/hooks/use-dialog';
 import { useFullScreenLoader } from '@/hooks/use-full-screen-spinner';
 import { useRedoUndoStack } from '@/hooks/use-redo-undo-stack';
@@ -15,7 +16,8 @@ export const useDiagramLoader = () => {
     const { loadDiagram, currentDiagram } = useChartDB();
     const { resetRedoStack, resetUndoStack } = useRedoUndoStack();
     const { showLoader, hideLoader } = useFullScreenLoader();
-    const { openCreateDiagramDialog, openOpenDiagramDialog } = useDialog();
+    const { openOpenDiagramDialog } = useDialog();
+    const { createEmptyDiagram } = useCreateEmptyDiagram();
     const navigate = useNavigate();
     const { listDiagrams } = useStorage();
 
@@ -60,7 +62,7 @@ export const useDiagramLoader = () => {
             if (diagrams.length > 0) {
                 openOpenDiagramDialog({ canClose: false });
             } else {
-                openCreateDiagramDialog();
+                await createEmptyDiagram();
             }
         };
 
@@ -75,7 +77,7 @@ export const useDiagramLoader = () => {
         loadDefaultDiagram();
     }, [
         diagramId,
-        openCreateDiagramDialog,
+        createEmptyDiagram,
         config,
         navigate,
         listDiagrams,

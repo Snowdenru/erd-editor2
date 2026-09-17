@@ -151,7 +151,7 @@ const AboutPageComponent: React.FC = () => {
                     </p>
                     <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
                         <Button asChild size="lg">
-                            <a href="/tools/erd2/">Открыть редактор</a>
+                            <Link to="">Открыть редактор</Link>
                         </Button>
                         <Button asChild size="lg" variant="outline">
                             <Link to="/templates">Смотреть шаблоны</Link>
@@ -250,7 +250,7 @@ const AboutPageComponent: React.FC = () => {
                 <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 px-6 pb-20 text-center">
                     <h2 className="text-2xl font-bold">Готовы начать?</h2>
                     <Button asChild size="lg">
-                        <a href="/tools/erd2/">Открыть редактор</a>
+                        <Link to="">Открыть редактор</Link>
                     </Button>
                 </div>
             </section>

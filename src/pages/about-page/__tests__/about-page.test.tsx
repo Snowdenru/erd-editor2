@@ -30,7 +30,7 @@ describe('AboutPage', () => {
         });
         expect(openEditorLinks.length).toBeGreaterThan(0);
         openEditorLinks.forEach((link) => {
-            expect(link).toHaveAttribute('href', '/tools/erd2/');
+            expect(link).toHaveAttribute('href', '/tools/erd2');
         });
     });
 

@@ -12,12 +12,14 @@ export const ko_KR: LanguageTranslation = {
             visuals: '시각화',
         },
         menu: {
+            features: 'Features',
             actions: {
                 actions: '작업',
                 new: '새로 만들기...',
                 browse: '모든 데이터베이스...',
                 save: '저장',
                 import: '데이터베이스 가져오기',
+                import_into_current: 'Import into current diagram',
                 export_sql: 'SQL로 저장',
                 export_as: '다른 형식으로 저장',
                 delete_diagram: '삭제',
@@ -348,6 +350,28 @@ export const ko_KR: LanguageTranslation = {
                 import_method_label: 'How would you like to import?',
                 import_method_smart_query: 'Smart Query',
                 import_method_sql_script: 'SQL Script',
+                example: 'Example:',
+                output_smart_query: 'Smart Query Output',
+                output_dbml: 'DBML Script',
+                output_sql: 'SQL Script',
+                dbml_paste:
+                    'Paste your DBML (Database Markup Language) schema definition here →',
+                ddl: {
+                    install: 'Install {{tool}}.',
+                    run_command_sudo:
+                        'Execute the following command in your terminal (prefix with sudo on Linux if needed):',
+                    run_command:
+                        'Execute the following command in your terminal:',
+                    open_exported:
+                        'Open the exported SQL file, copy its contents, and paste them here.',
+                    ssms_install:
+                        'Download and install SQL Server Management Studio (SSMS).',
+                    ssms_connect:
+                        'Connect to your SQL Server instance using SSMS.',
+                    ssms_script:
+                        'Right-click on the database you want to export and select Script Database as > CREATE To > New Query Editor Window.',
+                    ssms_copy: 'Copy the generated script and paste it here.',
+                },
                 instructions_title: 'Instructions:',
                 step_1: '데이터베이스에서 아래의 SQL을 실행해주세요:',
                 step_2: '이곳에 결과를 붙여넣어주세요 →',
@@ -532,6 +556,7 @@ export const ko_KR: LanguageTranslation = {
         },
 
         canvas_context_menu: {
+            import_database: 'Import from your DB',
             new_table: '새 테이블',
             new_view: '새 뷰',
             new_relationship: '새 연관관계',

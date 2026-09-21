@@ -12,12 +12,14 @@ export const uk: LanguageTranslation = {
             visuals: 'Візуальні елементи',
         },
         menu: {
+            features: 'Features',
             actions: {
                 actions: 'Дії',
                 new: 'Нова...',
                 browse: 'Усі бази даних...',
                 save: 'Зберегти',
                 import: 'Імпорт бази даних',
+                import_into_current: 'Import into current diagram',
                 export_sql: 'Експорт SQL',
                 export_as: 'Експортувати як',
                 delete_diagram: 'Видалити',
@@ -348,6 +350,28 @@ export const uk: LanguageTranslation = {
                 import_method_label: 'How would you like to import?',
                 import_method_smart_query: 'Smart Query',
                 import_method_sql_script: 'SQL Script',
+                example: 'Example:',
+                output_smart_query: 'Smart Query Output',
+                output_dbml: 'DBML Script',
+                output_sql: 'SQL Script',
+                dbml_paste:
+                    'Paste your DBML (Database Markup Language) schema definition here →',
+                ddl: {
+                    install: 'Install {{tool}}.',
+                    run_command_sudo:
+                        'Execute the following command in your terminal (prefix with sudo on Linux if needed):',
+                    run_command:
+                        'Execute the following command in your terminal:',
+                    open_exported:
+                        'Open the exported SQL file, copy its contents, and paste them here.',
+                    ssms_install:
+                        'Download and install SQL Server Management Studio (SSMS).',
+                    ssms_connect:
+                        'Connect to your SQL Server instance using SSMS.',
+                    ssms_script:
+                        'Right-click on the database you want to export and select Script Database as > CREATE To > New Query Editor Window.',
+                    ssms_copy: 'Copy the generated script and paste it here.',
+                },
                 instructions_title: 'Instructions:',
                 step_1: 'Запустіть цей сценарій у своїй базі даних:',
                 step_2: 'Вставте сюди результат сценарію →',
@@ -533,6 +557,7 @@ export const uk: LanguageTranslation = {
         },
 
         canvas_context_menu: {
+            import_database: 'Import from your DB',
             new_table: 'Нова таблиця',
             new_view: 'Нове представлення',
             new_relationship: 'Новий звʼязок',

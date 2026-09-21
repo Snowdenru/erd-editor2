@@ -12,12 +12,14 @@ export const bn: LanguageTranslation = {
             visuals: 'ভিজ্যুয়াল',
         },
         menu: {
+            features: 'Features',
             actions: {
                 actions: 'কার্য',
                 new: 'নতুন...',
                 browse: 'সমস্ত ডেটাবেস...',
                 save: 'সংরক্ষণ করুন',
                 import: 'ডাটাবেস আমদানি করুন',
+                import_into_current: 'Import into current diagram',
                 export_sql: 'SQL রপ্তানি করুন',
                 export_as: 'রূপে রপ্তানি করুন',
                 delete_diagram: 'মুছুন',
@@ -351,6 +353,28 @@ export const bn: LanguageTranslation = {
                 import_method_label: 'How would you like to import?',
                 import_method_smart_query: 'Smart Query',
                 import_method_sql_script: 'SQL Script',
+                example: 'Example:',
+                output_smart_query: 'Smart Query Output',
+                output_dbml: 'DBML Script',
+                output_sql: 'SQL Script',
+                dbml_paste:
+                    'Paste your DBML (Database Markup Language) schema definition here →',
+                ddl: {
+                    install: 'Install {{tool}}.',
+                    run_command_sudo:
+                        'Execute the following command in your terminal (prefix with sudo on Linux if needed):',
+                    run_command:
+                        'Execute the following command in your terminal:',
+                    open_exported:
+                        'Open the exported SQL file, copy its contents, and paste them here.',
+                    ssms_install:
+                        'Download and install SQL Server Management Studio (SSMS).',
+                    ssms_connect:
+                        'Connect to your SQL Server instance using SSMS.',
+                    ssms_script:
+                        'Right-click on the database you want to export and select Script Database as > CREATE To > New Query Editor Window.',
+                    ssms_copy: 'Copy the generated script and paste it here.',
+                },
                 instructions_title: 'Instructions:',
                 step_1: 'আপনার ডাটাবেসে এই স্ক্রিপ্ট চালান:',
                 step_2: 'স্ক্রিপ্টের ফলাফল এখানে পেস্ট করুন →',
@@ -537,6 +561,7 @@ export const bn: LanguageTranslation = {
         },
 
         canvas_context_menu: {
+            import_database: 'Import from your DB',
             new_table: 'নতুন টেবিল',
             new_view: 'নতুন ভিউ',
             new_relationship: 'নতুন সম্পর্ক',

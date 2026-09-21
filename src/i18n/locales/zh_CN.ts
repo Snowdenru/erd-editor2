@@ -12,12 +12,14 @@ export const zh_CN: LanguageTranslation = {
             visuals: '视觉效果',
         },
         menu: {
+            features: 'Features',
             actions: {
                 actions: '操作',
                 new: '新建...',
                 browse: '所有数据库...',
                 save: '保存',
                 import: '导入数据库',
+                import_into_current: 'Import into current diagram',
                 export_sql: '导出 SQL 语句',
                 export_as: '导出为',
                 delete_diagram: '删除',
@@ -341,6 +343,28 @@ export const zh_CN: LanguageTranslation = {
                 import_method_label: 'How would you like to import?',
                 import_method_smart_query: 'Smart Query',
                 import_method_sql_script: 'SQL Script',
+                example: 'Example:',
+                output_smart_query: 'Smart Query Output',
+                output_dbml: 'DBML Script',
+                output_sql: 'SQL Script',
+                dbml_paste:
+                    'Paste your DBML (Database Markup Language) schema definition here →',
+                ddl: {
+                    install: 'Install {{tool}}.',
+                    run_command_sudo:
+                        'Execute the following command in your terminal (prefix with sudo on Linux if needed):',
+                    run_command:
+                        'Execute the following command in your terminal:',
+                    open_exported:
+                        'Open the exported SQL file, copy its contents, and paste them here.',
+                    ssms_install:
+                        'Download and install SQL Server Management Studio (SSMS).',
+                    ssms_connect:
+                        'Connect to your SQL Server instance using SSMS.',
+                    ssms_script:
+                        'Right-click on the database you want to export and select Script Database as > CREATE To > New Query Editor Window.',
+                    ssms_copy: 'Copy the generated script and paste it here.',
+                },
                 instructions_title: 'Instructions:',
                 step_1: '在您的数据库中执行以下脚本：',
                 step_2: '将结果粘贴于此 →',
@@ -525,6 +549,7 @@ export const zh_CN: LanguageTranslation = {
         },
 
         canvas_context_menu: {
+            import_database: 'Import from your DB',
             new_table: '新建表',
             new_view: '新建视图',
             new_relationship: '新建关系',

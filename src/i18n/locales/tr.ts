@@ -12,12 +12,14 @@ export const tr: LanguageTranslation = {
             visuals: 'Görseller',
         },
         menu: {
+            features: 'Features',
             actions: {
                 actions: 'Eylemler',
                 new: 'Yeni...',
                 browse: 'Tüm veritabanları...',
                 save: 'Kaydet',
                 import: 'Veritabanı İçe Aktar',
+                import_into_current: 'Import into current diagram',
                 export_sql: 'SQL Olarak Dışa Aktar',
                 export_as: 'Olarak Dışa Aktar',
                 delete_diagram: 'Sil',
@@ -344,6 +346,28 @@ export const tr: LanguageTranslation = {
                 import_method_label: 'How would you like to import?',
                 import_method_smart_query: 'Smart Query',
                 import_method_sql_script: 'SQL Script',
+                example: 'Example:',
+                output_smart_query: 'Smart Query Output',
+                output_dbml: 'DBML Script',
+                output_sql: 'SQL Script',
+                dbml_paste:
+                    'Paste your DBML (Database Markup Language) schema definition here →',
+                ddl: {
+                    install: 'Install {{tool}}.',
+                    run_command_sudo:
+                        'Execute the following command in your terminal (prefix with sudo on Linux if needed):',
+                    run_command:
+                        'Execute the following command in your terminal:',
+                    open_exported:
+                        'Open the exported SQL file, copy its contents, and paste them here.',
+                    ssms_install:
+                        'Download and install SQL Server Management Studio (SSMS).',
+                    ssms_connect:
+                        'Connect to your SQL Server instance using SSMS.',
+                    ssms_script:
+                        'Right-click on the database you want to export and select Script Database as > CREATE To > New Query Editor Window.',
+                    ssms_copy: 'Copy the generated script and paste it here.',
+                },
                 instructions_title: 'Instructions:',
                 step_1: 'Bu komut dosyasını veritabanınızda çalıştırın:',
                 step_2: 'Komut dosyası sonucunu buraya yapıştırın →',
@@ -524,6 +548,7 @@ export const tr: LanguageTranslation = {
             many_to_many: 'Çok Çok',
         },
         canvas_context_menu: {
+            import_database: 'Import from your DB',
             new_table: 'Yeni Tablo',
             new_view: 'Yeni Görünüm',
             new_relationship: 'Yeni İlişki',

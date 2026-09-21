@@ -496,10 +496,12 @@ export const ImportDatabase: React.FC<ImportDatabaseProps> = ({
             <div className="flex size-full flex-col gap-1 overflow-hidden rounded-md border p-1">
                 <div className="w-full text-center text-xs text-muted-foreground">
                     {importMethod === 'query'
-                        ? 'Smart Query Output'
+                        ? t(
+                              'new_diagram_dialog.import_database.output_smart_query'
+                          )
                         : importMethod === 'dbml'
-                          ? 'DBML Script'
-                          : 'SQL Script'}
+                          ? t('new_diagram_dialog.import_database.output_dbml')
+                          : t('new_diagram_dialog.import_database.output_sql')}
                 </div>
                 <div className="flex-1 overflow-hidden">
                     <Suspense fallback={<Spinner />}>
@@ -569,6 +571,7 @@ export const ImportDatabase: React.FC<ImportDatabaseProps> = ({
             </div>
         ),
         [
+            t,
             errorMessage,
             scriptResult,
             importMethod,

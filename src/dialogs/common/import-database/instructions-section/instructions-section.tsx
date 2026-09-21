@@ -169,7 +169,12 @@ export const InstructionsSection: React.FC<InstructionsSectionProps> = ({
                             className="h-6 gap-1 p-0 px-2 shadow-none data-[state=on]:bg-slate-200 dark:data-[state=on]:bg-slate-700"
                         >
                             <Avatar className="h-3 w-4 rounded-none">
-                                <AvatarImage src={logo} alt="query" />
+                                <AvatarImage
+                                    src={logo}
+                                    alt={t(
+                                        'new_diagram_dialog.import_database.import_method_smart_query'
+                                    )}
+                                />
                                 <AvatarFallback>
                                     {t(
                                         'new_diagram_dialog.import_database.import_method_smart_query'

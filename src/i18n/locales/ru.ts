@@ -348,6 +348,28 @@ export const ru: LanguageTranslation = {
                 import_method_label: 'Как вы хотите импортировать?',
                 import_method_smart_query: 'Умный запрос',
                 import_method_sql_script: 'SQL-скрипт',
+                example: 'Пример:',
+                output_smart_query: 'Вывод умного запроса',
+                output_dbml: 'DBML-скрипт',
+                output_sql: 'SQL-скрипт',
+                dbml_paste:
+                    'Вставьте сюда описание схемы в формате DBML (Database Markup Language) →',
+                ddl: {
+                    install: 'Установите {{tool}}.',
+                    run_command_sudo:
+                        'Выполните в терминале следующую команду (на Linux при необходимости добавьте sudo):',
+                    run_command: 'Выполните в терминале следующую команду:',
+                    open_exported:
+                        'Откройте экспортированный SQL-файл, скопируйте его содержимое и вставьте сюда.',
+                    ssms_install:
+                        'Скачайте и установите SQL Server Management Studio (SSMS).',
+                    ssms_connect:
+                        'Подключитесь к своему экземпляру SQL Server через SSMS.',
+                    ssms_script:
+                        'Щёлкните правой кнопкой по нужной базе данных и выберите Tasks → Generate Scripts или Script Database as > CREATE To > New Query Editor Window.',
+                    ssms_copy:
+                        'Скопируйте сгенерированный скрипт и вставьте его сюда.',
+                },
                 instructions_title: 'Инструкция:',
                 step_1: 'Запустите этот скрипт в своей базе данных:',
                 step_2: 'Вставьте вывод скрипта сюда →',
@@ -535,6 +557,7 @@ export const ru: LanguageTranslation = {
         },
 
         canvas_context_menu: {
+            import_database: 'Импорт из вашей БД',
             new_table: 'Создать таблицу',
             new_view: 'Новое представление',
             new_relationship: 'Создать отношение',

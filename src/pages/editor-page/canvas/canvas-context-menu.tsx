@@ -48,7 +48,7 @@ export const CanvasContextMenu: React.FC<React.PropsWithChildren> = ({
         updateTablesState,
     } = useChartDB();
     const { schemasDisplayed } = useDiagramFilter();
-    const { openCreateRelationshipDialog, openImportDatabaseDialog } =
+    const { openCreateRelationshipDialog, openCreateDiagramDialog } =
         useDialog();
     const { screenToFlowPosition, getNodes } = useReactFlow();
     const { t } = useTranslation();
@@ -187,12 +187,9 @@ export const CanvasContextMenu: React.FC<React.PropsWithChildren> = ({
 
     const importSqlDbmlHandler = useCallback(() => {
         queueMicrotask(() => {
-            openImportDatabaseDialog({
-                databaseType,
-                importMethods: ['ddl', 'dbml'],
-            });
+            openCreateDiagramDialog();
         });
-    }, [openImportDatabaseDialog, databaseType]);
+    }, [openCreateDiagramDialog]);
 
     // Arrange selected tables into an area
     const moveSelectedToArea = useCallback(
@@ -338,7 +335,7 @@ export const CanvasContextMenu: React.FC<React.PropsWithChildren> = ({
                     onClick={importSqlDbmlHandler}
                     className="flex justify-between gap-4"
                 >
-                    Import SQL/DBML
+                    {t('canvas_context_menu.import_database')}
                     <Import className="size-3.5" />
                 </ContextMenuItem>
                 {hasSelectedTables && (

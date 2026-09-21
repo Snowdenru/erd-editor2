@@ -9,7 +9,14 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/sidebar/sidebar';
-import { Group, FileType, Plus, FolderOpen, CodeXml } from 'lucide-react';
+import {
+    Group,
+    FileType,
+    Plus,
+    FolderOpen,
+    CodeXml,
+    FileCode,
+} from 'lucide-react';
 import { Table, Workflow } from 'lucide-react';
 import { useLayout } from '@/hooks/use-layout';
 import { useTranslation } from 'react-i18next';
@@ -88,6 +95,15 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
                     selectSidebarSection('dbml');
                 },
                 active: selectedSidebarSection === 'dbml',
+            },
+            {
+                title: 'DDL',
+                icon: FileCode,
+                onClick: () => {
+                    showSidePanel();
+                    selectSidebarSection('ddl');
+                },
+                active: selectedSidebarSection === 'ddl',
             },
             {
                 title: t('editor_sidebar.refs'),

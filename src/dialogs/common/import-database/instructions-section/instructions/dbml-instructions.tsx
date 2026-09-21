@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { DatabaseType } from '@/lib/domain/database-type';
 import type { DatabaseEdition } from '@/lib/domain/database-edition';
 import { CodeSnippet } from '@/components/code-snippet/code-snippet';
@@ -10,17 +11,17 @@ export interface DBMLInstructionsProps {
 }
 
 export const DBMLInstructions: React.FC<DBMLInstructionsProps> = () => {
+    const { t } = useTranslation();
     return (
         <>
             <div className="flex flex-col gap-1 text-sm text-primary">
-                <div>
-                    Paste your DBML (Database Markup Language) schema definition
-                    here →
-                </div>
+                <div>{t('new_diagram_dialog.import_database.dbml_paste')}</div>
             </div>
 
             <div className="flex h-64 flex-col gap-1 text-sm text-primary">
-                <h4 className="text-xs font-medium">Example:</h4>
+                <h4 className="text-xs font-medium">
+                    {t('new_diagram_dialog.import_database.example')}
+                </h4>
                 <CodeSnippet
                     className="h-full"
                     allowCopy={false}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { CodeSnippet } from '@/components/code-snippet/code-snippet';
 
 export interface DDLInstructionStepProps {
@@ -14,6 +15,7 @@ export const DDLInstructionStep: React.FC<DDLInstructionStepProps> = ({
     code,
     example,
 }) => {
+    const { t } = useTranslation();
     return (
         <div className="flex flex-col gap-1">
             <div className="flex flex-col gap-1 text-sm text-primary">
@@ -32,7 +34,9 @@ export const DDLInstructionStep: React.FC<DDLInstructionStepProps> = ({
                 ) : null}
                 {example ? (
                     <>
-                        <div className="my-2">Example:</div>
+                        <div className="my-2">
+                            {t('new_diagram_dialog.import_database.example')}
+                        </div>
                         <div className="h-[60px]">
                             <CodeSnippet
                                 className="h-full"

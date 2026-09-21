@@ -18,6 +18,7 @@ export const en = {
                 browse: 'All Databases...',
                 save: 'Save',
                 import: 'Import',
+                import_into_current: 'Import into current diagram',
                 export_sql: 'Export SQL',
                 export_as: 'Export as',
                 delete_diagram: 'Delete',

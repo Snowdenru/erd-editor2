@@ -18,6 +18,7 @@ export const ru: LanguageTranslation = {
                 browse: 'Все базы данных...',
                 save: 'Сохранить',
                 import: 'Импортировать базу данных',
+                import_into_current: 'Импорт в текущую диаграмму',
                 export_sql: 'Экспорт SQL',
                 export_as: 'Экспортировать как',
                 delete_diagram: 'Удалить',

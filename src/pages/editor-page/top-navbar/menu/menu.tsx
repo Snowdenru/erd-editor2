@@ -168,9 +168,12 @@ export const Menu: React.FC<MenuProps> = () => {
                         </MenubarShortcut>
                     </MenubarItem>
                     <MenubarSeparator />
+                    <MenubarItem onClick={createNewDiagram}>
+                        {t('menu.actions.import')}
+                    </MenubarItem>
                     <MenubarSub>
                         <MenubarSubTrigger>
-                            {t('menu.actions.import')}
+                            {t('menu.actions.import_into_current')}
                         </MenubarSubTrigger>
                         <MenubarSubContent>
                             <MenubarItem onClick={openImportDiagramDialog}>

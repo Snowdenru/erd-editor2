@@ -12,6 +12,7 @@ export const ru: LanguageTranslation = {
             visuals: 'Области',
         },
         menu: {
+            features: 'Возможности',
             actions: {
                 actions: 'Действия',
                 new: 'Новая...',

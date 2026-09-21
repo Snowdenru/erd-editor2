@@ -12,6 +12,7 @@ export const en = {
             visuals: 'Visuals',
         },
         menu: {
+            features: 'Features',
             actions: {
                 actions: 'Actions',
                 new: 'New...',

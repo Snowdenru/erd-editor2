@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import ChartDBLogo from '@/assets/sqllab-logo-light.svg';
 import ChartDBDarkLogo from '@/assets/sqllab-logo-dark.svg';
 import { useTheme } from '@/hooks/use-theme';
@@ -36,6 +36,7 @@ import { Canvas } from '../editor-page/canvas/canvas';
 import { ReactFlowProvider } from '@xyflow/react';
 import { ChartDBProvider } from '@/context/chartdb-context/chartdb-provider';
 import { DiffProvider } from '@/context/diff-context/diff-provider';
+import { FitToTables } from '@/components/fit-to-tables/fit-to-tables';
 import { Helmet } from 'react-helmet-async';
 import { APP_URL, HOST_URL } from '@/lib/env';
 import { Link } from '@/components/link/link';
@@ -58,6 +59,7 @@ const TemplatePageComponent: React.FC = () => {
     }, [template, navigate]);
 
     const { effectiveTheme } = useTheme();
+    const canvasContainerRef = useRef<HTMLDivElement>(null);
 
     const cloneTemplate = useCallback(async () => {
         if (APP_URL) {
@@ -279,7 +281,10 @@ const TemplatePageComponent: React.FC = () => {
                                 </div>
                             </div>
                             <div className="flex min-h-96 overflow-hidden rounded border md:flex-1 md:rounded-lg">
-                                <div className="size-full">
+                                <div
+                                    ref={canvasContainerRef}
+                                    className="size-full"
+                                >
                                     <DiffProvider>
                                         <ChartDBProvider
                                             diagram={template.diagram}
@@ -289,6 +294,15 @@ const TemplatePageComponent: React.FC = () => {
                                                 initialTables={
                                                     template.diagram.tables ??
                                                     []
+                                                }
+                                            />
+                                            <FitToTables
+                                                tables={
+                                                    template.diagram.tables ??
+                                                    []
+                                                }
+                                                containerRef={
+                                                    canvasContainerRef
                                                 }
                                             />
                                         </ChartDBProvider>

@@ -2,6 +2,10 @@ import type { LanguageMetadata, LanguageTranslation } from '../types';
 
 export const ko_KR: LanguageTranslation = {
     translation: {
+        theme_toggle: {
+            switch_to_light: 'Switch to light theme',
+            switch_to_dark: 'Switch to dark theme',
+        },
         editor_sidebar: {
             new_diagram: '새로 만들기',
             browse: '열기',

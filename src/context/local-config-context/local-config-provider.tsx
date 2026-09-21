@@ -10,7 +10,8 @@ const showFieldAttributesKey = 'show_field_attributes';
 const githubRepoOpenedKey = 'github_repo_opened';
 const starUsDialogLastOpenKey = 'star_us_dialog_last_open';
 const showMiniMapOnCanvasKey = 'show_minimap_on_canvas';
-const showDBViewsKey = 'show_db_views';
+// v2: старый ключ у всех уже хранит 'false' (провайдер записывает умолчание при первом визите) — меняем ключ, чтобы новое умолчание true применилось и к существующим пользователям
+const showDBViewsKey = 'show_db_views_v2';
 
 export const LocalConfigProvider: React.FC<React.PropsWithChildren> = ({
     children,
@@ -24,7 +25,8 @@ export const LocalConfigProvider: React.FC<React.PropsWithChildren> = ({
     );
 
     const [showDBViews, setShowDBViews] = React.useState<boolean>(
-        (localStorage.getItem(showDBViewsKey) || 'false') === 'true'
+        // По умолчанию показываем вьюхи: иначе в готовых схемах (например, зона Current Status в Employees) области выглядят пустыми
+        (localStorage.getItem(showDBViewsKey) ?? 'true') === 'true'
     );
 
     const [showCardinality, setShowCardinality] = React.useState<boolean>(

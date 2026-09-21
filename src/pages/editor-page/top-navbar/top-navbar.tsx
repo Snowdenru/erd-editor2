@@ -5,6 +5,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { DiagramName } from './diagram-name';
 import { LastSaved } from './last-saved';
 import { LanguageNav } from './language-nav/language-nav';
+import { ThemeToggle } from './theme-toggle';
 import { Menu } from './menu/menu';
 import { ImportFromDbButton } from './import-from-db-button';
 
@@ -39,6 +40,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = () => {
             <div className="hidden flex-1 items-center justify-end gap-2 sm:flex">
                 <ImportFromDbButton />
                 <LastSaved />
+                <ThemeToggle />
                 <LanguageNav />
             </div>
         </nav>

@@ -1,11 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { useStorage } from '@/hooks/use-storage';
 import { DatabaseType } from '@/lib/domain/database-type';
 import type { Diagram } from '@/lib/domain/diagram';
-import { DdlLivePreview } from '@/dialogs/common/import-database/ddl-live-preview/ddl-live-preview';
+import { Spinner } from '@/components/spinner/spinner';
+
+const DdlCanvasPreview = React.lazy(() =>
+    import('./ddl-canvas-preview').then((module) => ({
+        default: module.DdlCanvasPreview,
+    }))
+);
 
 const PARSE_DEBOUNCE_MS = 400;
 
@@ -147,7 +153,7 @@ export const DdlTryBlock: React.FC = () => {
                         spellCheck={false}
                         aria-label="SQL-скрипт для построения диаграммы"
                         placeholder="Вставьте сюда CREATE TABLE ..."
-                        className="h-80 w-full resize-y rounded-2xl border bg-card p-4 font-mono text-sm leading-relaxed shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-600"
+                        className="h-[420px] w-full resize-y rounded-2xl border bg-card p-4 font-mono text-sm leading-relaxed shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-600"
                     />
                     {error ? (
                         <p className="flex items-start gap-2 text-sm text-destructive">
@@ -157,7 +163,21 @@ export const DdlTryBlock: React.FC = () => {
                     ) : null}
                 </div>
                 <div className="flex flex-col gap-3">
-                    <DdlLivePreview diagram={diagram} height={320} />
+                    {diagram && hasTables ? (
+                        <Suspense
+                            fallback={
+                                <div className="flex h-[420px] items-center justify-center rounded-2xl border">
+                                    <Spinner className="text-pink-600" />
+                                </div>
+                            }
+                        >
+                            <DdlCanvasPreview diagram={diagram} />
+                        </Suspense>
+                    ) : (
+                        <div className="flex h-[420px] items-center justify-center rounded-2xl border border-dashed text-sm text-muted-foreground">
+                            Схема появится здесь по мере ввода
+                        </div>
+                    )}
                     <Button
                         type="button"
                         size="lg"

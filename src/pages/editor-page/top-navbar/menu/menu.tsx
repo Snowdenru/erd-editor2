@@ -141,12 +141,6 @@ export const Menu: React.FC<MenuProps> = () => {
 
     return (
         <Menubar className="h-8 border-none py-2 shadow-none md:h-10 md:py-0">
-            <Link
-                to="/about"
-                className="flex cursor-default select-none items-center rounded-sm px-3 py-1 text-sm font-medium outline-none hover:bg-accent focus:bg-accent focus:text-accent-foreground"
-            >
-                {t('menu.features')}
-            </Link>
             <MenubarMenu>
                 <MenubarTrigger>{t('menu.actions.actions')}</MenubarTrigger>
                 <MenubarContent>
@@ -486,6 +480,12 @@ export const Menu: React.FC<MenuProps> = () => {
                     </MenubarItem>
                 </MenubarContent>
             </MenubarMenu>
+            <Link
+                to="/about"
+                className="flex cursor-default select-none items-center rounded-sm px-3 py-1 text-sm font-medium outline-none hover:bg-accent focus:bg-accent focus:text-accent-foreground"
+            >
+                {t('menu.features')}
+            </Link>
         </Menubar>
     );
 };

@@ -2,9 +2,13 @@ import type { LanguageMetadata, LanguageTranslation } from '../types';
 
 export const ru: LanguageTranslation = {
     translation: {
+        theme_toggle: {
+            switch_to_light: 'Переключить на светлую тему',
+            switch_to_dark: 'Переключить на тёмную тему',
+        },
         editor_sidebar: {
             new_diagram: 'Новая',
-            browse: 'Открыть',
+            browse: 'Мои схемы',
             tables: 'Таблицы',
             refs: 'Связи',
             dependencies: 'Зависимости',

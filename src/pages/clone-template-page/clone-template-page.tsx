@@ -11,7 +11,7 @@ import { ThemeProvider } from '@/context/theme-context/theme-provider';
 
 export const CloneTemplateComponent: React.FC = () => {
     const navigate = useNavigate();
-    const { addDiagram, deleteDiagram } = useStorage();
+    const { addDiagram } = useStorage();
     const clonedBefore = useRef<boolean>(false);
     const data = useLoaderData() as TemplatePageLoaderData;
 
@@ -29,8 +29,6 @@ export const CloneTemplateComponent: React.FC = () => {
         clonedBefore.current = true;
         const diagram = convertTemplateToNewDiagram(template);
 
-        await deleteDiagram(diagram.id);
-
         const now = new Date();
         const diagramToAdd: Diagram = {
             ...diagram,
@@ -40,7 +38,7 @@ export const CloneTemplateComponent: React.FC = () => {
 
         await addDiagram({ diagram: diagramToAdd });
         navigate(`/diagrams/${diagramToAdd.id}`);
-    }, [addDiagram, deleteDiagram, navigate, template]);
+    }, [addDiagram, navigate, template]);
 
     useEffect(() => {
         if (!template) {

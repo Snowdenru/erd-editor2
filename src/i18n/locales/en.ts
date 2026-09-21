@@ -2,9 +2,13 @@ import type { LanguageMetadata } from '../types';
 
 export const en = {
     translation: {
+        theme_toggle: {
+            switch_to_light: 'Switch to light theme',
+            switch_to_dark: 'Switch to dark theme',
+        },
         editor_sidebar: {
             new_diagram: 'New',
-            browse: 'Open',
+            browse: 'My diagrams',
             tables: 'Tables',
             refs: 'Refs',
             dependencies: 'Dependencies',

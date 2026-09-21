@@ -37,7 +37,7 @@ export const LocalConfigContext = createContext<LocalConfigContext>({
     scrollAction: 'pan',
     setScrollAction: emptyFn,
 
-    showDBViews: false,
+    showDBViews: true,
     setShowDBViews: emptyFn,
 
     showCardinality: true,

@@ -4,14 +4,12 @@ import { removeDups } from '@/lib/utils';
 import { cloneDiagram } from '@/lib/clone';
 
 export const convertTemplateToNewDiagram = (template: Template): Diagram => {
-    const diagramId = template.diagram.id;
-
+    // Новый id при каждом взятии шаблона: копия пользователя независима от шаблона и от прошлых копий
     const clonedDiagram: Diagram = cloneDiagram(template.diagram).diagram;
 
     return {
         ...template.diagram,
         ...clonedDiagram,
-        id: diagramId,
     };
 };
 

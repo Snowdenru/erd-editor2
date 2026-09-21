@@ -4,6 +4,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import type { TemplatePageLoaderData } from './pages/template-page/template-page';
 import type { TemplatesPageLoaderData } from './pages/templates-page/templates-page';
 import { getTemplatesAndAllTags } from './templates-data/template-utils';
+import { RouteError } from './components/route-error/route-error';
 
 const routes: RouteObject[] = [
     ...['', 'diagrams/:diagramId'].map((path) => ({
@@ -150,4 +151,7 @@ const routes: RouteObject[] = [
     },
 ];
 
-export const router = createBrowserRouter(routes, { basename: '/tools/erd2' });
+export const router = createBrowserRouter(
+    routes.map((route) => ({ ...route, errorElement: <RouteError /> })),
+    { basename: '/tools/erd2' }
+);

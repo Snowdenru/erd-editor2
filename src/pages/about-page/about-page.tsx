@@ -48,6 +48,7 @@ const DIALECTS: Array<{ name: string; type: DatabaseType }> = [
 const FEATURE_CARD_MAIN = {
     icon: Database as IconType,
     tag: 'Любая БД',
+    to: '/',
     title: 'Импорт из вашей базы',
     description:
         'Вставьте DDL, DBML или результат нашего SQL-запроса — схема строится сразу, а живой предпросмотр обновляется по мере ввода.',
@@ -57,6 +58,7 @@ const FEATURE_CARD_MAIN = {
 const FEATURE_CARDS: Array<{
     icon: IconType;
     tag: string;
+    to: string;
     title: string;
     description: string;
     className: string;
@@ -64,6 +66,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: Zap,
         tag: 'Быстро',
+        to: '/',
         title: 'Мгновенный импорт',
         description:
             'Один запрос забирает всю схему вашей базы целиком — без доступа к самой базе данных.',
@@ -72,6 +75,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: FileCode,
         tag: 'Просто',
+        to: '/',
         title: 'Экспорт SQL',
         description:
             'Чистые DDL-скрипты для нужного диалекта: PostgreSQL, MySQL, SQL Server и других.',
@@ -80,6 +84,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: Code2,
         tag: 'Онлайн',
+        to: '/',
         title: 'Вкладки DDL и DBML',
         description:
             'Схема всегда под рукой как код: DDL для базы и DBML для правок прямо в боковой панели.',
@@ -88,6 +93,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: LayoutTemplate,
         tag: 'Готово',
+        to: '/templates',
         title: 'Готовые шаблоны',
         description:
             '50 схем реальных проектов и учебные базы — Employees, Bike Stores, DVD Rental.',
@@ -96,6 +102,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: ImageIcon,
         tag: 'Делитесь',
+        to: '/',
         title: 'Экспорт в изображение',
         description:
             'SVG и PNG для документации, JSON для резервной копии, DBML для других инструментов.',
@@ -104,6 +111,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: Undo2,
         tag: 'Удобно',
+        to: '/',
         title: 'Порядок на холсте',
         description:
             'Отмена и повтор, автораскладка, области и заметки — с большими схемами работать легко.',
@@ -402,8 +410,9 @@ const AboutPageComponent: React.FC = () => {
                             </p>
                         </div>
                         <div className="flex flex-col gap-5">
-                            <div
-                                className={`flex flex-col items-center gap-3 rounded-3xl p-8 text-center ${FEATURE_CARD_MAIN.className}`}
+                            <Link
+                                to={FEATURE_CARD_MAIN.to}
+                                className={`group flex flex-col items-center gap-3 rounded-3xl p-8 text-center transition duration-200 hover:-translate-y-1 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-600 ${FEATURE_CARD_MAIN.className}`}
                             >
                                 <div className="flex items-center gap-4">
                                     <IconTile icon={FEATURE_CARD_MAIN.icon} />
@@ -417,19 +426,21 @@ const AboutPageComponent: React.FC = () => {
                                 <p className="max-w-xl text-lg font-medium text-slate-700 dark:text-slate-200">
                                     {FEATURE_CARD_MAIN.description}
                                 </p>
-                            </div>
+                            </Link>
                             <div className="grid gap-5 md:grid-cols-3">
                                 {FEATURE_CARDS.map(
                                     ({
                                         icon,
                                         tag,
+                                        to,
                                         title,
                                         description,
                                         className,
                                     }) => (
-                                        <div
+                                        <Link
                                             key={title}
-                                            className={`flex flex-col items-center gap-3 rounded-3xl p-8 text-center ${className}`}
+                                            to={to}
+                                            className={`group flex flex-col items-center gap-3 rounded-3xl p-8 text-center transition duration-200 hover:-translate-y-1 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-600 ${className}`}
                                         >
                                             <div className="flex items-center gap-4">
                                                 <IconTile icon={icon} />
@@ -443,7 +454,7 @@ const AboutPageComponent: React.FC = () => {
                                             <p className="text-lg font-medium text-slate-700 dark:text-slate-200">
                                                 {description}
                                             </p>
-                                        </div>
+                                        </Link>
                                     )
                                 )}
                             </div>

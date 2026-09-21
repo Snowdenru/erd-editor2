@@ -1,6 +1,8 @@
 import React, { Suspense, useEffect } from 'react';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { useDialog } from '@/hooks/use-dialog';
+import { useLayout } from '@/hooks/use-layout';
+import type { SidebarSection } from '@/context/layout-context/layout-context';
 import { Toaster } from '@/components/toast/toaster';
 import { SourceLink } from '@/components/source-link/source-link';
 import { useBreakpoint } from '@/hooks/use-breakpoint';
@@ -29,6 +31,25 @@ import { TopNavbarMock } from './top-navbar/top-navbar-mock';
 import { DiagramFilterProvider } from '@/context/diagram-filter-context/diagram-filter-provider';
 import { SqllabSyncProvider } from '@/components/sqllab-sync/sqllab-sync-provider';
 
+// Глубокие ссылки со страницы /about: ?open=import, ?tab=ddl|dbml|tables|refs.
+// Читаем один раз при загрузке модуля — редирект / → /diagrams/:id теряет query.
+const DEEP_LINK_TABS: readonly SidebarSection[] = [
+    'tables',
+    'dbml',
+    'ddl',
+    'refs',
+    'visuals',
+];
+const initialDeepLink = (() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    return {
+        openImport: params.get('open') === 'import',
+        tab: DEEP_LINK_TABS.find((section) => section === tab),
+    };
+})();
+let deepLinkHandled = false;
+
 const OPEN_STAR_US_AFTER_SECONDS = 30;
 const SHOW_STAR_US_AGAIN_AFTER_DAYS = 1;
 
@@ -42,11 +63,39 @@ export const EditorMobileLayoutLazy = React.lazy(
 
 const EditorPageComponent: React.FC = () => {
     const { diagramName, currentDiagram } = useChartDB();
-    const { openStarUsDialog } = useDialog();
+    const { openStarUsDialog, openCreateDiagramDialog } = useDialog();
     const { isMd: isDesktop } = useBreakpoint('md');
     const { starUsDialogLastOpen, setStarUsDialogLastOpen, githubRepoOpened } =
         useLocalConfig();
     const { initialDiagram } = useDiagramLoader();
+    const { selectSidebarSection, showSidePanel } = useLayout();
+
+    useEffect(() => {
+        if (deepLinkHandled || !currentDiagram?.id) {
+            return;
+        }
+        deepLinkHandled = true;
+
+        if (initialDeepLink.tab) {
+            showSidePanel();
+            selectSidebarSection(initialDeepLink.tab);
+        }
+        if (initialDeepLink.openImport) {
+            openCreateDiagramDialog();
+        }
+        if (initialDeepLink.tab || initialDeepLink.openImport) {
+            window.history.replaceState(
+                window.history.state,
+                '',
+                window.location.pathname
+            );
+        }
+    }, [
+        currentDiagram?.id,
+        openCreateDiagramDialog,
+        selectSidebarSection,
+        showSidePanel,
+    ]);
 
     useEffect(() => {
         if (HIDE_CHARTDB_CLOUD) {

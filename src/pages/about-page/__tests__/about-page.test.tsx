@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { AboutPage } from '../about-page';
@@ -99,6 +99,9 @@ describe('AboutPage', () => {
             </HelmetProvider>
         );
 
+        // Диалекты также встречаются в кнопках блока «Вставьте DDL», поэтому ищем в секции «Поддержка»
+        const databasesSection = document.getElementById('databases')!;
+
         [
             'PostgreSQL',
             'MySQL',
@@ -109,7 +112,9 @@ describe('AboutPage', () => {
             'CockroachDB',
             'ClickHouse',
         ].forEach((dialect) => {
-            expect(screen.getByText(dialect)).toBeInTheDocument();
+            expect(
+                within(databasesSection).getByText(dialect)
+            ).toBeInTheDocument();
         });
     });
 });

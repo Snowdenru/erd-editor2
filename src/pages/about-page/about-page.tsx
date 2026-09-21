@@ -9,6 +9,8 @@ import { useTheme } from '@/hooks/use-theme';
 import { LocalConfigProvider } from '@/context/local-config-context/local-config-provider';
 import { ThemeProvider } from '@/context/theme-context/theme-provider';
 import { Button } from '@/components/button/button';
+import { StorageProvider } from '@/context/storage-context/storage-provider';
+import { DdlTryBlock } from './ddl-try-block';
 import {
     Accordion,
     AccordionItem,
@@ -22,6 +24,7 @@ import {
     Code2,
     Database,
     FileCode,
+    GraduationCap,
     Image as ImageIcon,
     LayoutTemplate,
     Layers,
@@ -48,7 +51,7 @@ const DIALECTS: Array<{ name: string; type: DatabaseType }> = [
 const FEATURE_CARD_MAIN = {
     icon: Database as IconType,
     tag: 'Любая БД',
-    to: '/',
+    to: '/tools/erd2/?open=import',
     title: 'Импорт из вашей базы',
     description:
         'Вставьте DDL, DBML или результат нашего SQL-запроса — схема строится сразу, а живой предпросмотр обновляется по мере ввода.',
@@ -66,7 +69,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: Zap,
         tag: 'Быстро',
-        to: '/',
+        to: '/tools/erd2/?open=import',
         title: 'Мгновенный импорт',
         description:
             'Один запрос забирает всю схему вашей базы целиком — без доступа к самой базе данных.',
@@ -75,7 +78,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: FileCode,
         tag: 'Просто',
-        to: '/',
+        to: '/tools/erd2/?tab=ddl',
         title: 'Экспорт SQL',
         description:
             'Чистые DDL-скрипты для нужного диалекта: PostgreSQL, MySQL, SQL Server и других.',
@@ -84,7 +87,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: Code2,
         tag: 'Онлайн',
-        to: '/',
+        to: '/tools/erd2/?tab=ddl',
         title: 'Вкладки DDL и DBML',
         description:
             'Схема всегда под рукой как код: DDL для базы и DBML для правок прямо в боковой панели.',
@@ -93,7 +96,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: LayoutTemplate,
         tag: 'Готово',
-        to: '/templates',
+        to: '/tools/erd2/templates',
         title: 'Готовые шаблоны',
         description:
             '50 схем реальных проектов и учебные базы — Employees, Bike Stores, DVD Rental.',
@@ -102,7 +105,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: ImageIcon,
         tag: 'Делитесь',
-        to: '/',
+        to: '/tools/erd2/',
         title: 'Экспорт в изображение',
         description:
             'SVG и PNG для документации, JSON для резервной копии, DBML для других инструментов.',
@@ -111,7 +114,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: Undo2,
         tag: 'Удобно',
-        to: '/',
+        to: '/tools/erd2/',
         title: 'Порядок на холсте',
         description:
             'Отмена и повтор, автораскладка, области и заметки — с большими схемами работать легко.',
@@ -187,6 +190,14 @@ const IconTile: React.FC<{ icon: IconType }> = ({ icon: Icon }) => (
         <Icon className="size-8" />
     </span>
 );
+
+const HEADER_LINKS: Array<{ label: string; href: string }> = [
+    { label: 'Возможности', href: '#features' },
+    { label: 'Поддержка БД', href: '#databases' },
+    { label: 'Шаблоны', href: '/tools/erd2/templates' },
+    { label: 'Инструменты', href: '/tools' },
+    { label: 'Цены', href: '/plans' },
+];
 
 const FOOTER_COLUMNS: Array<{
     title: string;
@@ -273,27 +284,52 @@ const AboutPageComponent: React.FC = () => {
                 />
             </Helmet>
             <section className="flex w-screen flex-col overflow-x-hidden bg-background">
-                <nav className="flex h-12 shrink-0 flex-row items-center justify-between border-b px-4">
-                    <div className="flex flex-1 justify-start gap-x-3">
-                        <div className="flex items-center font-primary">
-                            <a
-                                href="https://sqllab.ru"
-                                className="cursor-pointer"
-                                rel="noreferrer"
-                            >
-                                <img
-                                    src={
-                                        effectiveTheme === 'light'
-                                            ? ChartDBLogo
-                                            : ChartDBDarkLogo
-                                    }
-                                    alt="SQL Lab"
-                                    className="h-4 max-w-fit"
-                                />
-                            </a>
+                <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur">
+                    <nav className="mx-auto flex h-14 w-full max-w-7xl items-center justify-between gap-4 px-6">
+                        <a
+                            href="https://sqllab.ru"
+                            className="flex shrink-0 cursor-pointer items-center"
+                            rel="noreferrer"
+                        >
+                            <img
+                                src={
+                                    effectiveTheme === 'light'
+                                        ? ChartDBLogo
+                                        : ChartDBDarkLogo
+                                }
+                                alt="SQL Lab"
+                                className="h-4 max-w-fit"
+                            />
+                        </a>
+                        <div className="hidden items-center gap-1 md:flex">
+                            {HEADER_LINKS.map(({ label, href }) => (
+                                <a
+                                    key={label}
+                                    href={href}
+                                    className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+                                >
+                                    {label}
+                                </a>
+                            ))}
                         </div>
-                    </div>
-                </nav>
+                        <div className="flex items-center gap-2">
+                            <a
+                                href="/courses"
+                                className="flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-950"
+                            >
+                                <GraduationCap className="size-4" />
+                                Изучать SQL
+                            </a>
+                            <Button
+                                asChild
+                                size="sm"
+                                className="hidden sm:inline-flex"
+                            >
+                                <Link to="/">Открыть редактор</Link>
+                            </Button>
+                        </div>
+                    </nav>
+                </header>
 
                 {/* 1. Hero */}
                 <div className="mx-auto grid w-full max-w-7xl items-center gap-10 px-6 py-16 lg:grid-cols-2 lg:py-24">
@@ -397,8 +433,14 @@ const AboutPageComponent: React.FC = () => {
                     </div>
                 </div>
 
+                {/* Попробовать: вставить DDL */}
+                <DdlTryBlock />
+
                 {/* 3. Возможности */}
-                <div className="bg-slate-100/70 py-20 dark:bg-slate-900/40">
+                <div
+                    id="features"
+                    className="scroll-mt-14 bg-slate-100/70 py-20 dark:bg-slate-900/40"
+                >
                     <div className="mx-auto max-w-5xl px-6">
                         <div className="mb-10 flex flex-col items-center gap-4 text-center">
                             <SectionPill>Много возможностей</SectionPill>
@@ -410,8 +452,8 @@ const AboutPageComponent: React.FC = () => {
                             </p>
                         </div>
                         <div className="flex flex-col gap-5">
-                            <Link
-                                to={FEATURE_CARD_MAIN.to}
+                            <a
+                                href={FEATURE_CARD_MAIN.to}
                                 className={`group flex flex-col items-center gap-3 rounded-3xl p-8 text-center transition duration-200 hover:-translate-y-1 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-600 ${FEATURE_CARD_MAIN.className}`}
                             >
                                 <div className="flex items-center gap-4">
@@ -426,7 +468,7 @@ const AboutPageComponent: React.FC = () => {
                                 <p className="max-w-xl text-lg font-medium text-slate-700 dark:text-slate-200">
                                     {FEATURE_CARD_MAIN.description}
                                 </p>
-                            </Link>
+                            </a>
                             <div className="grid gap-5 md:grid-cols-3">
                                 {FEATURE_CARDS.map(
                                     ({
@@ -437,9 +479,9 @@ const AboutPageComponent: React.FC = () => {
                                         description,
                                         className,
                                     }) => (
-                                        <Link
+                                        <a
                                             key={title}
-                                            to={to}
+                                            href={to}
                                             className={`group flex flex-col items-center gap-3 rounded-3xl p-8 text-center transition duration-200 hover:-translate-y-1 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-600 ${className}`}
                                         >
                                             <div className="flex items-center gap-4">
@@ -454,7 +496,7 @@ const AboutPageComponent: React.FC = () => {
                                             <p className="text-lg font-medium text-slate-700 dark:text-slate-200">
                                                 {description}
                                             </p>
-                                        </Link>
+                                        </a>
                                     )
                                 )}
                             </div>
@@ -503,7 +545,10 @@ const AboutPageComponent: React.FC = () => {
                 </div>
 
                 {/* 5. Поддержка БД */}
-                <div className="mx-auto w-full max-w-5xl px-6 pb-20">
+                <div
+                    id="databases"
+                    className="mx-auto w-full max-w-5xl scroll-mt-14 px-6 pb-20"
+                >
                     <div className="mb-10 flex flex-col items-center gap-4 text-center">
                         <SectionPill>БД</SectionPill>
                         <h2 className="text-4xl font-bold sm:text-5xl">
@@ -611,8 +656,10 @@ const AboutPageComponent: React.FC = () => {
 
 export const AboutPage: React.FC = () => (
     <LocalConfigProvider>
-        <ThemeProvider>
-            <AboutPageComponent />
-        </ThemeProvider>
+        <StorageProvider>
+            <ThemeProvider>
+                <AboutPageComponent />
+            </ThemeProvider>
+        </StorageProvider>
     </LocalConfigProvider>
 );

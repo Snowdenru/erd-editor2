@@ -23,9 +23,13 @@ function cardHeight(table: DBTable): number {
 
 export interface DdlLivePreviewProps {
     diagram?: Diagram;
+    height?: number;
 }
 
-export const DdlLivePreview: React.FC<DdlLivePreviewProps> = ({ diagram }) => {
+export const DdlLivePreview: React.FC<DdlLivePreviewProps> = ({
+    diagram,
+    height = PREVIEW_HEIGHT,
+}) => {
     const { t } = useTranslation();
     const tables = useMemo(() => diagram?.tables ?? [], [diagram]);
     const relationships = useMemo(
@@ -87,7 +91,7 @@ export const DdlLivePreview: React.FC<DdlLivePreviewProps> = ({ diagram }) => {
             data-testid="ddl-live-preview"
             viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
             width="100%"
-            height={PREVIEW_HEIGHT}
+            height={height}
             preserveAspectRatio="xMidYMid meet"
             className="rounded-md border bg-muted/20"
         >

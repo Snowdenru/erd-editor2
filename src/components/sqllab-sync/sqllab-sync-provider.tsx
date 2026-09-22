@@ -3,6 +3,7 @@ import type React from 'react';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { authFetch, getAccessToken } from '@/lib/sqllab-auth';
 import { toast } from '@/components/toast/use-toast';
+import { emitUpgradeWall } from '@/lib/upgrade-wall-events';
 
 const SYNC_DEBOUNCE_MS = 2000;
 const API_BASE = '/api/erd2/diagrams';
@@ -41,8 +42,24 @@ async function pushDiagram(diagramId: string, title: string, content: unknown) {
     }
 
     if (res.status === 403) {
+        const body = (await res
+            .clone()
+            .json()
+            .catch(() => null)) as {
+            code?: string;
+            limit?: number;
+        } | null;
+
+        if (body?.code === 'diagram_limit' || body?.code === 'table_limit') {
+            console.error(
+                `sqllab-sync: не удалось сохранить диаграмму — лимит тарифа (${body.code})`
+            );
+            emitUpgradeWall({ reason: body.code, limit: body.limit });
+            return;
+        }
+
         console.error(
-            'sqllab-sync: не удалось сохранить диаграмму — достигнут лимит диаграмм текущего тарифа (403)'
+            'sqllab-sync: не удалось сохранить диаграмму — доступ запрещён (403)'
         );
         toast({
             title: 'Diagram not saved',

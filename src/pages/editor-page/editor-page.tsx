@@ -4,6 +4,7 @@ import { useDialog } from '@/hooks/use-dialog';
 import { useLayout } from '@/hooks/use-layout';
 import type { SidebarSection } from '@/context/layout-context/layout-context';
 import { Toaster } from '@/components/toast/toaster';
+import { UpgradeWallHost } from '@/components/upgrade-wall/upgrade-wall-host';
 import { SourceLink } from '@/components/source-link/source-link';
 import { useBreakpoint } from '@/hooks/use-breakpoint';
 import { useLocalConfig } from '@/hooks/use-local-config';
@@ -160,6 +161,7 @@ const EditorPageComponent: React.FC = () => {
             <div className="fixed bottom-1 left-1 z-10">
                 <SourceLink />
             </div>
+            <UpgradeWallHost />
             <Toaster />
         </>
     );

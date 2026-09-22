@@ -4,6 +4,7 @@ import { render } from '@testing-library/react';
 import { chartDBContext } from '@/context/chartdb-context/chartdb-context';
 import { SqllabSyncProvider } from '../sqllab-sync-provider';
 import * as auth from '@/lib/sqllab-auth';
+import * as wall from '@/lib/upgrade-wall-events';
 import { DatabaseType } from '@/lib/domain/database-type';
 import type { Diagram } from '@/lib/domain/diagram';
 import type { DBTable } from '@/lib/domain/db-table';
@@ -179,5 +180,36 @@ describe('SqllabSyncProvider', () => {
         await vi.advanceTimersByTimeAsync(3000);
 
         expect(authFetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('emits the upgrade wall when the backend answers 403 with a limit code', async () => {
+        vi.spyOn(auth, 'getAccessToken').mockReturnValue('fake-access-token');
+        vi.spyOn(auth, 'authFetch').mockResolvedValue(
+            new Response(
+                JSON.stringify({ code: 'table_limit', detail: 'x', limit: 10 }),
+                { status: 403 }
+            )
+        );
+        const wallSpy = vi.spyOn(wall, 'emitUpgradeWall');
+
+        render(
+            <chartDBContext.Provider
+                value={
+                    {
+                        diagramId: 'diagram-1',
+                        currentDiagram: diagramWithTable,
+                    } as never
+                }
+            >
+                <SqllabSyncProvider />
+            </chartDBContext.Provider>
+        );
+
+        await vi.advanceTimersByTimeAsync(2000);
+
+        expect(wallSpy).toHaveBeenCalledWith({
+            reason: 'table_limit',
+            limit: 10,
+        });
     });
 });

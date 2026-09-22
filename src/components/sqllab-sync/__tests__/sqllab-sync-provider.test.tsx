@@ -302,7 +302,7 @@ describe('SqllabSyncProvider', () => {
         off();
     });
 
-    it('guards against concurrent force-syncs by ignoring the second emit while the first is in flight', async () => {
+    it('guards against concurrent force-syncs by queuing a trailing retry instead of dropping the second emit', async () => {
         vi.spyOn(auth, 'getAccessToken').mockReturnValue('fake-access-token');
 
         // Create a promise we can control the resolution of
@@ -339,22 +339,99 @@ describe('SqllabSyncProvider', () => {
         // Allow microtasks to run (emitSyncNow calls are synchronous but trigger in async context)
         await vi.advanceTimersByTimeAsync(0);
 
-        // authFetch should have been called only once (the second emitSyncNow is a no-op)
+        // authFetch should have been called only once — the second emitSyncNow was
+        // blocked by the in-flight guard and queued as a pending retry, not fired
+        // concurrently and not silently dropped.
         expect(authFetchSpy).toHaveBeenCalledTimes(1);
 
-        // Now resolve the first push
+        // Now resolve the first push — the queued retry must fire on its own,
+        // with no further manual trigger needed.
         act(() => {
             resolvePush?.();
         });
         await vi.advanceTimersByTimeAsync(0);
 
-        // After the first push completes, a subsequent emitSyncNow SHOULD trigger a new call
+        // authFetch should now have been called twice: the original sync plus the
+        // automatic trailing retry that fired once the first sync finished.
+        expect(authFetchSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('retries with the freshest diagram data after a blocking sync finishes (trailing-edge retry)', async () => {
+        vi.spyOn(auth, 'getAccessToken').mockReturnValue('fake-access-token');
+
+        // The first authFetch call hangs until we release it manually, simulating
+        // a slow push that outlives the debounce window while the user keeps editing.
+        let resolveFirstPush: (() => void) | null = null;
+        const firstPushGate = new Promise<void>((resolve) => {
+            resolveFirstPush = resolve;
+        });
+
+        const authFetchSpy = vi
+            .spyOn(auth, 'authFetch')
+            .mockImplementationOnce(
+                () =>
+                    firstPushGate.then(
+                        () => new Response(null, { status: 200 })
+                    ) as Promise<Response>
+            )
+            .mockResolvedValue(new Response(null, { status: 200 }));
+
+        const { rerender } = render(
+            <chartDBContext.Provider
+                value={
+                    {
+                        diagramId: 'diagram-1',
+                        currentDiagram: diagramWithTable,
+                    } as never
+                }
+            >
+                <SqllabSyncProvider />
+            </chartDBContext.Provider>
+        );
+
+        // Fire the initial debounced sync — it starts and hangs on firstPushGate.
+        await vi.advanceTimersByTimeAsync(2000);
+        expect(authFetchSpy).toHaveBeenCalledTimes(1);
+
+        // The user keeps editing while the first sync is still in flight: the
+        // diagram changes, and a new sync is requested.
+        const updatedDiagram: Diagram = {
+            ...diagramWithTable,
+            name: 'Renamed while syncing',
+        };
+
+        rerender(
+            <chartDBContext.Provider
+                value={
+                    {
+                        diagramId: 'diagram-1',
+                        currentDiagram: updatedDiagram,
+                    } as never
+                }
+            >
+                <SqllabSyncProvider />
+            </chartDBContext.Provider>
+        );
+        act(() => emitSyncNow());
+        await vi.advanceTimersByTimeAsync(0);
+
+        // The new request was blocked by the in-flight guard (queued, not fired
+        // concurrently) — still only one call so far.
+        expect(authFetchSpy).toHaveBeenCalledTimes(1);
+
+        // Let the first (now-stale) push complete.
         act(() => {
-            emitSyncNow();
+            resolveFirstPush?.();
         });
         await vi.advanceTimersByTimeAsync(0);
 
-        // authFetch should now have been called twice (the guard was reset after the first sync completed)
+        // The trailing retry must have fired automatically...
         expect(authFetchSpy).toHaveBeenCalledTimes(2);
+        // ...and it must have sent the LATEST diagram data, not the stale one
+        // captured when the original sync was scheduled.
+        const secondCallBody = JSON.parse(
+            String(authFetchSpy.mock.calls[1][1]?.body)
+        );
+        expect(secondCallBody.title).toBe('Renamed while syncing');
     });
 });

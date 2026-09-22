@@ -98,18 +98,36 @@ export const SqllabSyncProvider: React.FC = () => {
     const { diagramId, currentDiagram } = useChartDB();
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const syncingRef = useRef(false);
+    // Устанавливается, когда triggerSync заблокирован уже идущим синком — сигнал
+    // «после завершения текущего синка нужно немедленно повторить с самыми свежими данными».
+    const pendingRef = useRef(false);
+    // Обновляется на каждый рендер, чтобы triggerSync (в т.ч. при трейлинг-ретрае
+    // из .finally()) всегда читал актуальные diagramId/currentDiagram, а не то,
+    // что было замкнуто в момент планирования дебаунса.
+    const latestRef = useRef({ diagramId, currentDiagram });
+    latestRef.current = { diagramId, currentDiagram };
 
     useEffect(() => {
-        const canSync =
-            !!diagramId &&
-            !!getAccessToken() &&
-            !!currentDiagram.tables &&
-            currentDiagram.tables.length > 0;
+        const canSync = (): boolean => {
+            const { diagramId, currentDiagram } = latestRef.current;
+            return (
+                !!diagramId &&
+                !!getAccessToken() &&
+                !!currentDiagram.tables &&
+                currentDiagram.tables.length > 0
+            );
+        };
 
         const triggerSync = () => {
-            if (syncingRef.current) return;
+            if (syncingRef.current) {
+                pendingRef.current = true;
+                return;
+            }
+            if (!canSync()) return;
+
             syncingRef.current = true;
             emitSyncStatus('syncing');
+            const { diagramId, currentDiagram } = latestRef.current;
             pushDiagram(diagramId, currentDiagram.name, currentDiagram)
                 .catch((err: unknown) => {
                     console.error(
@@ -120,16 +138,22 @@ export const SqllabSyncProvider: React.FC = () => {
                 .finally(() => {
                     syncingRef.current = false;
                     emitSyncStatus('idle');
+                    // Пока синк был в процессе, пришёл ещё один запрос на синк —
+                    // повторяем немедленно на самых свежих данных, чтобы не
+                    // потерять правки, сделанные во время сохранения.
+                    if (pendingRef.current) {
+                        pendingRef.current = false;
+                        triggerSync();
+                    }
                 });
         };
 
         const offSyncNow = onSyncNow(() => {
-            if (!canSync) return;
             if (timerRef.current) clearTimeout(timerRef.current);
             triggerSync();
         });
 
-        if (!canSync) return offSyncNow;
+        if (!canSync()) return offSyncNow;
 
         if (timerRef.current) clearTimeout(timerRef.current);
         timerRef.current = setTimeout(triggerSync, SYNC_DEBOUNCE_MS);

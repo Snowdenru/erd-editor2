@@ -519,6 +519,12 @@ export const Menu: React.FC<MenuProps> = () => {
                 >
                     {t('menu.features')}
                 </Link>
+                <Link
+                    to="/pricing"
+                    className="flex cursor-default select-none items-center rounded-sm px-3 py-1 text-sm font-medium outline-none hover:bg-accent focus:bg-accent focus:text-accent-foreground"
+                >
+                    Тарифы
+                </Link>
             </Menubar>
             <LoginPromptDialog
                 open={promptOpen}

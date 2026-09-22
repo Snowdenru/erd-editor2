@@ -6,6 +6,8 @@ import { useStorage } from '@/hooks/use-storage';
 import { DatabaseType } from '@/lib/domain/database-type';
 import type { Diagram } from '@/lib/domain/diagram';
 import { Spinner } from '@/components/spinner/spinner';
+import { LoginPromptDialog } from '@/components/login-prompt/login-prompt-dialog';
+import { APP_BASE, isLoggedIn } from '@/lib/sqllab-account';
 
 const DdlCanvasPreview = React.lazy(() =>
     import('./ddl-canvas-preview').then((module) => ({
@@ -58,6 +60,7 @@ export const DdlTryBlock: React.FC = () => {
     const [diagram, setDiagram] = useState<Diagram | undefined>();
     const [error, setError] = useState<string>('');
     const [isOpening, setIsOpening] = useState(false);
+    const [promptForId, setPromptForId] = useState<string | null>(null);
 
     useEffect(() => {
         if (!sql.trim()) {
@@ -116,7 +119,13 @@ export const DdlTryBlock: React.FC = () => {
                 updatedAt: now,
             },
         });
-        navigate(`/diagrams/${diagram.id}`);
+
+        if (isLoggedIn()) {
+            navigate(`/diagrams/${diagram.id}`);
+            return;
+        }
+        // Схема уже лежит в браузере: после входа пользователь вернётся прямо в неё
+        setPromptForId(diagram.id);
     };
 
     return (
@@ -190,6 +199,25 @@ export const DdlTryBlock: React.FC = () => {
                     </Button>
                 </div>
             </div>
+            <LoginPromptDialog
+                open={promptForId !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsOpening(false);
+                    }
+                }}
+                reason="save_landing"
+                returnPath={
+                    promptForId
+                        ? `${APP_BASE}/diagrams/${promptForId}`
+                        : undefined
+                }
+                onSecondary={() => {
+                    if (promptForId) {
+                        navigate(`/diagrams/${promptForId}`);
+                    }
+                }}
+            />
         </div>
     );
 };

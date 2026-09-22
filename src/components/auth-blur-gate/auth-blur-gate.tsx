@@ -15,7 +15,7 @@ export const AuthBlurGate: React.FC<AuthBlurGateProps> = ({ children }) => {
         <div className="relative flex-1 overflow-hidden">
             <div
                 aria-hidden
-                className="pointer-events-none select-none blur-sm"
+                className="pointer-events-none flex h-full select-none flex-col overflow-hidden blur-sm"
             >
                 {children}
             </div>

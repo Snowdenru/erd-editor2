@@ -8,6 +8,34 @@ import { emitUpgradeWall } from '@/lib/upgrade-wall-events';
 const SYNC_DEBOUNCE_MS = 2000;
 const API_BASE = '/api/erd2/diagrams';
 
+// 403 с кодом лимита тарифа — показываем стену апгрейда; иначе обычный тост «доступ запрещён».
+async function handleSaveFailure(res: Response): Promise<void> {
+    const body = (await res
+        .clone()
+        .json()
+        .catch(() => null)) as {
+        code?: string;
+        limit?: number;
+    } | null;
+
+    if (body?.code === 'diagram_limit' || body?.code === 'table_limit') {
+        console.error(
+            `sqllab-sync: не удалось сохранить диаграмму — лимит тарифа (${body.code})`
+        );
+        emitUpgradeWall({ reason: body.code, limit: body.limit });
+        return;
+    }
+
+    console.error(
+        'sqllab-sync: не удалось сохранить диаграмму — доступ запрещён (403)'
+    );
+    toast({
+        title: 'Diagram not saved',
+        variant: 'destructive',
+        description: 'You have reached the diagram limit for your plan.',
+    });
+}
+
 async function pushDiagram(diagramId: string, title: string, content: unknown) {
     // Аноним не залогинен — сохранять на бэкенде нечего и некуда, не шлём запрос.
     if (!getAccessToken()) return;
@@ -20,11 +48,23 @@ async function pushDiagram(diagramId: string, title: string, content: unknown) {
 
     // Диаграммы ещё нет на бэкенде (первое сохранение) — создаём.
     if (res.status === 404) {
-        await authFetch(`${API_BASE}/`, {
+        const createRes = await authFetch(`${API_BASE}/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: diagramId, title, content }),
         });
+
+        // Бэкенд шлёт diagram_limit только на создании (POST) — здесь, а не на PATCH.
+        if (createRes.status === 403) {
+            await handleSaveFailure(createRes);
+            return;
+        }
+
+        if (!createRes.ok) {
+            console.error(
+                `sqllab-sync: не удалось создать диаграмму — бэкенд ответил статусом ${createRes.status}`
+            );
+        }
         return;
     }
 
@@ -42,30 +82,7 @@ async function pushDiagram(diagramId: string, title: string, content: unknown) {
     }
 
     if (res.status === 403) {
-        const body = (await res
-            .clone()
-            .json()
-            .catch(() => null)) as {
-            code?: string;
-            limit?: number;
-        } | null;
-
-        if (body?.code === 'diagram_limit' || body?.code === 'table_limit') {
-            console.error(
-                `sqllab-sync: не удалось сохранить диаграмму — лимит тарифа (${body.code})`
-            );
-            emitUpgradeWall({ reason: body.code, limit: body.limit });
-            return;
-        }
-
-        console.error(
-            'sqllab-sync: не удалось сохранить диаграмму — доступ запрещён (403)'
-        );
-        toast({
-            title: 'Diagram not saved',
-            variant: 'destructive',
-            description: 'You have reached the diagram limit for your plan.',
-        });
+        await handleSaveFailure(res);
         return;
     }
 

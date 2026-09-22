@@ -212,4 +212,37 @@ describe('SqllabSyncProvider', () => {
             limit: 10,
         });
     });
+
+    it('emits the upgrade wall when creating a new diagram (404 then POST 403 diagram_limit)', async () => {
+        vi.spyOn(auth, 'getAccessToken').mockReturnValue('fake-access-token');
+        vi.spyOn(auth, 'authFetch')
+            .mockResolvedValueOnce(new Response(null, { status: 404 }))
+            .mockResolvedValueOnce(
+                new Response(
+                    JSON.stringify({ code: 'diagram_limit', limit: 3 }),
+                    { status: 403 }
+                )
+            );
+        const wallSpy = vi.spyOn(wall, 'emitUpgradeWall');
+
+        render(
+            <chartDBContext.Provider
+                value={
+                    {
+                        diagramId: 'diagram-1',
+                        currentDiagram: diagramWithTable,
+                    } as never
+                }
+            >
+                <SqllabSyncProvider />
+            </chartDBContext.Provider>
+        );
+
+        await vi.advanceTimersByTimeAsync(2000);
+
+        expect(wallSpy).toHaveBeenCalledWith({
+            reason: 'diagram_limit',
+            limit: 3,
+        });
+    });
 });

@@ -203,6 +203,7 @@ export const DdlTryBlock: React.FC = () => {
                 open={promptForId !== null}
                 onOpenChange={(open) => {
                     if (!open) {
+                        setPromptForId(null);
                         setIsOpening(false);
                     }
                 }}

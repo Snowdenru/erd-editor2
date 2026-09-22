@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/button/button';
 import { buildLoginUrl, trackEvent } from '@/lib/sqllab-account';
 
-export type LoginPromptReason = 'export' | 'save_landing' | 'save_editor';
+export type LoginPromptReason = 'export' | 'save_landing';
 
 const COPY: Record<
     LoginPromptReason,
@@ -29,13 +29,6 @@ const COPY: Record<
             'Войдите, чтобы схема не потерялась и открывалась с любого устройства. Можно продолжить и без входа — тогда схема останется только в этом браузере.',
         primary: 'Войти и сохранить',
         secondary: 'Продолжить без входа',
-    },
-    save_editor: {
-        title: 'Сохраните схему в облаке',
-        description:
-            'Сейчас схема хранится только в этом браузере: очистка данных браузера удалит её. Войдите через Яндекс, VK или почту, и схема будет доступна с любого устройства.',
-        primary: 'Войти',
-        secondary: 'Позже',
     },
 };
 

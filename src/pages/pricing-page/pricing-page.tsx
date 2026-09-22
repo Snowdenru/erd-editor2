@@ -149,9 +149,8 @@ const PricingPageComponent: React.FC = () => {
                 <title>Тарифы ERD Pro — SQL Lab ERD</title>
                 <meta
                     name="description"
-                    content="ERD Pro от 149 ₽: до 100 таблиц в схеме, схемы в облаке, экспорт без подписи, ИИ-генерация и публичные ссылки."
+                    content="ERD Pro от 149 ₽: до 100 таблиц в схеме и 25 схем в облаке."
                 />
-                <meta name="robots" content="index, follow" />
             </Helmet>
             <section className="flex w-screen flex-col overflow-x-hidden bg-background">
                 <MarketingHeader />
@@ -162,9 +161,8 @@ const PricingPageComponent: React.FC = () => {
                             Тарифы ERD Pro
                         </h1>
                         <p className="max-w-2xl text-lg text-muted-foreground">
-                            Сохраняйте схемы в облаке, экспортируйте без подписи
-                            и генерируйте схемы с ИИ. Платите на срок, который
-                            нужен: от недели до года.
+                            Больше таблиц и схем в облаке. Платите на срок,
+                            который нужен: от недели до года.
                         </p>
                     </div>
 

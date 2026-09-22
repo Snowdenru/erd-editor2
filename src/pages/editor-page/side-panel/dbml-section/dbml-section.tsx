@@ -1,4 +1,5 @@
 import React from 'react';
+import { AuthBlurGate } from '@/components/auth-blur-gate/auth-blur-gate';
 import { TableDBML } from './table-dbml/table-dbml';
 
 export interface DBMLSectionProps {}
@@ -10,7 +11,9 @@ export const DBMLSection: React.FC<DBMLSectionProps> = () => {
             data-vaul-no-drag
         >
             <div className="flex flex-1 flex-col overflow-hidden">
-                <TableDBML />
+                <AuthBlurGate>
+                    <TableDBML />
+                </AuthBlurGate>
             </div>
         </section>
     );

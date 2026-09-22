@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { CodeSnippet } from '@/components/code-snippet/code-snippet';
+import { AuthBlurGate } from '@/components/auth-blur-gate/auth-blur-gate';
 import { exportBaseSQL } from '@/lib/data/sql-export/export-sql-script';
 
 const DDL_DEBOUNCE_MS = 300;
@@ -38,15 +39,17 @@ export const DDLSection: React.FC = () => {
             data-vaul-no-drag
         >
             <div className="flex flex-1 flex-col overflow-hidden">
-                <CodeSnippet
-                    code={ddl}
-                    className="my-0.5"
-                    language="sql"
-                    actionsTooltipSide="right"
-                    editorProps={{
-                        options: { readOnly: true },
-                    }}
-                />
+                <AuthBlurGate>
+                    <CodeSnippet
+                        code={ddl}
+                        className="my-0.5"
+                        language="sql"
+                        actionsTooltipSide="right"
+                        editorProps={{
+                            options: { readOnly: true },
+                        }}
+                    />
+                </AuthBlurGate>
             </div>
         </section>
     );

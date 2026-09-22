@@ -5,6 +5,7 @@ import { useLayout } from '@/hooks/use-layout';
 import type { SidebarSection } from '@/context/layout-context/layout-context';
 import { Toaster } from '@/components/toast/toaster';
 import { UpgradeWallHost } from '@/components/upgrade-wall/upgrade-wall-host';
+import { SaveToCloudPrompt } from '@/components/save-to-cloud-prompt/save-to-cloud-prompt';
 import { SourceLink } from '@/components/source-link/source-link';
 import { useBreakpoint } from '@/hooks/use-breakpoint';
 import { useLocalConfig } from '@/hooks/use-local-config';
@@ -162,6 +163,7 @@ const EditorPageComponent: React.FC = () => {
                 <SourceLink />
             </div>
             <UpgradeWallHost />
+            <SaveToCloudPrompt />
             <Toaster />
         </>
     );

@@ -275,6 +275,31 @@ describe('SqllabSyncProvider', () => {
         );
     });
 
+    it('does not push an empty diagram even when force-syncing with emitSyncNow — canSync guard blocks in triggerSync', async () => {
+        vi.spyOn(auth, 'getAccessToken').mockReturnValue('fake-access-token');
+        const authFetchSpy = vi
+            .spyOn(auth, 'authFetch')
+            .mockResolvedValue(new Response(null, { status: 200 }));
+
+        render(
+            <chartDBContext.Provider
+                value={
+                    {
+                        diagramId: 'diagram-1',
+                        currentDiagram: baseDiagram,
+                    } as never
+                }
+            >
+                <SqllabSyncProvider />
+            </chartDBContext.Provider>
+        );
+
+        act(() => emitSyncNow());
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(authFetchSpy).not.toHaveBeenCalled();
+    });
+
     it('broadcasts syncing then idle status around a push, including the regular debounced one', async () => {
         vi.spyOn(auth, 'getAccessToken').mockReturnValue('fake-access-token');
         vi.spyOn(auth, 'authFetch').mockResolvedValue(

@@ -5,6 +5,7 @@ import {
     buildLoginUrl,
     fetchErdPlan,
     fetchLimits,
+    fetchProfile,
     initiatePayment,
     isLoggedIn,
     trackEvent,
@@ -94,5 +95,16 @@ describe('sqllab-account', () => {
         expect(() =>
             trackEvent('erd2_wall_view', '/tools/erd2/', { reason: 'x' })
         ).not.toThrow();
+    });
+
+    it('fetchProfile returns the API body', async () => {
+        const body = { full_name: 'Denis S', email: 'den@example.com' };
+        vi.spyOn(auth, 'authFetch').mockResolvedValue(json(body));
+        await expect(fetchProfile()).resolves.toEqual(body);
+    });
+
+    it('fetchProfile throws on a non-OK response', async () => {
+        vi.spyOn(auth, 'authFetch').mockResolvedValue(json({}, 500));
+        await expect(fetchProfile()).rejects.toThrow();
     });
 });

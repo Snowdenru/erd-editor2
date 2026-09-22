@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Cookies from 'js-cookie';
-import { getAccessToken, authFetch } from '../sqllab-auth';
+import { getAccessToken, authFetch, logout } from '../sqllab-auth';
 
 describe('sqllab-auth', () => {
     beforeEach(() => {
@@ -63,5 +63,48 @@ describe('sqllab-auth', () => {
         expect(res.status).toBe(200);
         expect(fetchMock).toHaveBeenCalledTimes(3);
         expect(Cookies.get('access_token')).toBe('new-token');
+    });
+
+    it('logout posts the refresh token and clears both cookies', async () => {
+        Cookies.set('access_token', 'my-access');
+        Cookies.set('refresh_token', 'my-refresh');
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValue(new Response(null, { status: 200 }));
+        vi.stubGlobal('fetch', fetchMock);
+
+        await logout();
+
+        expect(fetchMock).toHaveBeenCalledWith(
+            '/api/auth/logout/',
+            expect.objectContaining({
+                method: 'POST',
+                body: JSON.stringify({ refresh: 'my-refresh' }),
+            })
+        );
+        expect(Cookies.get('access_token')).toBeUndefined();
+        expect(Cookies.get('refresh_token')).toBeUndefined();
+    });
+
+    it('logout clears cookies even when the request fails', async () => {
+        Cookies.set('access_token', 'my-access');
+        Cookies.set('refresh_token', 'my-refresh');
+        vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+
+        await logout();
+
+        expect(Cookies.get('access_token')).toBeUndefined();
+        expect(Cookies.get('refresh_token')).toBeUndefined();
+    });
+
+    it('logout makes no network call when there is no refresh token', async () => {
+        Cookies.set('access_token', 'my-access');
+        const fetchMock = vi.fn();
+        vi.stubGlobal('fetch', fetchMock);
+
+        await logout();
+
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(Cookies.get('access_token')).toBeUndefined();
     });
 });

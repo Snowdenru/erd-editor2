@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import {
     Sidebar,
     SidebarContent,
+    SidebarFooter,
     SidebarGroup,
     SidebarGroupContent,
     SidebarHeader,
@@ -29,6 +30,7 @@ import { supportsCustomTypes } from '@/lib/domain/database-capabilities';
 import { useCreateEmptyDiagram } from '@/hooks/use-create-empty-diagram';
 import { useDialog } from '@/hooks/use-dialog';
 import { Separator } from '@/components/separator/separator';
+import { AccountMenu } from '@/components/account-menu/account-menu';
 
 export interface SidebarItem {
     title: string;
@@ -230,6 +232,9 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
+            <SidebarFooter>
+                <AccountMenu />
+            </SidebarFooter>
         </Sidebar>
     );
 };

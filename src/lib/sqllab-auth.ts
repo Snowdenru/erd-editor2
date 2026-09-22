@@ -50,3 +50,20 @@ export async function authFetch(
     retryHeaders['Authorization'] = `Bearer ${newToken}`;
     return fetch(url, { ...init, headers: retryHeaders });
 }
+
+export async function logout(): Promise<void> {
+    const refresh = getRefreshToken();
+    if (refresh) {
+        try {
+            await fetch('/api/auth/logout/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refresh }),
+            });
+        } catch {
+            // выходим из системы локально в любом случае
+        }
+    }
+    Cookies.remove(ACCESS_KEY);
+    Cookies.remove(REFRESH_KEY);
+}

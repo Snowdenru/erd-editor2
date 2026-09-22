@@ -114,3 +114,16 @@ export function trackEvent(
         // ignore
     }
 }
+
+export interface UserProfileSummary {
+    full_name: string;
+    email: string;
+}
+
+export async function fetchProfile(): Promise<UserProfileSummary> {
+    const res = await authFetch('/api/profile/');
+    if (!res.ok) {
+        throw new Error(`profile: HTTP ${res.status}`);
+    }
+    return (await res.json()) as UserProfileSummary;
+}

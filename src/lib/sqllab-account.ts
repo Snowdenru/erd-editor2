@@ -91,7 +91,8 @@ export type FunnelEvent =
     | 'erd2_pricing_view'
     | 'erd2_checkout_start'
     | 'erd2_wall_view'
-    | 'erd2_login_prompt';
+    | 'erd2_login_prompt'
+    | 'erd2_try_pro_click';
 
 // Аналитика не должна ломать интерфейс: любые ошибки глотаем
 export function trackEvent(

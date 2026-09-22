@@ -30,6 +30,7 @@ import { useLocalConfig } from '@/hooks/use-local-config';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAlert } from '@/context/alert-context/alert-context';
 import { LoginPromptDialog } from '@/components/login-prompt/login-prompt-dialog';
+import { TryProButton } from '@/components/try-pro/try-pro-button';
 
 export interface MenuProps {}
 
@@ -519,12 +520,7 @@ export const Menu: React.FC<MenuProps> = () => {
                 >
                     {t('menu.features')}
                 </Link>
-                <Link
-                    to="/pricing"
-                    className="flex cursor-default select-none items-center rounded-sm px-3 py-1 text-sm font-medium outline-none hover:bg-accent focus:bg-accent focus:text-accent-foreground"
-                >
-                    Тарифы
-                </Link>
+                <TryProButton />
             </Menubar>
             <LoginPromptDialog
                 open={promptOpen}

@@ -52,7 +52,7 @@ describe('AboutPage', () => {
         expect(templatesLink).toHaveAttribute('href', '/tools/erd2/templates');
     });
 
-    it('links to /plans for the free/pro pricing details', () => {
+    it('links to the ERD pricing page for the free/pro details, respecting the app basename', () => {
         render(
             <HelmetProvider>
                 <MemoryRouter
@@ -64,8 +64,8 @@ describe('AboutPage', () => {
             </HelmetProvider>
         );
 
-        const plansLink = screen.getByRole('link', { name: /тарифы/i });
-        expect(plansLink).toHaveAttribute('href', '/plans');
+        const pricingLink = screen.getByRole('link', { name: /^тарифы$/i });
+        expect(pricingLink).toHaveAttribute('href', '/tools/erd2/pricing');
     });
 
     it('renders the FAQ section with the "does it connect to my database" question', () => {

@@ -1,16 +1,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import ChartDBLogo from '@/assets/sqllab-logo-light.svg';
-import ChartDBDarkLogo from '@/assets/sqllab-logo-dark.svg';
 import AboutHeroImage from '@/assets/about/hero-light.png';
 import AboutEditorDarkImage from '@/assets/about/editor-dark.png';
-import { useTheme } from '@/hooks/use-theme';
 import { LocalConfigProvider } from '@/context/local-config-context/local-config-provider';
 import { ThemeProvider } from '@/context/theme-context/theme-provider';
 import { Button } from '@/components/button/button';
 import { StorageProvider } from '@/context/storage-context/storage-provider';
 import { DdlTryBlock } from './ddl-try-block';
+import { MarketingHeader } from '@/components/marketing-layout/marketing-header';
+import { MarketingFooter } from '@/components/marketing-layout/marketing-footer';
 import {
     Accordion,
     AccordionItem,
@@ -24,7 +23,6 @@ import {
     Code2,
     Database,
     FileCode,
-    GraduationCap,
     Image as ImageIcon,
     LayoutTemplate,
     Layers,
@@ -191,63 +189,6 @@ const IconTile: React.FC<{ icon: IconType }> = ({ icon: Icon }) => (
     </span>
 );
 
-const HEADER_LINKS: Array<{ label: string; href: string }> = [
-    { label: 'Возможности', href: '#features' },
-    { label: 'Поддержка БД', href: '#databases' },
-    { label: 'Шаблоны', href: '/tools/erd2/templates' },
-    { label: 'Инструменты', href: '/tools' },
-    { label: 'Цены', href: '/plans' },
-];
-
-const FOOTER_COLUMNS: Array<{
-    title: string;
-    links: Array<{ label: string; href: string }>;
-}> = [
-    {
-        title: 'Продукт',
-        links: [
-            { label: 'Цены', href: '/plans' },
-            { label: 'Импорт из вашей БД', href: '/tools/erd2/' },
-            { label: 'Шаблоны', href: '/tools/erd2/templates' },
-            { label: 'Старый ERD-редактор', href: '/tools/erd' },
-        ],
-    },
-    {
-        title: 'Бесплатные инструменты',
-        links: [
-            { label: 'Все SQL-инструменты', href: '/tools' },
-            { label: 'SQL-форматтер', href: '/tools/formatter' },
-            { label: 'SQL-линтер', href: '/tools/linter' },
-            { label: 'Schema Diff', href: '/tools/diff' },
-            { label: 'Объяснение запроса', href: '/tools/describe' },
-            { label: 'EXPLAIN-визуализатор', href: '/tools/explain' },
-            { label: 'Генератор тестовых данных', href: '/tools/datagen' },
-            { label: 'JSON → SQL', href: '/tools/json-to-sql' },
-        ],
-    },
-    {
-        title: 'Обучение',
-        links: [
-            { label: 'Курсы SQL', href: '/courses' },
-            { label: 'Практика', href: '/practice' },
-            { label: 'Справочник', href: '/reference' },
-            { label: 'Статьи', href: '/articles' },
-            { label: 'Подготовка к собеседованию', href: '/interview' },
-        ],
-    },
-    {
-        title: 'О проекте',
-        links: [
-            { label: 'SQL Lab', href: '/' },
-            { label: 'Блог', href: '/blog' },
-            {
-                label: 'Исходный код',
-                href: 'https://github.com/Snowdenru/erd-editor2',
-            },
-        ],
-    },
-];
-
 const FAQ_ITEMS: Array<{ question: string; answer: string }> = [
     {
         question: 'Подключается ли ERD2 напрямую к моей базе данных?',
@@ -258,8 +199,8 @@ const FAQ_ITEMS: Array<{ question: string; answer: string }> = [
         answer: 'Нажмите «Импорт из вашей БД», выберите тип базы и вставьте DDL или DBML — или начните с одного из готовых примеров либо из 50 шаблонов.',
     },
     {
-        question: 'Чем Free отличается от Pro?',
-        answer: 'На Free доступно 3 сохранённые диаграммы, на Pro — без ограничений.',
+        question: 'Чем Free отличается от ERD Pro?',
+        answer: 'Free — схемы до 10 таблиц и 3 схемы в облаке. ERD Pro — до 100 таблиц, 25 схем, экспорт без подписи, ИИ-генерация и публичные ссылки; общий Pro включает ERD Pro и курсы. Подробности на странице «Тарифы».',
     },
     {
         question: 'В каких форматах можно экспортировать схему?',
@@ -272,8 +213,6 @@ const FAQ_ITEMS: Array<{ question: string; answer: string }> = [
 ];
 
 const AboutPageComponent: React.FC = () => {
-    const { effectiveTheme } = useTheme();
-
     return (
         <>
             <Helmet>
@@ -284,52 +223,7 @@ const AboutPageComponent: React.FC = () => {
                 />
             </Helmet>
             <section className="flex w-screen flex-col overflow-x-hidden bg-background">
-                <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur">
-                    <nav className="mx-auto flex h-14 w-full max-w-7xl items-center justify-between gap-4 px-6">
-                        <a
-                            href="https://sqllab.ru"
-                            className="flex shrink-0 cursor-pointer items-center"
-                            rel="noreferrer"
-                        >
-                            <img
-                                src={
-                                    effectiveTheme === 'light'
-                                        ? ChartDBLogo
-                                        : ChartDBDarkLogo
-                                }
-                                alt="SQL Lab"
-                                className="h-4 max-w-fit"
-                            />
-                        </a>
-                        <div className="hidden items-center gap-1 md:flex">
-                            {HEADER_LINKS.map(({ label, href }) => (
-                                <a
-                                    key={label}
-                                    href={href}
-                                    className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
-                                >
-                                    {label}
-                                </a>
-                            ))}
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <a
-                                href="/courses"
-                                className="flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-950"
-                            >
-                                <GraduationCap className="size-4" />
-                                Изучать SQL
-                            </a>
-                            <Button
-                                asChild
-                                size="sm"
-                                className="hidden sm:inline-flex"
-                            >
-                                <Link to="/">Открыть редактор</Link>
-                            </Button>
-                        </div>
-                    </nav>
-                </header>
+                <MarketingHeader />
 
                 {/* 1. Hero */}
                 <div className="mx-auto grid w-full max-w-7xl items-center gap-10 px-6 py-16 lg:grid-cols-2 lg:py-24">
@@ -583,16 +477,16 @@ const AboutPageComponent: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Free/Pro */}
+                {/* Тарифы */}
                 <div className="mx-auto max-w-3xl px-6 pb-14 text-center">
-                    <h2 className="mb-2 text-2xl font-bold">Free и Pro</h2>
+                    <h2 className="mb-2 text-2xl font-bold">Free и ERD Pro</h2>
                     <p className="mb-4 text-muted-foreground">
-                        На Free доступно 3 сохранённые диаграммы, на Pro — без
-                        ограничений.
+                        Бесплатно — схемы до 10 таблиц и 3 схемы в облаке. ERD
+                        Pro от 149 ₽: до 100 таблиц, экспорт без подписи, ИИ и
+                        публичные ссылки.
                     </p>
                     <Button asChild variant="outline">
-                        {/* /plans живёт вне SPA (на sql-platform, basename /tools/erd2 не применяется) — Link дал бы неверный /tools/erd2/plans */}
-                        <a href="/plans">Тарифы</a>
+                        <Link to="/pricing">Тарифы</Link>
                     </Button>
                 </div>
 
@@ -625,30 +519,7 @@ const AboutPageComponent: React.FC = () => {
                 </div>
 
                 {/* 6. Футер */}
-                <footer className="border-t">
-                    <div className="mx-auto grid max-w-6xl gap-10 px-6 py-14 sm:grid-cols-2 lg:grid-cols-4">
-                        {FOOTER_COLUMNS.map(({ title, links }) => (
-                            <div key={title} className="flex flex-col gap-3">
-                                <h3 className="text-base font-bold">{title}</h3>
-                                <ul className="flex flex-col gap-2.5">
-                                    {links.map(({ label, href }) => (
-                                        <li key={label}>
-                                            <a
-                                                href={href}
-                                                className="text-muted-foreground hover:text-foreground"
-                                            >
-                                                {label}
-                                            </a>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="border-t px-6 py-5 text-center text-sm text-muted-foreground">
-                        © 2026 SQL Lab
-                    </div>
-                </footer>
+                <MarketingFooter />
             </section>
         </>
     );

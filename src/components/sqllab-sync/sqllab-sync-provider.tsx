@@ -97,6 +97,7 @@ async function pushDiagram(diagramId: string, title: string, content: unknown) {
 export const SqllabSyncProvider: React.FC = () => {
     const { diagramId, currentDiagram } = useChartDB();
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const syncingRef = useRef(false);
 
     useEffect(() => {
         const canSync =
@@ -106,6 +107,8 @@ export const SqllabSyncProvider: React.FC = () => {
             currentDiagram.tables.length > 0;
 
         const triggerSync = () => {
+            if (syncingRef.current) return;
+            syncingRef.current = true;
             emitSyncStatus('syncing');
             pushDiagram(diagramId, currentDiagram.name, currentDiagram)
                 .catch((err: unknown) => {
@@ -114,7 +117,10 @@ export const SqllabSyncProvider: React.FC = () => {
                         err
                     );
                 })
-                .finally(() => emitSyncStatus('idle'));
+                .finally(() => {
+                    syncingRef.current = false;
+                    emitSyncStatus('idle');
+                });
         };
 
         const offSyncNow = onSyncNow(() => {

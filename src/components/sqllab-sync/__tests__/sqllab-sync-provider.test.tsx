@@ -301,4 +301,60 @@ describe('SqllabSyncProvider', () => {
         expect(statuses).toEqual(['syncing', 'idle']);
         off();
     });
+
+    it('guards against concurrent force-syncs by ignoring the second emit while the first is in flight', async () => {
+        vi.spyOn(auth, 'getAccessToken').mockReturnValue('fake-access-token');
+
+        // Create a promise we can control the resolution of
+        let resolvePush: (() => void) | null = null;
+        const pendingPush = new Promise<void>((resolve) => {
+            resolvePush = resolve;
+        });
+
+        vi.spyOn(auth, 'authFetch').mockImplementation(() => {
+            return pendingPush.then(() => new Response(null, { status: 200 }));
+        });
+
+        const authFetchSpy = vi.spyOn(auth, 'authFetch');
+
+        render(
+            <chartDBContext.Provider
+                value={
+                    {
+                        diagramId: 'diagram-1',
+                        currentDiagram: diagramWithTable,
+                    } as never
+                }
+            >
+                <SqllabSyncProvider />
+            </chartDBContext.Provider>
+        );
+
+        // Emit sync-now twice synchronously (before the first promise resolves)
+        act(() => {
+            emitSyncNow();
+            emitSyncNow();
+        });
+
+        // Allow microtasks to run (emitSyncNow calls are synchronous but trigger in async context)
+        await vi.advanceTimersByTimeAsync(0);
+
+        // authFetch should have been called only once (the second emitSyncNow is a no-op)
+        expect(authFetchSpy).toHaveBeenCalledTimes(1);
+
+        // Now resolve the first push
+        act(() => {
+            resolvePush?.();
+        });
+        await vi.advanceTimersByTimeAsync(0);
+
+        // After the first push completes, a subsequent emitSyncNow SHOULD trigger a new call
+        act(() => {
+            emitSyncNow();
+        });
+        await vi.advanceTimersByTimeAsync(0);
+
+        // authFetch should now have been called twice (the guard was reset after the first sync completed)
+        expect(authFetchSpy).toHaveBeenCalledTimes(2);
+    });
 });

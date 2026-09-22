@@ -38,6 +38,16 @@ const routes: RouteObject[] = [
         },
     },
     {
+        path: 'pricing',
+        async lazy() {
+            const { PricingPage } =
+                await import('./pages/pricing-page/pricing-page');
+            return {
+                element: <PricingPage />,
+            };
+        },
+    },
+    {
         id: 'templates',
         path: 'templates',
         async lazy() {

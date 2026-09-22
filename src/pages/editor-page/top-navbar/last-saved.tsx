@@ -10,7 +10,10 @@ import {
 import { useTranslation } from 'react-i18next';
 import type { LocaleFunc } from 'timeago.js';
 import { register as registerLocale } from 'timeago.js';
-import { Save } from 'lucide-react';
+import { Save, Loader2 } from 'lucide-react';
+import { isLoggedIn } from '@/lib/sqllab-account';
+import { emitSyncNow, onSyncStatus } from '@/lib/sync-status-events';
+import { LoginPromptDialog } from '@/components/login-prompt/login-prompt-dialog';
 
 export interface LastSavedProps {}
 
@@ -76,6 +79,8 @@ export const LastSaved: React.FC<LastSavedProps> = () => {
     const { currentDiagram } = useChartDB();
     const { i18n } = useTranslation();
     const [language, setLanguage] = useState<string>('en_US');
+    const [syncing, setSyncing] = useState(false);
+    const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
     useEffect(() => {
         const updateLocale = async () => {
@@ -90,23 +95,47 @@ export const LastSaved: React.FC<LastSavedProps> = () => {
         updateLocale();
     }, [i18n.language]);
 
+    useEffect(
+        () => onSyncStatus((status) => setSyncing(status === 'syncing')),
+        []
+    );
+
+    const handleClick = () => {
+        if (!isLoggedIn()) {
+            setShowLoginPrompt(true);
+            return;
+        }
+        emitSyncNow();
+    };
+
     return (
-        <Tooltip>
-            <TooltipTrigger>
-                <Badge
-                    variant="secondary"
-                    className="flex gap-1.5 whitespace-nowrap"
-                >
-                    <Save size={16} />
-                    <TimeAgo
-                        datetime={currentDiagram.updatedAt}
-                        locale={language}
-                    />
-                </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-                {currentDiagram.updatedAt.toLocaleString()}
-            </TooltipContent>
-        </Tooltip>
+        <>
+            <Tooltip>
+                <TooltipTrigger onClick={handleClick}>
+                    <Badge
+                        variant="secondary"
+                        className="flex gap-1.5 whitespace-nowrap"
+                    >
+                        {syncing ? (
+                            <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                            <Save size={16} />
+                        )}
+                        <TimeAgo
+                            datetime={currentDiagram.updatedAt}
+                            locale={language}
+                        />
+                    </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                    {currentDiagram.updatedAt.toLocaleString()}
+                </TooltipContent>
+            </Tooltip>
+            <LoginPromptDialog
+                open={showLoginPrompt}
+                onOpenChange={setShowLoginPrompt}
+                reason="save_landing"
+            />
+        </>
     );
 };

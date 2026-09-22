@@ -1,10 +1,11 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import { chartDBContext } from '@/context/chartdb-context/chartdb-context';
 import { SqllabSyncProvider } from '../sqllab-sync-provider';
 import * as auth from '@/lib/sqllab-auth';
 import * as wall from '@/lib/upgrade-wall-events';
+import { emitSyncNow, onSyncStatus } from '@/lib/sync-status-events';
 import { DatabaseType } from '@/lib/domain/database-type';
 import type { Diagram } from '@/lib/domain/diagram';
 import type { DBTable } from '@/lib/domain/db-table';
@@ -244,5 +245,60 @@ describe('SqllabSyncProvider', () => {
             reason: 'diagram_limit',
             limit: 3,
         });
+    });
+
+    it('syncs immediately (without waiting 2s) when a sync-now event arrives', async () => {
+        vi.spyOn(auth, 'getAccessToken').mockReturnValue('fake-access-token');
+        const authFetchSpy = vi
+            .spyOn(auth, 'authFetch')
+            .mockResolvedValue(new Response(null, { status: 200 }));
+
+        render(
+            <chartDBContext.Provider
+                value={
+                    {
+                        diagramId: 'diagram-1',
+                        currentDiagram: diagramWithTable,
+                    } as never
+                }
+            >
+                <SqllabSyncProvider />
+            </chartDBContext.Provider>
+        );
+
+        act(() => emitSyncNow());
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(authFetchSpy).toHaveBeenCalledWith(
+            '/api/erd2/diagrams/diagram-1/',
+            expect.objectContaining({ method: 'PATCH' })
+        );
+    });
+
+    it('broadcasts syncing then idle status around a push, including the regular debounced one', async () => {
+        vi.spyOn(auth, 'getAccessToken').mockReturnValue('fake-access-token');
+        vi.spyOn(auth, 'authFetch').mockResolvedValue(
+            new Response(null, { status: 200 })
+        );
+        const statuses: string[] = [];
+        const off = onSyncStatus((status) => statuses.push(status));
+
+        render(
+            <chartDBContext.Provider
+                value={
+                    {
+                        diagramId: 'diagram-1',
+                        currentDiagram: diagramWithTable,
+                    } as never
+                }
+            >
+                <SqllabSyncProvider />
+            </chartDBContext.Provider>
+        );
+
+        await vi.advanceTimersByTimeAsync(2000);
+
+        expect(statuses).toEqual(['syncing', 'idle']);
+        off();
     });
 });

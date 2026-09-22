@@ -4,6 +4,7 @@ import { useChartDB } from '@/hooks/use-chartdb';
 import { authFetch, getAccessToken } from '@/lib/sqllab-auth';
 import { toast } from '@/components/toast/use-toast';
 import { emitUpgradeWall } from '@/lib/upgrade-wall-events';
+import { emitSyncStatus, onSyncNow } from '@/lib/sync-status-events';
 
 const SYNC_DEBOUNCE_MS = 2000;
 const API_BASE = '/api/erd2/diagrams';
@@ -98,28 +99,38 @@ export const SqllabSyncProvider: React.FC = () => {
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
-        if (!diagramId) return;
-        // Не залогинен — синхронизировать нечего, не заводим даже таймер.
-        if (!getAccessToken()) return;
-        // Пустая диаграмма (без единой таблицы) не расходует квоту тарифа —
-        // синхронизация начнётся только после первой добавленной таблицы.
-        if (!currentDiagram.tables || currentDiagram.tables.length === 0)
-            return;
+        const canSync =
+            !!diagramId &&
+            !!getAccessToken() &&
+            !!currentDiagram.tables &&
+            currentDiagram.tables.length > 0;
 
-        if (timerRef.current) clearTimeout(timerRef.current);
-        timerRef.current = setTimeout(() => {
-            pushDiagram(diagramId, currentDiagram.name, currentDiagram).catch(
-                (err: unknown) => {
+        const triggerSync = () => {
+            emitSyncStatus('syncing');
+            pushDiagram(diagramId, currentDiagram.name, currentDiagram)
+                .catch((err: unknown) => {
                     console.error(
                         'sqllab-sync: сетевая ошибка при сохранении диаграммы',
                         err
                     );
-                }
-            );
-        }, SYNC_DEBOUNCE_MS);
+                })
+                .finally(() => emitSyncStatus('idle'));
+        };
+
+        const offSyncNow = onSyncNow(() => {
+            if (!canSync) return;
+            if (timerRef.current) clearTimeout(timerRef.current);
+            triggerSync();
+        });
+
+        if (!canSync) return offSyncNow;
+
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(triggerSync, SYNC_DEBOUNCE_MS);
 
         return () => {
             if (timerRef.current) clearTimeout(timerRef.current);
+            offSyncNow();
         };
     }, [diagramId, currentDiagram]);
 

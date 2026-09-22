@@ -132,6 +132,7 @@ const EditorPageComponent: React.FC = () => {
                         ? `SQL Lab - ${diagramName} | ERD редактор баз данных`
                         : 'SQL Lab - ERD редактор баз данных'}
                 </title>
+                <meta name="robots" content="noindex, nofollow" />
             </Helmet>
             <section
                 className={`bg-background ${isDesktop ? 'h-screen w-screen' : 'h-dvh w-dvw'} flex select-none flex-col overflow-x-hidden`}

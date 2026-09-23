@@ -99,8 +99,9 @@ describe('sqllab-account', () => {
 
     it('fetchProfile returns the API body', async () => {
         const body = { full_name: 'Denis S', email: 'den@example.com' };
-        vi.spyOn(auth, 'authFetch').mockResolvedValue(json(body));
+        const spy = vi.spyOn(auth, 'authFetch').mockResolvedValue(json(body));
         await expect(fetchProfile()).resolves.toEqual(body);
+        expect(spy).toHaveBeenCalledWith('/api/auth/profile/');
     });
 
     it('fetchProfile throws on a non-OK response', async () => {

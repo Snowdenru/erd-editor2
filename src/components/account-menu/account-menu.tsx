@@ -9,6 +9,11 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/dropdown-menu/dropdown-menu';
+import {
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+} from '@/components/sidebar/sidebar';
 import { Avatar, AvatarFallback } from '@/components/avatar/avatar';
 import { useDialog } from '@/hooks/use-dialog';
 import {
@@ -44,24 +49,28 @@ export const AccountMenu: React.FC = () => {
 
     if (!isLoggedIn()) {
         return (
-            <button
-                type="button"
-                onClick={() =>
-                    window.location.assign(
-                        buildLoginUrl(
-                            `${window.location.pathname}${window.location.search}`
-                        )
-                    )
-                }
-                className="flex w-full items-center gap-2 rounded-md p-2 text-sm text-muted-foreground hover:bg-accent"
-            >
-                <Avatar className="size-7">
-                    <AvatarFallback>
-                        <CircleUserRound className="size-4" />
-                    </AvatarFallback>
-                </Avatar>
-                Войти
-            </button>
+            <SidebarMenu>
+                <SidebarMenuItem>
+                    <SidebarMenuButton
+                        type="button"
+                        className="justify-center space-y-0.5 !px-0 text-muted-foreground"
+                        onClick={() =>
+                            window.location.assign(
+                                buildLoginUrl(
+                                    `${window.location.pathname}${window.location.search}`
+                                )
+                            )
+                        }
+                    >
+                        <Avatar className="size-7">
+                            <AvatarFallback>
+                                <CircleUserRound className="size-4" />
+                            </AvatarFallback>
+                        </Avatar>
+                        <span>Войти</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarMenu>
         );
     }
 
@@ -73,25 +82,32 @@ export const AccountMenu: React.FC = () => {
 
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <button
-                    type="button"
-                    className="flex w-full items-center gap-2 rounded-md p-2 text-sm hover:bg-accent"
-                >
-                    <Avatar className="size-7">
-                        <AvatarFallback>
-                            {profile ? (
-                                getInitials(profile.full_name, profile.email)
-                            ) : (
-                                <CircleUserRound className="size-4" />
-                            )}
-                        </AvatarFallback>
-                    </Avatar>
-                    <span className="truncate">
-                        {profile ? profile.full_name : 'Аккаунт'}
-                    </span>
-                </button>
-            </DropdownMenuTrigger>
+            <SidebarMenu>
+                <SidebarMenuItem>
+                    <DropdownMenuTrigger asChild>
+                        <SidebarMenuButton
+                            type="button"
+                            className="justify-center space-y-0.5 !px-0"
+                        >
+                            <Avatar className="size-7">
+                                <AvatarFallback>
+                                    {profile ? (
+                                        getInitials(
+                                            profile.full_name,
+                                            profile.email
+                                        )
+                                    ) : (
+                                        <CircleUserRound className="size-4" />
+                                    )}
+                                </AvatarFallback>
+                            </Avatar>
+                            <span>
+                                {profile ? profile.full_name : 'Аккаунт'}
+                            </span>
+                        </SidebarMenuButton>
+                    </DropdownMenuTrigger>
+                </SidebarMenuItem>
+            </SidebarMenu>
             <DropdownMenuContent side="top" align="start" className="w-56">
                 <DropdownMenuLabel>
                     <div className="flex flex-col">

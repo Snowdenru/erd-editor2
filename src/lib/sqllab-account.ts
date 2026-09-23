@@ -122,7 +122,7 @@ export interface UserProfileSummary {
 }
 
 export async function fetchProfile(): Promise<UserProfileSummary> {
-    const res = await authFetch('/api/profile/');
+    const res = await authFetch('/api/auth/profile/');
     if (!res.ok) {
         throw new Error(`profile: HTTP ${res.status}`);
     }

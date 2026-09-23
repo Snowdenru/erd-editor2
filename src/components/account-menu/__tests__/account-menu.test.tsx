@@ -2,6 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { SidebarProvider } from '@/components/sidebar/sidebar';
 import * as account from '@/lib/sqllab-account';
 import * as auth from '@/lib/sqllab-auth';
 import { AccountMenu } from '../account-menu';
@@ -16,7 +17,9 @@ vi.mock('@/hooks/use-dialog', () => ({
 const renderMenu = () =>
     render(
         <MemoryRouter basename="/tools/erd2" initialEntries={['/tools/erd2/']}>
-            <AccountMenu />
+            <SidebarProvider>
+                <AccountMenu />
+            </SidebarProvider>
         </MemoryRouter>
     );
 

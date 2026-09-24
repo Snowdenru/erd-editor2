@@ -7,6 +7,8 @@ import type { Diagram } from '@/lib/domain/diagram';
 import { useStorage } from '@/hooks/use-storage';
 import { LocalConfigProvider } from '@/context/local-config-context/local-config-provider';
 import { StorageProvider } from '@/context/storage-context/storage-provider';
+import { trackEvent } from '@/lib/sqllab-account';
+import { markTemplateSource } from '@/lib/erd2-tracking';
 import { ThemeProvider } from '@/context/theme-context/theme-provider';
 
 export const CloneTemplateComponent: React.FC = () => {
@@ -36,6 +38,10 @@ export const CloneTemplateComponent: React.FC = () => {
             updatedAt: now,
         };
 
+        markTemplateSource();
+        trackEvent('erd2_action', window.location.pathname, {
+            type: 'template_use',
+        });
         await addDiagram({ diagram: diagramToAdd });
         navigate(`/diagrams/${diagramToAdd.id}`);
     }, [addDiagram, navigate, template]);

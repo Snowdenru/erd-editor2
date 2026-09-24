@@ -1,4 +1,5 @@
 import { authFetch, getAccessToken } from '@/lib/sqllab-auth';
+import { getSessionId } from '@/lib/erd2-session';
 
 export const APP_BASE = '/tools/erd2';
 
@@ -92,13 +93,21 @@ export type FunnelEvent =
     | 'erd2_checkout_start'
     | 'erd2_wall_view'
     | 'erd2_login_prompt'
-    | 'erd2_try_pro_click';
+    | 'erd2_try_pro_click'
+    | 'erd2_open'
+    | 'erd2_engaged'
+    | 'erd2_action'
+    | 'erd2_schema_snapshot'
+    | 'erd2_export'
+    | 'erd2_review_prompt'
+    | 'erd2_review_submit';
 
 // Аналитика не должна ломать интерфейс: любые ошибки глотаем
 export function trackEvent(
     eventType: FunnelEvent,
     page: string,
-    payload: Record<string, unknown> = {}
+    payload: Record<string, unknown> = {},
+    options: { keepalive?: boolean } = {}
 ): void {
     try {
         void authFetch('/api/auth/event/', {
@@ -108,8 +117,9 @@ export function trackEvent(
                 event_type: eventType,
                 page,
                 payload,
-                session_id: '',
+                session_id: getSessionId(),
             }),
+            keepalive: options.keepalive ?? false,
         }).catch(() => undefined);
     } catch {
         // ignore

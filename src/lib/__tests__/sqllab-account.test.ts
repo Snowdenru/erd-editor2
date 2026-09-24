@@ -97,6 +97,24 @@ describe('sqllab-account', () => {
         ).not.toThrow();
     });
 
+    it('sends the anonymous session id and forwards keepalive', () => {
+        const spy = vi
+            .spyOn(auth, 'authFetch')
+            .mockResolvedValue(new Response(null, { status: 204 }));
+        trackEvent(
+            'erd2_open',
+            '/tools/erd2/',
+            { source: 'direct' },
+            { keepalive: true }
+        );
+
+        const [, init] = spy.mock.calls[0];
+        const body = JSON.parse(String((init as RequestInit).body));
+        expect(body.event_type).toBe('erd2_open');
+        expect(body.session_id).toMatch(/^[a-z0-9]+$/);
+        expect((init as RequestInit).keepalive).toBe(true);
+    });
+
     it('fetchProfile returns the API body', async () => {
         const body = { full_name: 'Denis S', email: 'den@example.com' };
         const spy = vi.spyOn(auth, 'authFetch').mockResolvedValue(json(body));

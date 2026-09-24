@@ -108,7 +108,7 @@ describe('AccountMenu', () => {
         expect(screen.getAllByText('Скоро')).toHaveLength(2);
     });
 
-    it('"Тарифы" links to /pricing and "Поддержка" to /profile', async () => {
+    it('"Тарифы" links to /pricing and "Поддержка" opens a modal', async () => {
         vi.spyOn(account, 'isLoggedIn').mockReturnValue(true);
         vi.spyOn(account, 'fetchProfile').mockResolvedValue({
             full_name: 'Denis S',
@@ -123,9 +123,11 @@ describe('AccountMenu', () => {
         expect(
             screen.getByRole('menuitem', { name: 'Тарифы' })
         ).toHaveAttribute('href', '/tools/erd2/pricing');
-        expect(
-            screen.getByRole('menuitem', { name: 'Поддержка' })
-        ).toHaveAttribute('href', '/profile');
+        const support = screen.getByRole('menuitem', { name: 'Поддержка' });
+        expect(support).not.toHaveAttribute('href');
+        fireEvent.click(support);
+        expect(await screen.findByRole('dialog')).toBeInTheDocument();
+        expect(screen.getByText('sqllab@yandex.ru')).toBeInTheDocument();
     });
 
     it('"Выйти" logs out and redirects to the app root', async () => {

@@ -24,6 +24,7 @@ import {
     type UserProfileSummary,
 } from '@/lib/sqllab-account';
 import { logout } from '@/lib/sqllab-auth';
+import { SupportDialog } from '@/components/support/support-dialog';
 
 const getInitials = (fullName: string, email: string): string => {
     const parts = fullName.trim().split(/\s+/).filter(Boolean);
@@ -39,6 +40,7 @@ const getInitials = (fullName: string, email: string): string => {
 export const AccountMenu: React.FC = () => {
     const { openOpenDiagramDialog } = useDialog();
     const [profile, setProfile] = useState<UserProfileSummary | null>(null);
+    const [supportOpen, setSupportOpen] = useState(false);
 
     useEffect(() => {
         if (!isLoggedIn()) return;
@@ -81,73 +83,76 @@ export const AccountMenu: React.FC = () => {
     };
 
     return (
-        <DropdownMenu>
-            <SidebarMenu>
-                <SidebarMenuItem>
-                    <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton
-                            type="button"
-                            className="justify-center space-y-0.5 !px-0"
-                        >
-                            <Avatar className="size-7">
-                                <AvatarFallback>
-                                    {profile ? (
-                                        getInitials(
-                                            profile.full_name,
-                                            profile.email
-                                        )
-                                    ) : (
-                                        <CircleUserRound className="size-4" />
-                                    )}
-                                </AvatarFallback>
-                            </Avatar>
-                            <span>
-                                {profile ? profile.full_name : 'Аккаунт'}
+        <>
+            <DropdownMenu>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <DropdownMenuTrigger asChild>
+                            <SidebarMenuButton
+                                type="button"
+                                className="justify-center space-y-0.5 !px-0"
+                            >
+                                <Avatar className="size-7">
+                                    <AvatarFallback>
+                                        {profile ? (
+                                            getInitials(
+                                                profile.full_name,
+                                                profile.email
+                                            )
+                                        ) : (
+                                            <CircleUserRound className="size-4" />
+                                        )}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <span>
+                                    {profile ? profile.full_name : 'Аккаунт'}
+                                </span>
+                            </SidebarMenuButton>
+                        </DropdownMenuTrigger>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+                <DropdownMenuContent side="top" align="start" className="w-56">
+                    <DropdownMenuLabel>
+                        <div className="flex flex-col">
+                            <span className="font-medium">
+                                {profile?.full_name ?? '…'}
                             </span>
-                        </SidebarMenuButton>
-                    </DropdownMenuTrigger>
-                </SidebarMenuItem>
-            </SidebarMenu>
-            <DropdownMenuContent side="top" align="start" className="w-56">
-                <DropdownMenuLabel>
-                    <div className="flex flex-col">
-                        <span className="font-medium">
-                            {profile?.full_name ?? '…'}
+                            <span className="text-xs font-normal text-muted-foreground">
+                                {profile?.email ?? ''}
+                            </span>
+                        </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => openOpenDiagramDialog()}>
+                        Мои схемы
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem disabled className="justify-between">
+                        Ссылка для встраивания
+                        <span className="ml-auto text-xs text-muted-foreground">
+                            Скоро
                         </span>
-                        <span className="text-xs font-normal text-muted-foreground">
-                            {profile?.email ?? ''}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem disabled className="justify-between">
+                        Пригласить в команду
+                        <span className="ml-auto text-xs text-muted-foreground">
+                            Скоро
                         </span>
-                    </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => openOpenDiagramDialog()}>
-                    Мои схемы
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem disabled className="justify-between">
-                    Ссылка для встраивания
-                    <span className="ml-auto text-xs text-muted-foreground">
-                        Скоро
-                    </span>
-                </DropdownMenuItem>
-                <DropdownMenuItem disabled className="justify-between">
-                    Пригласить в команду
-                    <span className="ml-auto text-xs text-muted-foreground">
-                        Скоро
-                    </span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                    <Link to="/pricing">Тарифы</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                    <a href="/profile">Поддержка</a>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                    Выйти
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                        <Link to="/pricing">Тарифы</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setSupportOpen(true)}>
+                        Поддержка
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout}>
+                        Выйти
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+            <SupportDialog open={supportOpen} onOpenChange={setSupportOpen} />
+        </>
     );
 };

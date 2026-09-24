@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Star } from 'lucide-react';
 import {
     Dialog,
@@ -52,35 +52,57 @@ export const ReviewDialog: React.FC<ReviewDialogProps> = ({
     const [done, setDone] = useState(false);
     const [error, setError] = useState(false);
 
-    // При открытии подгружаем прежний отзыв, чтобы его можно было изменить
+    const interactedRef = useRef(false);
+    const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const clearCloseTimer = () => {
+        if (closeTimerRef.current !== null) {
+            clearTimeout(closeTimerRef.current);
+            closeTimerRef.current = null;
+        }
+    };
+
+    useEffect(() => clearCloseTimer, []);
+
+    // При открытии сбрасываем форму и подгружаем прежний отзыв для правки
     useEffect(() => {
         if (!open) {
             return;
         }
+        clearCloseTimer();
+        interactedRef.current = false;
         setStep(1);
+        setRating(0);
+        setHovered(0);
+        setTags([]);
+        setCustomTag('');
+        setText('');
         setDone(false);
         setError(false);
-        setCustomTag('');
+        setSubmitting(false);
+        let cancelled = false;
         void fetchMyReview()
             .then((previous) => {
-                if (previous) {
-                    setRating(previous.rating);
-                    setTags(previous.tags);
-                    setText(previous.text);
-                    setStep(2); // сразу показываем прежнюю оценку и теги для правки
-                } else {
-                    setRating(0);
-                    setTags([]);
-                    setText('');
+                if (cancelled || interactedRef.current || !previous) {
+                    return;
                 }
+                setRating(previous.rating);
+                setTags(previous.tags);
+                setText(previous.text);
+                setStep(2); // сразу показываем прежнюю оценку и теги для правки
             })
             .catch(() => undefined);
+        return () => {
+            cancelled = true;
+        };
     }, [open]);
 
-    const toggleTag = (tag: string) =>
+    const toggleTag = (tag: string) => {
+        interactedRef.current = true;
         setTags((prev) =>
             prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
         );
+    };
 
     const handleSubmit = async () => {
         if (submitting) {
@@ -100,7 +122,11 @@ export const ReviewDialog: React.FC<ReviewDialogProps> = ({
                 has_text: text.trim().length > 0,
             });
             setDone(true);
-            setTimeout(() => onOpenChange(false), 1800);
+            clearCloseTimer();
+            closeTimerRef.current = setTimeout(() => {
+                closeTimerRef.current = null;
+                onOpenChange(false);
+            }, 1800);
         } catch {
             setError(true);
         } finally {
@@ -149,6 +175,7 @@ export const ReviewDialog: React.FC<ReviewDialogProps> = ({
                                             onMouseEnter={() => setHovered(n)}
                                             onMouseLeave={() => setHovered(0)}
                                             onClick={() => {
+                                                interactedRef.current = true;
                                                 setRating(n);
                                                 setTags([]);
                                                 setStep(2);
@@ -221,9 +248,10 @@ export const ReviewDialog: React.FC<ReviewDialogProps> = ({
                                     <input
                                         type="text"
                                         value={customTag}
-                                        onChange={(e) =>
-                                            setCustomTag(e.target.value)
-                                        }
+                                        onChange={(e) => {
+                                            interactedRef.current = true;
+                                            setCustomTag(e.target.value);
+                                        }}
                                         placeholder="Ваш вариант..."
                                         maxLength={100}
                                         className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -243,7 +271,10 @@ export const ReviewDialog: React.FC<ReviewDialogProps> = ({
                             <div className="space-y-4">
                                 <textarea
                                     value={text}
-                                    onChange={(e) => setText(e.target.value)}
+                                    onChange={(e) => {
+                                        interactedRef.current = true;
+                                        setText(e.target.value);
+                                    }}
                                     placeholder="Пожелания, предложения..."
                                     rows={4}
                                     maxLength={2000}

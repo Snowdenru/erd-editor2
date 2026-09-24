@@ -113,4 +113,61 @@ describe('ReviewDialog', () => {
             screen.getByRole('button', { name: 'Медленно' })
         ).toBeInTheDocument();
     });
+
+    it('does not overwrite input the user made before the preload resolved', async () => {
+        let resolve!: (r: review.Erd2Review | null) => void;
+        vi.spyOn(review, 'fetchMyReview').mockReturnValue(
+            new Promise((r) => {
+                resolve = r;
+            })
+        );
+        await renderDialog();
+        fireEvent.click(screen.getByRole('button', { name: 'Оценка 5 из 5' }));
+        await act(async () => {
+            resolve({ rating: 2, tags: ['Медленно'], text: 'старый' });
+        });
+        expect(screen.getByText('Что понравилось?')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Медленно' })).toBeNull();
+        expect(
+            screen.getByRole('button', { name: 'Быстро' })
+        ).toBeInTheDocument();
+    });
+
+    it('allows a retry after a failed submit', async () => {
+        vi.spyOn(review, 'submitReview')
+            .mockRejectedValueOnce(new Error('boom'))
+            .mockResolvedValueOnce(undefined);
+        await renderDialog();
+        fireEvent.click(screen.getByRole('button', { name: 'Оценка 3 из 5' }));
+        fireEvent.click(screen.getByRole('button', { name: /далее/i }));
+        fireEvent.click(screen.getByRole('button', { name: 'Отправить' }));
+        await screen.findByText(/не удалось отправить/i);
+        const btn = screen.getByRole('button', { name: 'Отправить' });
+        expect(btn).toBeEnabled();
+        fireEvent.click(btn);
+        await waitFor(() =>
+            expect(review.submitReview).toHaveBeenCalledTimes(2)
+        );
+        await waitFor(() =>
+            expect(screen.queryByText(/не удалось отправить/i)).toBeNull()
+        );
+    });
+
+    it('does not submit a custom tag twice when it equals a selected tag', async () => {
+        await renderDialog();
+        fireEvent.click(screen.getByRole('button', { name: 'Оценка 5 из 5' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Быстро' }));
+        fireEvent.change(screen.getByPlaceholderText('Ваш вариант...'), {
+            target: { value: 'Быстро' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: /далее/i }));
+        fireEvent.click(screen.getByRole('button', { name: 'Отправить' }));
+        await waitFor(() =>
+            expect(review.submitReview).toHaveBeenCalledWith({
+                rating: 5,
+                tags: ['Быстро'],
+                text: '',
+            })
+        );
+    });
 });

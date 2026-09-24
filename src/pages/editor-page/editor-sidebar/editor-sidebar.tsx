@@ -17,7 +17,9 @@ import {
     FolderOpen,
     CodeXml,
     FileCode,
+    Star,
 } from 'lucide-react';
+import { emitReviewSignal } from '@/lib/review-events';
 import { Table, Workflow } from 'lucide-react';
 import { useLayout } from '@/hooks/use-layout';
 import { useTranslation } from 'react-i18next';
@@ -233,6 +235,18 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
                 </SidebarGroup>
             </SidebarContent>
             <SidebarFooter>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton
+                            type="button"
+                            className="justify-center space-y-0.5 !px-0"
+                            onClick={() => emitReviewSignal('open')}
+                        >
+                            <Star className="size-4" />
+                            <span>Оценить редактор</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
                 <AccountMenu />
             </SidebarFooter>
         </Sidebar>

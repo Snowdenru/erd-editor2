@@ -4,6 +4,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@/i18n/i18n';
 import { DatabaseType } from '@/lib/domain/database-type';
 import { SidebarProvider } from '@/components/sidebar/sidebar';
+import * as reviewEvents from '@/lib/review-events';
 
 // Основная гарантия этого изменения: клик по кнопке «Новая» в сайдбаре
 // создаёт пустую диаграмму напрямую (createEmptyDiagram), а не открывает
@@ -63,5 +64,21 @@ describe('EditorSidebar', () => {
         expect(mockCreateEmptyDiagram).toHaveBeenCalledTimes(1);
         expect(mockOpenCreateDiagramDialog).not.toHaveBeenCalled();
         expect(mockOpenOpenDiagramDialog).not.toHaveBeenCalled();
+    });
+
+    it('emits the review "open" signal when "Оценить редактор" is clicked', () => {
+        const spy = vi
+            .spyOn(reviewEvents, 'emitReviewSignal')
+            .mockImplementation(() => undefined);
+        render(
+            <SidebarProvider>
+                <EditorSidebar />
+            </SidebarProvider>
+        );
+
+        fireEvent.click(screen.getByText('Оценить редактор'));
+
+        expect(spy).toHaveBeenCalledWith('open');
+        spy.mockRestore();
     });
 });

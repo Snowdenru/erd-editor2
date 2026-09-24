@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { LoginPromptDialog } from '@/components/login-prompt/login-prompt-dialog';
@@ -14,11 +14,27 @@ export const ReviewHost: React.FC = () => {
     const [loginOpen, setLoginOpen] = useState(false);
     const [nudgeVisible, setNudgeVisible] = useState(false);
 
+    // Зеркала состояния: showNudge остаётся стабильным, таймер не пересоздаётся
+    const nudgeVisibleRef = useRef(false);
+    const dialogOpenRef = useRef(false);
+    const loginOpenRef = useRef(false);
+    nudgeVisibleRef.current = nudgeVisible;
+    dialogOpenRef.current = dialogOpen;
+    loginOpenRef.current = loginOpen;
+
     const showNudge = useCallback(() => {
+        if (
+            nudgeVisibleRef.current ||
+            dialogOpenRef.current ||
+            loginOpenRef.current
+        ) {
+            return;
+        }
         // Оценка привязана к аккаунту: анониму не предлагаем, только по явному клику в сайдбаре
         if (!isLoggedIn() || !canAutoPrompt()) {
             return;
         }
+        nudgeVisibleRef.current = true;
         setNudgeVisible(true);
         trackEvent('erd2_review_prompt', window.location.pathname, {
             action: 'shown',
@@ -51,6 +67,12 @@ export const ReviewHost: React.FC = () => {
         return () => clearTimeout(timer);
     }, [showNudge]);
 
+    const acceptNudge = () => {
+        // Принятое, но отменённое предложение не должно возвращаться 30 дней
+        markPromptDismissed();
+        openReview();
+    };
+
     const dismissNudge = () => {
         markPromptDismissed();
         setNudgeVisible(false);
@@ -75,7 +97,7 @@ export const ReviewHost: React.FC = () => {
                     <p className="mb-3 mt-1 text-xs text-muted-foreground">
                         Оценка занимает полминуты и помогает нам его улучшать.
                     </p>
-                    <Button type="button" size="sm" onClick={openReview}>
+                    <Button type="button" size="sm" onClick={acceptNudge}>
                         Оценить
                     </Button>
                 </div>

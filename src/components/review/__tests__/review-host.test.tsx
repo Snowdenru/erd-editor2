@@ -88,4 +88,48 @@ describe('ReviewHost', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Оценить' }));
         expect(screen.getByText('Оцените ERD-редактор')).toBeInTheDocument();
     });
+    const shownCalls = () =>
+        vi
+            .mocked(account.trackEvent)
+            .mock.calls.filter((c) => c[2]?.action === 'shown');
+
+    it('tracks "shown" once when the nudge signal repeats', () => {
+        vi.spyOn(account, 'isLoggedIn').mockReturnValue(true);
+        render(<ReviewHost />);
+        act(() => emitReviewSignal('nudge'));
+        act(() => emitReviewSignal('nudge'));
+        act(() => {
+            vi.advanceTimersByTime(5 * 60_000);
+        });
+        expect(shownCalls()).toHaveLength(1);
+    });
+
+    it('does not nudge while the rating dialog is open', () => {
+        vi.spyOn(account, 'isLoggedIn').mockReturnValue(true);
+        render(<ReviewHost />);
+        act(() => emitReviewSignal('open'));
+        act(() => emitReviewSignal('nudge'));
+        expect(screen.queryByText('Как вам редактор?')).toBeNull();
+        expect(shownCalls()).toHaveLength(0);
+    });
+
+    it('does not nudge again after an accepted nudge was cancelled', () => {
+        vi.spyOn(account, 'isLoggedIn').mockReturnValue(true);
+        render(<ReviewHost />);
+        act(() => emitReviewSignal('nudge'));
+        fireEvent.click(screen.getByRole('button', { name: 'Оценить' }));
+        fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+        expect(screen.queryByText('Оцените ERD-редактор')).toBeNull();
+        expect(review.canAutoPrompt()).toBe(false);
+        act(() => emitReviewSignal('nudge'));
+        expect(screen.queryByText('Как вам редактор?')).toBeNull();
+    });
+
+    it('the open signal still opens the dialog after a dismissal', () => {
+        vi.spyOn(account, 'isLoggedIn').mockReturnValue(true);
+        review.markPromptDismissed(Date.now());
+        render(<ReviewHost />);
+        act(() => emitReviewSignal('open'));
+        expect(screen.getByText('Оцените ERD-редактор')).toBeInTheDocument();
+    });
 });

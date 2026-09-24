@@ -1,11 +1,27 @@
 import type { Diagram } from '@/lib/domain/diagram';
 import type { DBField } from '@/lib/domain/db-field';
-import type { DBRelationship } from '@/lib/domain/db-relationship';
 import { defaultSchemas } from '@/lib/data/default-schemas';
 import { databaseTypeToLabelMap } from '@/lib/databases';
+import { foreignKeyFieldIds } from './foreign-keys';
 
 const cell = (value: string): string =>
-    value.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+    value.replace(/\|/g, '\\|').replace(/\r?\n|\r/g, ' ');
+
+// Заголовок `#` должен оставаться одной строкой
+const heading = (text: string): string =>
+    text.replace(/\r?\n|\r/g, ' ').trim() || 'Без названия';
+
+// Инлайн-код по CommonMark: ограждение длиннее самой длинной серии backtick внутри значения
+const inlineCode = (value: string): string => {
+    const text = value.replace(/\r?\n|\r/g, ' ');
+    const longest = Math.max(
+        0,
+        ...(text.match(/`+/g) ?? []).map((run) => run.length)
+    );
+    const fence = '`'.repeat(longest + 1);
+    const pad = text.startsWith('`') || text.endsWith('`') ? ' ' : '';
+    return `${fence}${pad}${text}${pad}${fence}`;
+};
 
 const formatType = (field: DBField): string => {
     let type = field.type.name;
@@ -16,16 +32,6 @@ const formatType = (field: DBField): string => {
     }
     return field.isArray ? `${type}[]` : type;
 };
-
-// FK — поле со стороны «много»; если обе стороны одинаковы, целевое поле
-const foreignKeyFieldIds = (relationships: DBRelationship[]): Set<string> =>
-    new Set(
-        relationships.map((rel) =>
-            rel.sourceCardinality === 'many' && rel.targetCardinality !== 'many'
-                ? rel.sourceFieldId
-                : rel.targetFieldId
-        )
-    );
 
 export function diagramToMarkdown(diagram: Diagram): string {
     const tables = diagram.tables ?? [];
@@ -48,14 +54,14 @@ export function diagramToMarkdown(diagram: Diagram): string {
     );
 
     const lines: string[] = [
-        `# ${diagram.name}`,
+        `# ${heading(diagram.name)}`,
         '',
         `${databaseTypeToLabelMap[diagram.databaseType]} · таблиц: ${tables.length} · связей: ${relationships.length}`,
         '',
     ];
 
     for (const table of tables) {
-        lines.push(`## ${titles.get(table.id)}`, '');
+        lines.push(`## ${heading(titles.get(table.id) ?? '')}`, '');
         if (table.comments?.trim()) {
             lines.push(cell(table.comments), '');
         }
@@ -74,7 +80,7 @@ export function diagramToMarkdown(diagram: Diagram): string {
                     cell(formatType(field)),
                     keys.join(', '),
                     field.nullable ? 'да' : 'нет',
-                    field.default ? `\`${cell(field.default)}\`` : '',
+                    field.default ? inlineCode(cell(field.default)) : '',
                     cell(field.comments ?? ''),
                 ].join(' | ')} |`
             );
@@ -88,7 +94,7 @@ export function diagramToMarkdown(diagram: Diagram): string {
                     .map((id) => fieldNames.get(id) ?? id)
                     .join(', ');
                 lines.push(
-                    `- \`${index.name}\` (${columns})${index.unique ? ', уникальный' : ''}`
+                    `- ${inlineCode(index.name)} (${cell(columns)})${index.unique ? ', уникальный' : ''}`
                 );
             }
             lines.push('');
@@ -100,9 +106,9 @@ export function diagramToMarkdown(diagram: Diagram): string {
         for (const rel of relationships) {
             const from = `${titles.get(rel.sourceTableId) ?? '?'}.${fieldNames.get(rel.sourceFieldId) ?? '?'}`;
             const to = `${titles.get(rel.targetTableId) ?? '?'}.${fieldNames.get(rel.targetFieldId) ?? '?'}`;
-            const name = rel.name ? `, ${rel.name}` : '';
+            const name = rel.name ? `, ${cell(rel.name)}` : '';
             lines.push(
-                `- \`${from}\` → \`${to}\` (${rel.sourceCardinality}:${rel.targetCardinality}${name})`
+                `- ${inlineCode(from)} → ${inlineCode(to)} (${rel.sourceCardinality}:${rel.targetCardinality}${name})`
             );
         }
         lines.push('');

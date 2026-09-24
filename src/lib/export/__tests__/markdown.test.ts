@@ -92,6 +92,64 @@ describe('diagramToMarkdown', () => {
         expect(out).toContain('line1 line2');
     });
 
+    it('keeps a default with backticks a single valid code span', () => {
+        const out = diagramToMarkdown(
+            makeDiagram({
+                tables: [
+                    makeTable({
+                        id: 't',
+                        name: 'a',
+                        fields: [
+                            makeField({
+                                id: 'f',
+                                name: 'x',
+                                default: "'a`b'",
+                            }),
+                            makeField({ id: 'g', name: 'y', default: '`z`' }),
+                        ],
+                    }),
+                ],
+            })
+        );
+        expect(out).toContain("| x | integer |  | да | ``'a`b'`` |  |");
+        expect(out).toContain('| y | integer |  | да | `` `z` `` |  |');
+    });
+
+    it('keeps headings on one line when names contain newlines', () => {
+        const out = diagramToMarkdown(
+            makeDiagram({
+                name: 'My\r\nSchema\nX',
+                tables: [makeTable({ id: 't', name: 'ta\nble\rx' })],
+            })
+        );
+        expect(out.startsWith('# My Schema X\n')).toBe(true);
+        expect(out).toContain('\n## ta ble x\n');
+        expect(out).not.toContain('\r');
+    });
+
+    it('falls back to a placeholder for an empty heading', () => {
+        const out = diagramToMarkdown(makeDiagram({ name: ' \n ' }));
+        expect(out.startsWith('# Без названия\n')).toBe(true);
+    });
+
+    it('keeps index and relationship lines on one line with pipes and newlines', () => {
+        const d = shopDiagram();
+        (d.relationships ?? [])[0].name = 'fk|a\nb';
+        (d.tables ?? [])[0].indexes = [
+            makeIndex({ id: 'i', name: 'ix|a\nb', fieldIds: ['u-id'] }),
+        ];
+        const out = diagramToMarkdown(d);
+        expect(out).toContain('- `ix|a b` (id)');
+        expect(out).toContain('(one:many, fk\\|a b)');
+    });
+
+    it('protects backticks in table names inside relationship lines', () => {
+        const d = shopDiagram();
+        (d.tables ?? [])[0].name = 'us`ers';
+        const out = diagramToMarkdown(d);
+        expect(out).toContain('``us`ers.id`` → `orders.user_id`');
+    });
+
     it('handles an empty diagram', () => {
         const out = diagramToMarkdown(makeDiagram({ name: 'Пусто' }));
         expect(out).toContain('# Пусто');

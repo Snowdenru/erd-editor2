@@ -1,8 +1,8 @@
 import type { Diagram } from '@/lib/domain/diagram';
 import type { DBField } from '@/lib/domain/db-field';
-import type { DBRelationship } from '@/lib/domain/db-relationship';
 import { defaultSchemas } from '@/lib/data/default-schemas';
 import { transliterate } from './file-name';
+import { foreignKeyFieldIds } from './foreign-keys';
 
 const SOURCE_SYMBOL = { one: '||', many: '}o' } as const;
 const TARGET_SYMBOL = { one: '||', many: 'o{' } as const;
@@ -20,18 +20,10 @@ const attributeName = (name: string): string => {
     return /^[0-9]/.test(safe) ? `_${safe}` : safe || '_';
 };
 
-const typeName = (field: DBField): string =>
-    field.type.name.replace(/[^A-Za-z0-9_-]/g, '_') || 'unknown';
-
-// FK — поле со стороны «много»; если обе стороны одинаковы, считаем внешним ключом целевое поле
-const foreignKeyFieldIds = (relationships: DBRelationship[]): Set<string> =>
-    new Set(
-        relationships.map((rel) =>
-            rel.sourceCardinality === 'many' && rel.targetCardinality !== 'many'
-                ? rel.sourceFieldId
-                : rel.targetFieldId
-        )
-    );
+const typeName = (field: DBField): string => {
+    const safe = field.type.name.replace(/[^A-Za-z0-9_-]/g, '_');
+    return /^[0-9]/.test(safe) ? `_${safe}` : safe || 'unknown';
+};
 
 const attributeLine = (field: DBField, foreignKeys: Set<string>): string => {
     const keys: string[] = [];
@@ -56,9 +48,10 @@ export function diagramToMermaid(diagram: Diagram): string {
             table.schema && table.schema !== defaultSchema
                 ? `${table.schema}.${table.name}`
                 : table.name;
-        let label = base;
+        const start = base.trim() ? base : 'table';
+        let label = start;
         for (let n = 2; used.has(label); n++) {
-            label = `${base}_${n}`;
+            label = `${start}_${n}`;
         }
         used.add(label);
         names.set(table.id, entityName(label));
@@ -86,7 +79,7 @@ export function diagramToMermaid(diagram: Diagram): string {
         const target = names.get(rel.targetTableId);
         if (!source || !target) continue;
         lines.push(
-            `    ${source} ${SOURCE_SYMBOL[rel.sourceCardinality]}--${TARGET_SYMBOL[rel.targetCardinality]} ${target} : ${quote(rel.name || 'relates')}`
+            `    ${source} ${SOURCE_SYMBOL[rel.sourceCardinality]}--${TARGET_SYMBOL[rel.targetCardinality]} ${target} : ${quote(rel.name?.trim() || 'relates')}`
         );
     }
 

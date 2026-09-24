@@ -132,4 +132,40 @@ describe('diagramToMermaid', () => {
         expect(out).toContain(`"a'b" {`);
         expect(out).toContain(`"say 'hi' now"`);
     });
+
+    it('falls back to "relates" for a whitespace-only relationship name', () => {
+        const d = shopDiagram();
+        (d.relationships ?? [])[0].name = '   ';
+        expect(diagramToMermaid(d)).toContain(
+            'users ||--o{ orders : "relates"'
+        );
+    });
+
+    it('falls back to "table" for a whitespace-only table name', () => {
+        const out = diagramToMermaid(
+            makeDiagram({ tables: [makeTable({ id: 't', name: '  ' })] })
+        );
+        expect(out).toBe('erDiagram\n    table\n');
+    });
+
+    it('prefixes type names that start with a digit', () => {
+        const out = diagramToMermaid(
+            makeDiagram({
+                tables: [
+                    makeTable({
+                        id: 't',
+                        name: 'a',
+                        fields: [
+                            makeField({
+                                id: 'f',
+                                name: 'x',
+                                type: { id: '2d', name: '2d' },
+                            }),
+                        ],
+                    }),
+                ],
+            })
+        );
+        expect(out).toContain('        _2d x');
+    });
 });

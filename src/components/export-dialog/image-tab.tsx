@@ -100,15 +100,17 @@ export const ImageTab: React.FC<ImageTabProps> = ({ onExported }) => {
             )}
 
             <div className="space-y-2 text-sm">
-                <label className="flex items-center gap-2">
-                    <input
-                        type="checkbox"
-                        checked={canBeTransparent && transparent}
-                        disabled={!canBeTransparent}
-                        onChange={(e) => setTransparent(e.target.checked)}
-                    />
-                    Прозрачный фон
-                </label>
+                {!isVector && (
+                    <label className="flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            checked={canBeTransparent && transparent}
+                            disabled={!canBeTransparent}
+                            onChange={(e) => setTransparent(e.target.checked)}
+                        />
+                        Прозрачный фон
+                    </label>
+                )}
                 <label className="flex items-center gap-2">
                     <input
                         type="checkbox"

@@ -135,6 +135,19 @@ describe('ExportDialog', () => {
                 expect.objectContaining({ format: 'jpg' })
             );
         });
+
+        it('hides the transparency checkbox for SVG (it has no effect there) and shows it again for PNG', async () => {
+            renderDialog('image');
+            expect(screen.getByLabelText('Прозрачный фон')).toBeInTheDocument();
+
+            fireEvent.click(screen.getByRole('button', { name: 'SVG' }));
+            expect(
+                screen.queryByLabelText('Прозрачный фон')
+            ).not.toBeInTheDocument();
+
+            fireEvent.click(screen.getByRole('button', { name: 'PNG' }));
+            expect(screen.getByLabelText('Прозрачный фон')).toBeInTheDocument();
+        });
     });
 
     describe('sql tab', () => {

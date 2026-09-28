@@ -84,6 +84,33 @@ const exportOptions = {
     scale: 1,
 };
 
+// Minimal stand-in for the browser `Image` constructor, used only by the
+// PNG/JPEG watermark-branch tests below. The provider creates one `Image`
+// per `new Image()` call (first the rendered diagram, then the logo) and
+// waits on that instance's `onload`/`onerror`. Capturing every instance in
+// creation order lets a test grab exactly the instance it wants to drive,
+// without needing real image decoding (which happy-dom doesn't perform).
+type MockImageInstance = {
+    src: string;
+    width: number;
+    height: number;
+    onload: (() => void) | null;
+    onerror: (() => void) | null;
+};
+
+let createdImages: MockImageInstance[] = [];
+
+class MockImage implements MockImageInstance {
+    src = '';
+    width = 100;
+    height = 100;
+    onload: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+    constructor() {
+        createdImages.push(this);
+    }
+}
+
 describe('ExportImageProvider exportImage', () => {
     beforeEach(() => {
         vi.useFakeTimers();
@@ -93,12 +120,14 @@ describe('ExportImageProvider exportImage', () => {
         mockToPng.mockReset();
         mockToJpeg.mockReset();
         mockToSvg.mockReset();
+        createdImages = [];
         document.body.innerHTML = '';
     });
 
     afterEach(() => {
         vi.useRealTimers();
         vi.restoreAllMocks();
+        vi.unstubAllGlobals();
     });
 
     it('does not resolve until the setTimeout macrotask has run and the image work inside it has completed', async () => {
@@ -176,5 +205,91 @@ describe('ExportImageProvider exportImage', () => {
         await vi.advanceTimersByTimeAsync(0);
 
         await expect(promise).rejects.toThrow('encode failed');
+    });
+
+    // The two tests below cover the PNG/JPEG watermark-compositing branch,
+    // which loads the freshly-rendered diagram into an `Image`, draws it to
+    // a canvas, then loads the logo into a second `Image` and draws that on
+    // top. Both loads are wired through `Image.onerror` so a failed load
+    // rejects the export instead of hanging forever. `happy-dom` doesn't
+    // perform real image decoding, so these tests stub the global `Image`
+    // constructor (capturing every instance in creation order) and stub
+    // `HTMLCanvasElement.prototype.getContext` (happy-dom's real
+    // implementation returns `null`, which would otherwise make the
+    // provider skip the whole watermark path via its `if (!ctx)`
+    // short-circuit). Against the pre-fix code - where the diagram/logo
+    // `Image` objects had no `onerror` handler at all - both tests below
+    // would time out waiting for `promise` to settle, since nothing would
+    // ever reject (or resolve) it.
+    it('rejects rather than hanging when the rendered diagram image fails to load (PNG watermark branch)', async () => {
+        addReactFlowContainer();
+        mockToPng.mockResolvedValue('data:image/png;base64,INITIAL');
+
+        const fakeCtx = {
+            drawImage: vi.fn(),
+            globalAlpha: 1,
+        } as unknown as CanvasRenderingContext2D;
+        vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
+            fakeCtx
+        );
+        vi.stubGlobal('Image', MockImage);
+
+        const result = renderExportImage();
+        const priorImageCount = createdImages.length;
+
+        const promise = result.current.exportImage('png', exportOptions);
+        promise.catch(() => undefined);
+
+        await vi.advanceTimersByTimeAsync(0);
+
+        const diagramImage = createdImages[priorImageCount];
+        expect(diagramImage).toBeDefined();
+
+        diagramImage.onerror?.();
+
+        await expect(promise).rejects.toThrow(
+            'Failed to load the rendered diagram image'
+        );
+    });
+
+    it('rejects rather than hanging when the logo image fails to load after the diagram loads successfully (PNG watermark branch)', async () => {
+        addReactFlowContainer();
+        mockToPng.mockResolvedValue('data:image/png;base64,INITIAL');
+
+        const fakeCtx = {
+            drawImage: vi.fn(),
+            globalAlpha: 1,
+        } as unknown as CanvasRenderingContext2D;
+        vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
+            fakeCtx
+        );
+        vi.stubGlobal('Image', MockImage);
+
+        const result = renderExportImage();
+        const priorImageCount = createdImages.length;
+
+        const promise = result.current.exportImage('png', exportOptions);
+        promise.catch(() => undefined);
+
+        await vi.advanceTimersByTimeAsync(0);
+
+        const diagramImage = createdImages[priorImageCount];
+        expect(diagramImage).toBeDefined();
+
+        // Diagram loads fine. The provider's onload handler runs
+        // synchronously up to the point where it constructs the logo
+        // `Image` and assigns its handlers (it only suspends once it
+        // `await`s that image's own load/error promise), so the logo
+        // instance is available immediately after this call returns.
+        diagramImage.onload?.();
+
+        const logoImage = createdImages[priorImageCount + 1];
+        expect(logoImage).toBeDefined();
+
+        logoImage.onerror?.();
+
+        await expect(promise).rejects.toThrow(
+            'Failed to load logo image for watermark'
+        );
     });
 });

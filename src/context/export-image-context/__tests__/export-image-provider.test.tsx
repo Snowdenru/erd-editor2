@@ -28,8 +28,10 @@ const mockToPng = vi.fn();
 const mockToJpeg = vi.fn();
 const mockToSvg = vi.fn();
 
+let mockDiagramName = 'diagram';
+
 vi.mock('@/hooks/use-chartdb', () => ({
-    useChartDB: () => ({ diagramName: 'diagram' }),
+    useChartDB: () => ({ diagramName: mockDiagramName }),
 }));
 
 vi.mock('@/hooks/use-full-screen-spinner', () => ({
@@ -128,6 +130,7 @@ describe('ExportImageProvider exportImage', () => {
         vi.useRealTimers();
         vi.restoreAllMocks();
         vi.unstubAllGlobals();
+        mockDiagramName = 'diagram';
     });
 
     it('does not resolve until the setTimeout macrotask has run and the image work inside it has completed', async () => {
@@ -291,5 +294,68 @@ describe('ExportImageProvider exportImage', () => {
         await expect(promise).rejects.toThrow(
             'Failed to load logo image for watermark'
         );
+    });
+
+    // Guards a fix for a real bug: downloadImage() used to build the
+    // download filename from the raw diagramName (which can contain
+    // Cyrillic, spaces, or other filename-unsafe characters) concatenated
+    // directly with the image `type`, so a JPEG export downloaded as
+    // `<name>.jpeg` (not the canonical `.jpg`) with no sanitization at all -
+    // unlike every text-based export, which already goes through
+    // exportFileName(). Against the pre-fix code, this test would see a
+    // `download` attribute like `Мой Магазин.jpeg`: wrong extension, raw
+    // Cyrillic intact.
+    it('uses an exportFileName-sanitized diagramName with a canonical .jpg extension for the download filename (Cyrillic name, jpeg type)', async () => {
+        mockDiagramName = 'Мой Магазин';
+        addReactFlowContainer();
+
+        const click = vi
+            .spyOn(HTMLAnchorElement.prototype, 'click')
+            .mockImplementation(() => undefined);
+        const setAttributeSpy = vi.spyOn(
+            HTMLAnchorElement.prototype,
+            'setAttribute'
+        );
+
+        mockToJpeg.mockResolvedValue('data:image/jpeg;base64,INITIAL');
+
+        const fakeCtx = {
+            drawImage: vi.fn(),
+            globalAlpha: 1,
+        } as unknown as CanvasRenderingContext2D;
+        vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
+            fakeCtx
+        );
+        vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue(
+            'data:image/jpeg;base64,FINAL'
+        );
+        vi.stubGlobal('Image', MockImage);
+
+        const result = renderExportImage();
+        const priorImageCount = createdImages.length;
+
+        const promise = result.current.exportImage('jpeg', exportOptions);
+        promise.catch(() => undefined);
+
+        await vi.advanceTimersByTimeAsync(0);
+
+        const diagramImage = createdImages[priorImageCount];
+        expect(diagramImage).toBeDefined();
+        diagramImage.onload?.();
+
+        const logoImage = createdImages[priorImageCount + 1];
+        expect(logoImage).toBeDefined();
+        logoImage.onload?.();
+
+        await promise;
+
+        expect(click).toHaveBeenCalledTimes(1);
+        const downloadCall = setAttributeSpy.mock.calls.find(
+            ([attr]) => attr === 'download'
+        );
+        expect(downloadCall).toBeDefined();
+        const filename = downloadCall?.[1] as string;
+        expect(filename.endsWith('.jpg')).toBe(true);
+        expect(filename).not.toMatch(/[а-яё]/i);
     });
 });

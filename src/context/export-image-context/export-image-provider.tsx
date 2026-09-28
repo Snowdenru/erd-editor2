@@ -9,6 +9,7 @@ import { useTheme } from '@/hooks/use-theme';
 import logoDark from '@/assets/sqllab-logo-dark.svg';
 import logoLight from '@/assets/sqllab-logo-light.svg';
 import type { EffectiveTheme } from '../theme-context/theme-context';
+import { exportFileName } from '@/lib/export/file-name';
 
 export const ExportImageProvider: React.FC<React.PropsWithChildren> = ({
     children,
@@ -38,8 +39,9 @@ export const ExportImageProvider: React.FC<React.PropsWithChildren> = ({
 
     const downloadImage = useCallback(
         (dataUrl: string, type: ImageType) => {
+            const extension = type === 'jpeg' ? 'jpg' : type;
             const a = document.createElement('a');
-            a.setAttribute('download', `${diagramName}.${type}`);
+            a.setAttribute('download', exportFileName(diagramName, extension));
             a.setAttribute('href', dataUrl);
             a.click();
         },

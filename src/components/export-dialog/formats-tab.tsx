@@ -61,7 +61,7 @@ const FORMATS: FormatDef[] = [
     {
         id: 'json',
         label: 'JSON',
-        hint: 'Полная копия схемы',
+        hint: 'Копия схемы в JSON',
         extension: 'json',
         mime: 'application/json',
         build: (diagram) => ({ code: diagramToJSONOutput(diagram) }),

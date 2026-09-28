@@ -9,6 +9,7 @@ import {
     within,
 } from '@testing-library/react';
 import { DatabaseType } from '@/lib/domain/database-type';
+import type { DiagramFilter } from '@/lib/domain/diagram-filter/diagram-filter';
 import * as account from '@/lib/sqllab-account';
 import * as download from '@/lib/export/download';
 import * as reviewEvents from '@/lib/review-events';
@@ -16,13 +17,14 @@ import { shopDiagram } from '@/lib/export/__tests__/fixtures';
 import { ExportDialog } from '../export-dialog';
 
 let mockDiagram = shopDiagram();
+let mockFilter: DiagramFilter = {};
 const mockExportImage = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('@/hooks/use-chartdb', () => ({
     useChartDB: () => ({ currentDiagram: mockDiagram }),
 }));
 vi.mock('@/context/diagram-filter-context/use-diagram-filter', () => ({
-    useDiagramFilter: () => ({ filter: {} }),
+    useDiagramFilter: () => ({ filter: mockFilter }),
 }));
 vi.mock('@/hooks/use-export-image', () => ({
     useExportImage: () => ({ exportImage: mockExportImage }),
@@ -45,6 +47,7 @@ describe('ExportDialog', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
         mockDiagram = shopDiagram();
+        mockFilter = {};
         mockExportImage.mockClear();
         vi.spyOn(account, 'trackEvent').mockImplementation(() => undefined);
         vi.spyOn(reviewEvents, 'emitReviewSignal').mockImplementation(
@@ -250,6 +253,84 @@ describe('ExportDialog', () => {
                     action: 'download',
                 }
             );
+        });
+    });
+
+    describe('export scope', () => {
+        it('does not render the scope toggle on the sql tab when no filter is active', () => {
+            renderDialog('sql');
+            expect(
+                screen.queryByRole('radio', { name: 'Вся схема' })
+            ).not.toBeInTheDocument();
+            expect(
+                screen.queryByRole('radio', { name: 'Только видимое' })
+            ).not.toBeInTheDocument();
+        });
+
+        it('does not render the scope toggle on the formats tab when no filter is active', () => {
+            renderDialog('formats');
+            expect(
+                screen.queryByRole('radio', { name: 'Вся схема' })
+            ).not.toBeInTheDocument();
+        });
+
+        describe('with a filter hiding the orders table', () => {
+            beforeEach(() => {
+                // shopDiagram() has tables t-users (users) and t-orders (orders);
+                // this filter keeps only users visible.
+                mockFilter = { tableIds: ['t-users'] };
+            });
+
+            it('shows the toggle on the sql tab, defaults to "visible only", and switching to "full" restores the hidden table', () => {
+                renderDialog('sql');
+                expect(
+                    screen.getByRole('radio', { name: 'Только видимое' })
+                ).toHaveAttribute('aria-checked', 'true');
+                expect(
+                    screen.getByRole('radio', { name: 'Вся схема' })
+                ).toHaveAttribute('aria-checked', 'false');
+                expect(screen.getByTestId('code').textContent).not.toContain(
+                    'CREATE TABLE "orders"'
+                );
+
+                fireEvent.click(
+                    screen.getByRole('radio', { name: 'Вся схема' })
+                );
+                expect(screen.getByTestId('code').textContent).toContain(
+                    'CREATE TABLE "orders"'
+                );
+            });
+
+            it('shows the toggle on the formats tab and applies scope to the JSON format', () => {
+                renderDialog('formats');
+                fireEvent.click(screen.getByRole('button', { name: /JSON/ }));
+                expect(
+                    screen.getByText('Копия схемы в JSON')
+                ).toBeInTheDocument();
+                expect(
+                    screen.queryByText('Полная копия схемы')
+                ).not.toBeInTheDocument();
+                expect(screen.getByTestId('code').textContent).not.toContain(
+                    'orders'
+                );
+
+                fireEvent.click(
+                    screen.getByRole('radio', { name: 'Вся схема' })
+                );
+                expect(screen.getByTestId('code').textContent).toContain(
+                    'orders'
+                );
+            });
+
+            it('does not render the toggle while the image tab is active, even with an active filter', () => {
+                renderDialog('image');
+                expect(
+                    screen.queryByRole('radio', { name: 'Вся схема' })
+                ).not.toBeInTheDocument();
+                expect(
+                    screen.queryByRole('radio', { name: 'Только видимое' })
+                ).not.toBeInTheDocument();
+            });
         });
     });
 });

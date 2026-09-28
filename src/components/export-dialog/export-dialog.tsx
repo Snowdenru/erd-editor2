@@ -13,6 +13,7 @@ import {
     TabsList,
     TabsTrigger,
 } from '@/components/tabs/tabs';
+import { ToggleGroup, ToggleGroupItem } from '@/components/toggle/toggle-group';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { useDiagramFilter } from '@/context/diagram-filter-context/use-diagram-filter';
 import { applyFilterOnDiagram } from '@/lib/domain/diagram-filter/filter';
@@ -43,9 +44,10 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
     const { currentDiagram } = useChartDB();
     const { filter } = useDiagramFilter();
     const [tab, setTab] = useState<ExportTab>(initialTab);
+    const [scope, setScope] = useState<'visible' | 'full'>('visible');
 
-    // Экспортируем то, что видно на холсте: учитываем фильтр по схемам и таблицам
-    const diagram = useMemo(
+    // То, что видно на холсте с учётом фильтра по схемам/таблицам
+    const visibleDiagram = useMemo(
         () =>
             applyFilterOnDiagram({
                 diagram: currentDiagram,
@@ -53,6 +55,12 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
             }),
         [currentDiagram, filter]
     );
+
+    const hasActiveFilter =
+        Boolean(filter?.tableIds) || Boolean(filter?.schemaIds);
+
+    // Пользователь явно выбирает: экспортировать только видимое или всю схему целиком
+    const effectiveDiagram = scope === 'full' ? currentDiagram : visibleDiagram;
 
     const handleExported = (info: ExportedInfo) => {
         trackEvent('erd2_export', window.location.pathname, {
@@ -76,6 +84,33 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                         файл для документации.
                     </DialogDescription>
                 </DialogHeader>
+                {hasActiveFilter && tab !== 'image' && (
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/30 px-3 py-2 text-sm">
+                        <span className="text-muted-foreground">
+                            Фильтр холста скрывает часть схемы: видно{' '}
+                            {visibleDiagram.tables?.length ?? 0} из{' '}
+                            {currentDiagram.tables?.length ?? 0} таблиц
+                        </span>
+                        <ToggleGroup
+                            type="single"
+                            value={scope}
+                            onValueChange={(value) => {
+                                if (value)
+                                    setScope(value as 'visible' | 'full');
+                            }}
+                        >
+                            <ToggleGroupItem
+                                value="visible"
+                                className="text-xs"
+                            >
+                                Только видимое
+                            </ToggleGroupItem>
+                            <ToggleGroupItem value="full" className="text-xs">
+                                Вся схема
+                            </ToggleGroupItem>
+                        </ToggleGroup>
+                    </div>
+                )}
                 <Tabs
                     value={tab}
                     onValueChange={(value) => setTab(value as ExportTab)}
@@ -96,14 +131,17 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                         value="sql"
                         className="flex min-h-0 flex-1 flex-col pt-2"
                     >
-                        <SqlTab diagram={diagram} onExported={handleExported} />
+                        <SqlTab
+                            diagram={effectiveDiagram}
+                            onExported={handleExported}
+                        />
                     </TabsContent>
                     <TabsContent
                         value="formats"
                         className="flex min-h-0 flex-1 flex-col pt-2"
                     >
                         <FormatsTab
-                            diagram={diagram}
+                            diagram={effectiveDiagram}
                             onExported={handleExported}
                         />
                     </TabsContent>

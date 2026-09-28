@@ -4,6 +4,7 @@ import { useDialog } from '@/hooks/use-dialog';
 import { useLayout } from '@/hooks/use-layout';
 import type { SidebarSection } from '@/context/layout-context/layout-context';
 import { Toaster } from '@/components/toast/toaster';
+import { ExportHost } from '@/components/export-dialog/export-host';
 import { UpgradeWallHost } from '@/components/upgrade-wall/upgrade-wall-host';
 import { ReviewHost } from '@/components/review/review-host';
 import { SaveToCloudPrompt } from '@/components/save-to-cloud-prompt/save-to-cloud-prompt';
@@ -162,6 +163,7 @@ const EditorPageComponent: React.FC = () => {
                 </Suspense>
             </section>
             <UpgradeWallHost />
+            <ExportHost />
             <SaveToCloudPrompt />
             <ReviewHost />
             <Toaster />

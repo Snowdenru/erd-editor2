@@ -18,7 +18,9 @@ import {
     CodeXml,
     FileCode,
     Star,
+    Download,
 } from 'lucide-react';
+import { emitOpenExport } from '@/lib/export-dialog-events';
 import { emitReviewSignal } from '@/lib/review-events';
 import { Table, Workflow } from 'lucide-react';
 import { useLayout } from '@/hooks/use-layout';
@@ -73,6 +75,14 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
                 icon: FolderOpen,
                 onClick: () => {
                     openOpenDiagramDialog();
+                },
+                active: false,
+            },
+            {
+                title: 'Экспорт',
+                icon: Download,
+                onClick: () => {
+                    emitOpenExport();
                 },
                 active: false,
             },

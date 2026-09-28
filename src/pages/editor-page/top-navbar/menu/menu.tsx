@@ -14,10 +14,8 @@ import {
 } from '@/components/menubar/menubar';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { useDialog } from '@/hooks/use-dialog';
-import { useExportImage } from '@/hooks/use-export-image';
+import { emitOpenExport } from '@/lib/export-dialog-events';
 import { useLoginGate } from '@/hooks/use-login-gate';
-import { databaseTypeToLabelMap } from '@/lib/databases';
-import { DatabaseType } from '@/lib/domain/database-type';
 import {
     KeyboardShortcutAction,
     keyboardShortcutsForOS,
@@ -44,9 +42,7 @@ export const Menu: React.FC<MenuProps> = () => {
     const {
         openCreateDiagramDialog,
         openOpenDiagramDialog,
-        openExportSQLDialog,
         openImportDatabaseDialog,
-        openExportImageDialog,
         openExportDiagramDialog,
         openImportDiagramDialog,
     } = useDialog();
@@ -67,9 +63,8 @@ export const Menu: React.FC<MenuProps> = () => {
     } = useLocalConfig();
     const { t } = useTranslation();
     const { redo, undo, hasRedo, hasUndo } = useHistory();
-    const { exportImage } = useExportImage();
     const navigate = useNavigate();
-    const { guard, promptOpen, setPromptOpen } = useLoginGate();
+    const { promptOpen, setPromptOpen } = useLoginGate();
 
     const handleDeleteDiagramAction = useCallback(() => {
         deleteDiagram();
@@ -83,55 +78,6 @@ export const Menu: React.FC<MenuProps> = () => {
     const openDiagram = () => {
         openOpenDiagramDialog();
     };
-
-    const exportSVG = useCallback(() => {
-        if (!guard()) {
-            return;
-        }
-        exportImage('svg', {
-            scale: 1,
-            transparent: true,
-            includePatternBG: false,
-        });
-    }, [exportImage, guard]);
-
-    const exportPNG = useCallback(() => {
-        if (!guard()) {
-            return;
-        }
-        openExportImageDialog({
-            format: 'png',
-        });
-    }, [openExportImageDialog, guard]);
-
-    const exportJPG = useCallback(() => {
-        if (!guard()) {
-            return;
-        }
-        openExportImageDialog({
-            format: 'jpeg',
-        });
-    }, [openExportImageDialog, guard]);
-
-    const exportSQL = useCallback(
-        (databaseType: DatabaseType) => {
-            if (!guard()) {
-                return;
-            }
-            if (databaseType === DatabaseType.GENERIC) {
-                openExportSQLDialog({
-                    targetDatabaseType: DatabaseType.GENERIC,
-                });
-
-                return;
-            }
-
-            openExportSQLDialog({
-                targetDatabaseType: databaseType,
-            });
-        },
-        [openExportSQLDialog, guard]
-    );
 
     const showOrHideSidePanel = useCallback(() => {
         if (isSidePanelShowed) {
@@ -152,15 +98,6 @@ export const Menu: React.FC<MenuProps> = () => {
     const showOrHideMiniMap = useCallback(() => {
         setShowMiniMapOnCanvas(!showMiniMapOnCanvas);
     }, [showMiniMapOnCanvas, setShowMiniMapOnCanvas]);
-
-    const emojiAI = '✨';
-
-    const exportJSON = useCallback(() => {
-        if (!guard()) {
-            return;
-        }
-        openExportDiagramDialog({});
-    }, [guard, openExportDiagramDialog]);
 
     return (
         <>
@@ -229,109 +166,15 @@ export const Menu: React.FC<MenuProps> = () => {
                             </MenubarSubContent>
                         </MenubarSub>
                         <MenubarSeparator />
-                        <MenubarSub>
-                            <MenubarSubTrigger>
-                                {t('menu.actions.export_sql')}
-                            </MenubarSubTrigger>
-                            <MenubarSubContent>
-                                {databaseType === DatabaseType.GENERIC ? (
-                                    <MenubarItem
-                                        onClick={() =>
-                                            exportSQL(DatabaseType.GENERIC)
-                                        }
-                                    >
-                                        {databaseTypeToLabelMap['generic']}
-                                    </MenubarItem>
-                                ) : null}
-                                {databaseType !== DatabaseType.GENERIC ? (
-                                    <MenubarItem
-                                        onClick={() => exportSQL(databaseType)}
-                                    >
-                                        {databaseTypeToLabelMap[databaseType]}
-                                    </MenubarItem>
-                                ) : null}
-                                {databaseType !== DatabaseType.POSTGRESQL ? (
-                                    <MenubarItem
-                                        onClick={() =>
-                                            exportSQL(DatabaseType.POSTGRESQL)
-                                        }
-                                    >
-                                        {databaseTypeToLabelMap['postgresql']}
-                                        <MenubarShortcut className="text-base">
-                                            {emojiAI}
-                                        </MenubarShortcut>
-                                    </MenubarItem>
-                                ) : null}
-                                {databaseType !== DatabaseType.MYSQL ? (
-                                    <MenubarItem
-                                        onClick={() =>
-                                            exportSQL(DatabaseType.MYSQL)
-                                        }
-                                    >
-                                        {databaseTypeToLabelMap['mysql']}
-                                        <MenubarShortcut className="text-base">
-                                            {emojiAI}
-                                        </MenubarShortcut>
-                                    </MenubarItem>
-                                ) : null}
-                                {databaseType !== DatabaseType.SQL_SERVER ? (
-                                    <MenubarItem
-                                        onClick={() =>
-                                            exportSQL(DatabaseType.SQL_SERVER)
-                                        }
-                                    >
-                                        {databaseTypeToLabelMap['sql_server']}
-                                        <MenubarShortcut className="text-base">
-                                            {emojiAI}
-                                        </MenubarShortcut>
-                                    </MenubarItem>
-                                ) : null}
-                                {databaseType !== DatabaseType.MARIADB ? (
-                                    <MenubarItem
-                                        onClick={() =>
-                                            exportSQL(DatabaseType.MARIADB)
-                                        }
-                                    >
-                                        {databaseTypeToLabelMap['mariadb']}
-                                        <MenubarShortcut className="text-base">
-                                            {emojiAI}
-                                        </MenubarShortcut>
-                                    </MenubarItem>
-                                ) : null}
-                                {databaseType !== DatabaseType.SQLITE ? (
-                                    <MenubarItem
-                                        onClick={() =>
-                                            exportSQL(DatabaseType.SQLITE)
-                                        }
-                                    >
-                                        {databaseTypeToLabelMap['sqlite']}
-                                        <MenubarShortcut className="text-base">
-                                            {emojiAI}
-                                        </MenubarShortcut>
-                                    </MenubarItem>
-                                ) : null}
-                            </MenubarSubContent>
-                        </MenubarSub>
-                        <MenubarSub>
-                            <MenubarSubTrigger>
-                                {t('menu.actions.export_as')}
-                            </MenubarSubTrigger>
-                            <MenubarSubContent>
-                                <MenubarItem onClick={exportPNG}>
-                                    PNG
-                                </MenubarItem>
-                                <MenubarItem onClick={exportJPG}>
-                                    JPG
-                                </MenubarItem>
-                                <MenubarItem onClick={exportSVG}>
-                                    SVG
-                                </MenubarItem>
-                                <MenubarSeparator />
-                                <MenubarItem onClick={exportJSON}>
-                                    JSON
-                                </MenubarItem>
-                            </MenubarSubContent>
-                        </MenubarSub>
+                        <MenubarItem onClick={() => emitOpenExport('sql')}>
+                            Экспорт SQL…
+                        </MenubarItem>
+                        <MenubarItem onClick={() => emitOpenExport('image')}>
+                            Экспорт как изображение…
+                        </MenubarItem>
+                        <MenubarItem onClick={() => emitOpenExport('formats')}>
+                            Экспорт DBML, Mermaid, Markdown, JSON…
+                        </MenubarItem>
                         <MenubarSeparator />
                         <MenubarItem
                             onClick={() =>

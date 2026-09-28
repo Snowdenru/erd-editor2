@@ -15,7 +15,6 @@ import {
 import { useChartDB } from '@/hooks/use-chartdb';
 import { useDialog } from '@/hooks/use-dialog';
 import { emitOpenExport } from '@/lib/export-dialog-events';
-import { useLoginGate } from '@/hooks/use-login-gate';
 import {
     KeyboardShortcutAction,
     keyboardShortcutsForOS,
@@ -27,7 +26,6 @@ import { useTheme } from '@/hooks/use-theme';
 import { useLocalConfig } from '@/hooks/use-local-config';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAlert } from '@/context/alert-context/alert-context';
-import { LoginPromptDialog } from '@/components/login-prompt/login-prompt-dialog';
 import { TryProButton } from '@/components/try-pro/try-pro-button';
 
 export interface MenuProps {}
@@ -64,7 +62,6 @@ export const Menu: React.FC<MenuProps> = () => {
     const { t } = useTranslation();
     const { redo, undo, hasRedo, hasUndo } = useHistory();
     const navigate = useNavigate();
-    const { promptOpen, setPromptOpen } = useLoginGate();
 
     const handleDeleteDiagramAction = useCallback(() => {
         deleteDiagram();
@@ -365,11 +362,6 @@ export const Menu: React.FC<MenuProps> = () => {
                 </Link>
                 <TryProButton />
             </Menubar>
-            <LoginPromptDialog
-                open={promptOpen}
-                onOpenChange={setPromptOpen}
-                reason="export"
-            />
         </>
     );
 };

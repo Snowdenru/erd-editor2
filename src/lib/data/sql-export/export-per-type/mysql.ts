@@ -173,9 +173,13 @@ function mapMySQLType(typeName: string): string {
 export function exportMySQL({
     diagram,
     onlyRelationships = false,
+    dialectLabel = 'MySQL',
 }: {
     diagram: Diagram;
     onlyRelationships?: boolean;
+    // MariaDB shares this exporter (near-identical DDL syntax) - only the
+    // header comment needs to say which dialect was actually requested.
+    dialectLabel?: 'MySQL' | 'MariaDB';
 }): string {
     if (!diagram.tables || !diagram.relationships) {
         return '';
@@ -185,7 +189,7 @@ export function exportMySQL({
     const relationships = diagram.relationships;
 
     // Start SQL script
-    let sqlScript = '-- MySQL database export\n';
+    let sqlScript = `-- ${dialectLabel} database export\n`;
 
     if (!onlyRelationships) {
         // MySQL doesn't really use transactions for DDL statements but we'll add it for consistency

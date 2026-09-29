@@ -17,6 +17,10 @@ export type {
 export { exportPostgreSQLToMySQL } from './postgresql/to-mysql';
 export { exportPostgreSQLToMSSQL } from './postgresql/to-mssql';
 
+// Re-export MySQL/MariaDB exporters
+export { exportMySQLToPostgreSQL } from './mysql/to-postgresql';
+export { exportMySQLToMSSQL } from './mysql/to-mssql';
+
 // Re-export unsupported features detection
 export {
     detectUnsupportedFeatures,
@@ -39,6 +43,7 @@ const CROSS_DIALECT_SUPPORT: Partial<Record<DatabaseType, DatabaseType[]>> = {
         DatabaseType.MARIADB,
         DatabaseType.SQL_SERVER,
     ],
+    [DatabaseType.MYSQL]: [DatabaseType.POSTGRESQL, DatabaseType.SQL_SERVER],
 };
 
 /**
@@ -52,7 +57,8 @@ const CROSS_DIALECT_SUPPORT: Partial<Record<DatabaseType, DatabaseType[]>> = {
  * ```ts
  * hasCrossDialectSupport(DatabaseType.POSTGRESQL, DatabaseType.MYSQL) // true
  * hasCrossDialectSupport(DatabaseType.POSTGRESQL, DatabaseType.SQL_SERVER) // true
- * hasCrossDialectSupport(DatabaseType.MYSQL, DatabaseType.POSTGRESQL) // false (not yet implemented)
+ * hasCrossDialectSupport(DatabaseType.MYSQL, DatabaseType.POSTGRESQL) // true
+ * hasCrossDialectSupport(DatabaseType.MARIADB, DatabaseType.POSTGRESQL) // false (not yet implemented; MariaDB only converts to/from MySQL, see isSqlTargetAvailable)
  * ```
  */
 export function hasCrossDialectSupport(

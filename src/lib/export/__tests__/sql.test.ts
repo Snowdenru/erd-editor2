@@ -61,7 +61,19 @@ describe('isSqlTargetAvailable', () => {
         expect(isSqlTargetAvailable(POSTGRESQL, SQL_SERVER)).toBe(true);
         expect(isSqlTargetAvailable(POSTGRESQL, SQLITE)).toBe(false);
         expect(isSqlTargetAvailable(POSTGRESQL, ORACLE)).toBe(false);
-        expect(isSqlTargetAvailable(MYSQL, POSTGRESQL)).toBe(false);
+    });
+
+    it('allows the deterministic MySQL conversions, but not yet from MariaDB', () => {
+        expect(isSqlTargetAvailable(MYSQL, POSTGRESQL)).toBe(true);
+        expect(isSqlTargetAvailable(MYSQL, SQL_SERVER)).toBe(true);
+        expect(isSqlTargetAvailable(MYSQL, SQLITE)).toBe(false);
+        expect(isSqlTargetAvailable(MARIADB, POSTGRESQL)).toBe(false);
+        expect(isSqlTargetAvailable(MARIADB, SQL_SERVER)).toBe(false);
+    });
+
+    it('treats MySQL and MariaDB as the same DDL-compatible family in either direction', () => {
+        expect(isSqlTargetAvailable(MYSQL, MARIADB)).toBe(true);
+        expect(isSqlTargetAvailable(MARIADB, MYSQL)).toBe(true);
     });
 });
 
@@ -91,6 +103,18 @@ describe('generateSql', () => {
 
     it('returns an empty string for a diagram without tables', () => {
         expect(generateSql(makeDiagram(), POSTGRESQL)).toBe('');
+    });
+
+    it('renders MySQL-family cross exports with the requested dialect label, not the source one', () => {
+        const mysqlDiagram = { ...shopDiagram(), databaseType: MYSQL };
+        const asMariaDb = generateSql(mysqlDiagram, MARIADB);
+        expect(asMariaDb).toContain('-- MariaDB database export');
+        expect(asMariaDb).toContain('CREATE TABLE');
+        expect(asMariaDb).toContain('`users`');
+
+        const mariaDbDiagram = { ...shopDiagram(), databaseType: MARIADB };
+        const asMysql = generateSql(mariaDbDiagram, MYSQL);
+        expect(asMysql).toContain('-- MySQL database export');
     });
 
     it('does not mutate the diagram it is given', () => {

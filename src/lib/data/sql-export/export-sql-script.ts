@@ -11,6 +11,8 @@ import { exportMySQL } from './export-per-type/mysql';
 import {
     exportPostgreSQLToMySQL,
     exportPostgreSQLToMSSQL,
+    exportMySQLToPostgreSQL,
+    exportMySQLToMSSQL,
 } from './cross-dialect';
 import { escapeSQLComment } from './export-per-type/common';
 import {
@@ -170,8 +172,19 @@ export const exportBaseSQL = ({
         return '';
     }
 
-    if (!isDBMLFlow && diagram.databaseType === targetDatabaseType) {
-        switch (diagram.databaseType) {
+    // MySQL and MariaDB are DDL-compatible for everything this exporter
+    // generates (MariaDB is a drop-in-compatible fork), so they share the
+    // same renderer in either direction - no real "cross-dialect" work needed.
+    const isMySqlFamily = (type: DatabaseType) =>
+        type === DatabaseType.MYSQL || type === DatabaseType.MARIADB;
+
+    if (
+        !isDBMLFlow &&
+        (diagram.databaseType === targetDatabaseType ||
+            (isMySqlFamily(diagram.databaseType) &&
+                isMySqlFamily(targetDatabaseType)))
+    ) {
+        switch (targetDatabaseType) {
             case DatabaseType.SQL_SERVER:
                 return exportMSSQL({ diagram, onlyRelationships });
             case DatabaseType.POSTGRESQL:
@@ -179,15 +192,24 @@ export const exportBaseSQL = ({
             case DatabaseType.SQLITE:
                 return exportSQLite({ diagram, onlyRelationships });
             case DatabaseType.MYSQL:
+                return exportMySQL({
+                    diagram,
+                    onlyRelationships,
+                    dialectLabel: 'MySQL',
+                });
             case DatabaseType.MARIADB:
-                return exportMySQL({ diagram, onlyRelationships });
+                return exportMySQL({
+                    diagram,
+                    onlyRelationships,
+                    dialectLabel: 'MariaDB',
+                });
             default:
                 return exportPostgreSQL({ diagram, onlyRelationships });
         }
     }
 
-    // Deterministic cross-dialect exports (PostgreSQL to MySQL/SQL Server)
-    // These do not use LLM and provide consistent, predictable output
+    // Deterministic cross-dialect exports (do not use LLM, consistent and
+    // predictable output)
     if (!isDBMLFlow && diagram.databaseType === DatabaseType.POSTGRESQL) {
         if (
             targetDatabaseType === DatabaseType.MYSQL ||
@@ -197,6 +219,20 @@ export const exportBaseSQL = ({
         }
         if (targetDatabaseType === DatabaseType.SQL_SERVER) {
             return exportPostgreSQLToMSSQL({ diagram, onlyRelationships });
+        }
+    }
+
+    // MariaDB is intentionally excluded here even though it shares MySQL's
+    // renderer above: these two converters were only written and reviewed
+    // against MySQL's own type list (mysql-data-types.ts), which is not
+    // identical to MariaDB's (see mariadb-data-types.ts) - extending this to
+    // MariaDB needs its own pass, not an assumption that the lists match.
+    if (!isDBMLFlow && diagram.databaseType === DatabaseType.MYSQL) {
+        if (targetDatabaseType === DatabaseType.POSTGRESQL) {
+            return exportMySQLToPostgreSQL({ diagram, onlyRelationships });
+        }
+        if (targetDatabaseType === DatabaseType.SQL_SERVER) {
+            return exportMySQLToMSSQL({ diagram, onlyRelationships });
         }
     }
 

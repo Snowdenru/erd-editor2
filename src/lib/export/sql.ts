@@ -24,13 +24,20 @@ const NATIVE_DIALECTS = new Set<DatabaseType>([
     DatabaseType.SQLITE,
 ]);
 
-// Без ИИ: Generic, свой диалект схемы (если он нативный) и детерминированные конверсии из PostgreSQL
+// MySQL и MariaDB рендерятся одним и тем же нативным экспортёром в обе
+// стороны (MariaDB DDL-совместима с MySQL) — это не «конверсия», а один диалект
+const isMySqlFamily = (type: DatabaseType) =>
+    type === DatabaseType.MYSQL || type === DatabaseType.MARIADB;
+
+// Без ИИ: Generic, свой диалект схемы (если он нативный), MySQL/MariaDB
+// друг в друга и детерминированные конверсии из PostgreSQL/MySQL
 export const isSqlTargetAvailable = (
     source: DatabaseType,
     target: DatabaseType
 ): boolean =>
     target === DatabaseType.GENERIC ||
     (source === target && NATIVE_DIALECTS.has(target)) ||
+    (isMySqlFamily(source) && isMySqlFamily(target)) ||
     hasCrossDialectSupport(source, target);
 
 export const pickDefaultSqlTarget = (source: DatabaseType): DatabaseType =>

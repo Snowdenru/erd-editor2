@@ -6,8 +6,8 @@ export interface CompareRow {
 }
 
 export const COMPARE_ROWS: CompareRow[] = [
-    { label: 'Таблиц в схеме', free: '10', erd: '100', pro: '200' },
-    { label: 'Схем в облаке', free: '3', erd: '25', pro: 'без лимита' },
+    { label: 'Таблиц в схеме', free: '10', erd: '200', pro: '200' },
+    { label: 'Схем в облаке', free: '3', erd: 'без лимита', pro: 'без лимита' },
     {
         label: 'Курсы SQL и вся платформа',
         free: 'как сейчас',

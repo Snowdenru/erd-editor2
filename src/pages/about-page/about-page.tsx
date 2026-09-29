@@ -200,7 +200,7 @@ const FAQ_ITEMS: Array<{ question: string; answer: string }> = [
     },
     {
         question: 'Чем Free отличается от ERD Pro?',
-        answer: 'Free — схемы до 10 таблиц и 3 схемы в облаке. ERD Pro — до 100 таблиц и 25 схем в облаке; общий Pro включает ERD Pro и курсы. Подробности на странице «Тарифы».',
+        answer: 'Free — схемы до 10 таблиц и 3 схемы в облаке. ERD Pro — до 200 таблиц и без лимита схем в облаке; общий Pro даёт то же самое плюс курсы. Подробности на странице «Тарифы».',
     },
     {
         question: 'В каких форматах можно экспортировать схему?',
@@ -482,7 +482,7 @@ const AboutPageComponent: React.FC = () => {
                     <h2 className="mb-2 text-2xl font-bold">Free и ERD Pro</h2>
                     <p className="mb-4 text-muted-foreground">
                         Бесплатно — схемы до 10 таблиц и 3 схемы в облаке. ERD
-                        Pro от 149 ₽: до 100 таблиц и 25 схем в облаке.
+                        Pro от 149 ₽: до 200 таблиц, схемы в облаке без лимита.
                     </p>
                     <Button asChild variant="outline">
                         <Link to="/pricing">Тарифы</Link>

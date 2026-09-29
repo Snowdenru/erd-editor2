@@ -18,7 +18,7 @@ import {
     CodeXml,
     FileCode,
     Star,
-    Download,
+    FileOutput,
 } from 'lucide-react';
 import { emitOpenExport } from '@/lib/export-dialog-events';
 import { emitReviewSignal } from '@/lib/review-events';
@@ -75,14 +75,6 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
                 icon: FolderOpen,
                 onClick: () => {
                     openOpenDiagramDialog();
-                },
-                active: false,
-            },
-            {
-                title: 'Экспорт',
-                icon: Download,
-                onClick: () => {
-                    emitOpenExport();
                 },
                 active: false,
             },
@@ -150,6 +142,14 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
                     selectVisualsTab('areas');
                 },
                 active: selectedSidebarSection === 'visuals',
+            },
+            {
+                title: 'Экспорт',
+                icon: FileOutput,
+                onClick: () => {
+                    emitOpenExport();
+                },
+                active: false,
             },
         ],
         [

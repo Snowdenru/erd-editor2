@@ -174,8 +174,7 @@ export const mysqlToSQLServer: TypeMappingTable = {
     smallint: { targetType: 'SMALLINT' },
     mediumint: {
         targetType: 'INT',
-        conversionNote:
-            'SQL Server has no 3-byte integer type; widened to INT',
+        conversionNote: 'SQL Server has no 3-byte integer type; widened to INT',
         includeInlineComment: true,
     },
     bigint: { targetType: 'BIGINT' },

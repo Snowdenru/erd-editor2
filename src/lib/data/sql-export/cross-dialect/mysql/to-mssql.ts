@@ -241,8 +241,10 @@ export function exportMySQLToMSSQL({
                         const fieldName = `[${field.name}]`;
                         const isIndexed = indexedFieldIds.has(field.id);
 
-                        const { typeName, inlineComment } =
-                            mapMySQLTypeToMSSQL(field, isIndexed);
+                        const { typeName, inlineComment } = mapMySQLTypeToMSSQL(
+                            field,
+                            isIndexed
+                        );
 
                         const notNull = field.nullable ? '' : ' NOT NULL';
 
@@ -293,73 +295,68 @@ export function exportMySQLToMSSQL({
                               )
                               .join('')
                         : ''
-                }\n);\nGO${
-                    (() => {
-                        const validIndexes = table.indexes
-                            .map((index) => {
-                                if (index.isPrimaryKey) {
-                                    return '';
-                                }
+                }\n);\nGO${(() => {
+                    const validIndexes = table.indexes
+                        .map((index) => {
+                            if (index.isPrimaryKey) {
+                                return '';
+                            }
 
-                                const indexFields = index.fieldIds
-                                    .map((fieldId) =>
-                                        table.fields.find(
-                                            (f) => f.id === fieldId
-                                        )
+                            const indexFields = index.fieldIds
+                                .map((fieldId) =>
+                                    table.fields.find((f) => f.id === fieldId)
+                                )
+                                .filter(Boolean);
+
+                            if (
+                                primaryKeyFields.length ===
+                                    indexFields.length &&
+                                primaryKeyFields.every((pk) =>
+                                    indexFields.some(
+                                        (field) => field && field.id === pk.id
                                     )
-                                    .filter(Boolean);
+                                )
+                            ) {
+                                return '';
+                            }
 
-                                if (
-                                    primaryKeyFields.length ===
-                                        indexFields.length &&
-                                    primaryKeyFields.every((pk) =>
-                                        indexFields.some(
-                                            (field) =>
-                                                field && field.id === pk.id
-                                        )
-                                    )
-                                ) {
-                                    return '';
-                                }
+                            const indexType = (
+                                index.type || 'btree'
+                            ).toLowerCase();
+                            const indexTypeMapping =
+                                mysqlIndexTypeToSQLServer[indexType];
+                            const indexInlineComment =
+                                indexTypeMapping?.note ?? null;
 
-                                const indexType = (
-                                    index.type || 'btree'
-                                ).toLowerCase();
-                                const indexTypeMapping =
-                                    mysqlIndexTypeToSQLServer[indexType];
-                                const indexInlineComment =
-                                    indexTypeMapping?.note ?? null;
+                            const indexName = table.schema
+                                ? `[${table.schema}_${index.name}]`
+                                : `[${index.name}]`;
 
-                                const indexName = table.schema
-                                    ? `[${table.schema}_${index.name}]`
-                                    : `[${index.name}]`;
+                            const indexFieldNames = indexFields
+                                .map((field) =>
+                                    field ? `[${field.name}]` : ''
+                                )
+                                .filter(Boolean);
 
-                                const indexFieldNames = indexFields
-                                    .map((field) =>
-                                        field ? `[${field.name}]` : ''
-                                    )
-                                    .filter(Boolean);
+                            if (indexFieldNames.length > 32) {
+                                indexFieldNames.length = 32;
+                            }
 
-                                if (indexFieldNames.length > 32) {
-                                    indexFieldNames.length = 32;
-                                }
+                            const commentStr = indexInlineComment
+                                ? ` -- ${indexInlineComment}`
+                                : '';
 
-                                const commentStr = indexInlineComment
-                                    ? ` -- ${indexInlineComment}`
-                                    : '';
+                            return indexFieldNames.length > 0
+                                ? `CREATE ${index.unique ? 'UNIQUE ' : ''}${indexTypeMapping?.targetType === 'CLUSTERED' ? 'CLUSTERED ' : 'NONCLUSTERED '}INDEX ${indexName} ON ${tableName} (${indexFieldNames.join(', ')});${commentStr}`
+                                : '';
+                        })
+                        .filter(Boolean)
+                        .sort((a, b) => a.localeCompare(b));
 
-                                return indexFieldNames.length > 0
-                                    ? `CREATE ${index.unique ? 'UNIQUE ' : ''}${indexTypeMapping?.targetType === 'CLUSTERED' ? 'CLUSTERED ' : 'NONCLUSTERED '}INDEX ${indexName} ON ${tableName} (${indexFieldNames.join(', ')});${commentStr}`
-                                    : '';
-                            })
-                            .filter(Boolean)
-                            .sort((a, b) => a.localeCompare(b));
-
-                        return validIndexes.length > 0
-                            ? `\n-- Indexes\n${validIndexes.join('\nGO\n')}\nGO`
-                            : '';
-                    })()
-                }`;
+                    return validIndexes.length > 0
+                        ? `\n-- Indexes\n${validIndexes.join('\nGO\n')}\nGO`
+                        : '';
+                })()}`;
             })
             .filter(Boolean)
             .join('\n');

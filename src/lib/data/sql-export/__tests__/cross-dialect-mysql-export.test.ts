@@ -376,9 +376,7 @@ describe('MySQL Cross-Dialect Export Tests', () => {
 
                 const result = exportMySQLToPostgreSQL({ diagram });
 
-                expect(result).toContain(
-                    'CREATE SCHEMA IF NOT EXISTS "app"'
-                );
+                expect(result).toContain('CREATE SCHEMA IF NOT EXISTS "app"');
                 expect(result).toContain('"app"."users"');
             });
         });

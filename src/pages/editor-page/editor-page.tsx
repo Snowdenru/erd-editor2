@@ -33,6 +33,7 @@ import { DiffProvider } from '@/context/diff-context/diff-provider';
 import { TopNavbarMock } from './top-navbar/top-navbar-mock';
 import { DiagramFilterProvider } from '@/context/diagram-filter-context/diagram-filter-provider';
 import { SqllabSyncProvider } from '@/components/sqllab-sync/sqllab-sync-provider';
+import { CloudPullProvider } from '@/components/cloud-pull/cloud-pull-provider';
 import { Erd2Tracker } from '@/components/erd2-tracker/erd2-tracker';
 
 // Глубокие ссылки со страницы /about: ?open=import, ?tab=ddl|dbml|tables|refs.
@@ -181,6 +182,7 @@ export const EditorPage: React.FC = () => (
                             <RedoUndoStackProvider>
                                 <DiffProvider>
                                     <ChartDBProvider>
+                                        <CloudPullProvider />
                                         <SqllabSyncProvider />
                                         <Erd2Tracker />
                                         <DiagramFilterProvider>

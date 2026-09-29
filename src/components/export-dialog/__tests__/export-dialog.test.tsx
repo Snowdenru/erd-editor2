@@ -19,6 +19,9 @@ import { ExportDialog } from '../export-dialog';
 let mockDiagram = shopDiagram();
 let mockFilter: DiagramFilter = {};
 const mockExportImage = vi.fn().mockResolvedValue(undefined);
+const mockPreviewImage = vi
+    .fn()
+    .mockResolvedValue('data:image/png;base64,PREVIEW');
 
 vi.mock('@/hooks/use-chartdb', () => ({
     useChartDB: () => ({ currentDiagram: mockDiagram }),
@@ -27,7 +30,10 @@ vi.mock('@/context/diagram-filter-context/use-diagram-filter', () => ({
     useDiagramFilter: () => ({ filter: mockFilter }),
 }));
 vi.mock('@/hooks/use-export-image', () => ({
-    useExportImage: () => ({ exportImage: mockExportImage }),
+    useExportImage: () => ({
+        exportImage: mockExportImage,
+        previewImage: mockPreviewImage,
+    }),
 }));
 vi.mock('@/hooks/use-theme', () => ({
     useTheme: () => ({ effectiveTheme: 'light' }),
@@ -49,6 +55,7 @@ describe('ExportDialog', () => {
         mockDiagram = shopDiagram();
         mockFilter = {};
         mockExportImage.mockClear();
+        mockPreviewImage.mockClear();
         vi.spyOn(account, 'trackEvent').mockImplementation(() => undefined);
         vi.spyOn(reviewEvents, 'emitReviewSignal').mockImplementation(
             () => undefined

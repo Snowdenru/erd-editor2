@@ -440,8 +440,153 @@ export const ExportImageProvider: React.FC<React.PropsWithChildren> = ({
         ]
     );
 
+    // Lightweight sibling of exportImage: same DOM snapshot, but skips the
+    // watermark canvas compositing and download side effect so it's fast
+    // enough to re-run on every option change for a live preview. Renders
+    // at pixelRatio 1 regardless of the export scale the user picked, since
+    // a thumbnail doesn't need full export resolution.
+    const previewImage = useCallback(
+        async (
+            type: ImageType,
+            {
+                includePatternBG,
+                transparent,
+            }: { includePatternBG: boolean; transparent: boolean }
+        ): Promise<string> => {
+            const viewportElement = window.document.querySelector(
+                '.react-flow__viewport'
+            ) as HTMLElement | null;
+            const reactFlowBounds = document
+                .querySelector('.react-flow')
+                ?.getBoundingClientRect();
+
+            if (!viewportElement || !reactFlowBounds) {
+                throw new Error('Could not find React Flow container');
+            }
+
+            const viewport = getViewport();
+            const imageCreateFn = imageCreatorMap[type];
+
+            let patternOverlay: SVGSVGElement | null = null;
+            if (includePatternBG) {
+                patternOverlay = document.createElementNS(
+                    'http://www.w3.org/2000/svg',
+                    'svg'
+                );
+                patternOverlay.style.position = 'absolute';
+                patternOverlay.style.top = '0';
+                patternOverlay.style.left = '0';
+                patternOverlay.style.width = '100%';
+                patternOverlay.style.height = '100%';
+                patternOverlay.style.overflow = 'visible';
+                patternOverlay.style.zIndex = '-50';
+                patternOverlay.setAttribute(
+                    'viewBox',
+                    `0 0 ${reactFlowBounds.width} ${reactFlowBounds.height}`
+                );
+
+                const defs = document.createElementNS(
+                    'http://www.w3.org/2000/svg',
+                    'defs'
+                );
+                const pattern = document.createElementNS(
+                    'http://www.w3.org/2000/svg',
+                    'pattern'
+                );
+                pattern.setAttribute('id', 'preview-background-pattern');
+                pattern.setAttribute('width', String(16 * viewport.zoom));
+                pattern.setAttribute('height', String(16 * viewport.zoom));
+                pattern.setAttribute('patternUnits', 'userSpaceOnUse');
+                pattern.setAttribute(
+                    'patternTransform',
+                    `translate(${viewport.x % (16 * viewport.zoom)} ${viewport.y % (16 * viewport.zoom)})`
+                );
+                const dot = document.createElementNS(
+                    'http://www.w3.org/2000/svg',
+                    'circle'
+                );
+                const dotSize = viewport.zoom * 0.5;
+                dot.setAttribute('cx', String(viewport.zoom));
+                dot.setAttribute('cy', String(viewport.zoom));
+                dot.setAttribute('r', String(dotSize));
+                dot.setAttribute(
+                    'fill',
+                    effectiveTheme === 'light' ? '#92939C' : '#777777'
+                );
+                pattern.appendChild(dot);
+                defs.appendChild(pattern);
+                patternOverlay.appendChild(defs);
+
+                const backgroundRect = document.createElementNS(
+                    'http://www.w3.org/2000/svg',
+                    'rect'
+                );
+                const bgPadding = 2000;
+                backgroundRect.setAttribute(
+                    'x',
+                    String(-viewport.x - bgPadding)
+                );
+                backgroundRect.setAttribute(
+                    'y',
+                    String(-viewport.y - bgPadding)
+                );
+                backgroundRect.setAttribute(
+                    'width',
+                    String(reactFlowBounds.width + 2 * bgPadding)
+                );
+                backgroundRect.setAttribute(
+                    'height',
+                    String(reactFlowBounds.height + 2 * bgPadding)
+                );
+                backgroundRect.setAttribute(
+                    'fill',
+                    'url(#preview-background-pattern)'
+                );
+                patternOverlay.appendChild(backgroundRect);
+
+                viewportElement.insertBefore(
+                    patternOverlay,
+                    viewportElement.firstChild
+                );
+            }
+
+            const baseOptions = {
+                width: reactFlowBounds.width,
+                height: reactFlowBounds.height,
+                style: {
+                    width: `${reactFlowBounds.width}px`,
+                    height: `${reactFlowBounds.height}px`,
+                    transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
+                },
+                quality: 1,
+                pixelRatio: 1,
+                skipFonts: true,
+            };
+
+            try {
+                return await imageCreateFn(
+                    viewportElement,
+                    type === 'svg'
+                        ? baseOptions
+                        : {
+                              ...baseOptions,
+                              backgroundColor: getBackgroundColor(
+                                  effectiveTheme,
+                                  transparent
+                              ),
+                          }
+                );
+            } finally {
+                if (patternOverlay) {
+                    viewportElement.removeChild(patternOverlay);
+                }
+            }
+        },
+        [effectiveTheme, getBackgroundColor, getViewport, imageCreatorMap]
+    );
+
     return (
-        <exportImageContext.Provider value={{ exportImage }}>
+        <exportImageContext.Provider value={{ exportImage, previewImage }}>
             {children}
         </exportImageContext.Provider>
     );

@@ -1,8 +1,9 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import * as account from '@/lib/sqllab-account';
+import type { ErdLimits } from '@/lib/sqllab-account';
 import { TryProButton } from '../try-pro-button';
 
 const renderButton = () =>
@@ -48,5 +49,62 @@ describe('TryProButton', () => {
 
         fireEvent.click(cta);
         expect(screen.queryByRole('dialog')).toBeNull();
+    });
+
+    it('shows nothing while the tier of a logged-in user is still loading', () => {
+        vi.spyOn(account, 'isLoggedIn').mockReturnValue(true);
+        vi.spyOn(account, 'fetchLimits').mockReturnValue(
+            new Promise<ErdLimits>(() => undefined)
+        );
+        renderButton();
+        expect(screen.queryByText('Улучшить до Pro')).toBeNull();
+        expect(screen.queryByText(/активен/)).toBeNull();
+    });
+
+    it('shows an "ERD Pro активен" badge instead of the upsell for ERD Pro subscribers', async () => {
+        vi.spyOn(account, 'isLoggedIn').mockReturnValue(true);
+        vi.spyOn(account, 'fetchLimits').mockResolvedValue({
+            tier: 'erd',
+            max_tables: 200,
+            max_cloud_diagrams: null,
+            cloud_diagrams_used: 0,
+        });
+        renderButton();
+
+        await waitFor(() =>
+            expect(screen.getByText('ERD Pro активен')).toBeInTheDocument()
+        );
+        expect(screen.queryByText('Улучшить до Pro')).toBeNull();
+        expect(
+            screen.getByRole('link', { name: /erd pro активен/i })
+        ).toHaveAttribute('href', '/tools/erd2/pricing');
+    });
+
+    it('shows a "Pro активен" badge instead of the upsell for platform Pro subscribers', async () => {
+        vi.spyOn(account, 'isLoggedIn').mockReturnValue(true);
+        vi.spyOn(account, 'fetchLimits').mockResolvedValue({
+            tier: 'pro',
+            max_tables: 200,
+            max_cloud_diagrams: null,
+            cloud_diagrams_used: 0,
+        });
+        renderButton();
+
+        await waitFor(() =>
+            expect(screen.getByText('Pro активен')).toBeInTheDocument()
+        );
+        expect(screen.queryByText('Улучшить до Pro')).toBeNull();
+    });
+
+    it('falls back to the free-tier upsell if fetching the tier fails', async () => {
+        vi.spyOn(account, 'isLoggedIn').mockReturnValue(true);
+        vi.spyOn(account, 'fetchLimits').mockRejectedValue(
+            new Error('network')
+        );
+        renderButton();
+
+        await waitFor(() =>
+            expect(screen.getByText('Улучшить до Pro')).toBeInTheDocument()
+        );
     });
 });

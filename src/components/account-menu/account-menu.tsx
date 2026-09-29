@@ -25,6 +25,12 @@ import {
 } from '@/lib/sqllab-account';
 import { logout } from '@/lib/sqllab-auth';
 import { SupportDialog } from '@/components/support/support-dialog';
+import { useErdTier } from '@/hooks/use-erd-tier';
+
+const TIER_LABEL: Record<'erd' | 'pro', string> = {
+    erd: 'ERD Pro',
+    pro: 'Pro (вся платформа)',
+};
 
 const getInitials = (fullName: string, email: string): string => {
     const parts = fullName.trim().split(/\s+/).filter(Boolean);
@@ -41,6 +47,7 @@ export const AccountMenu: React.FC = () => {
     const { openOpenDiagramDialog } = useDialog();
     const [profile, setProfile] = useState<UserProfileSummary | null>(null);
     const [supportOpen, setSupportOpen] = useState(false);
+    const tier = useErdTier();
 
     useEffect(() => {
         if (!isLoggedIn()) return;
@@ -120,6 +127,11 @@ export const AccountMenu: React.FC = () => {
                             <span className="text-xs font-normal text-muted-foreground">
                                 {profile?.email ?? ''}
                             </span>
+                            {tier === 'erd' || tier === 'pro' ? (
+                                <span className="mt-1 w-fit rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                                    Тариф: {TIER_LABEL[tier]}
+                                </span>
+                            ) : null}
                         </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />

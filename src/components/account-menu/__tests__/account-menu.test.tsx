@@ -28,6 +28,14 @@ describe('AccountMenu', () => {
         vi.restoreAllMocks();
         openOpenDiagramDialog.mockClear();
         assign.mockClear();
+        // Реальный fetchLimits() бил бы по сети в jsdom - по умолчанию free,
+        // тесты на бейдж тарифа переопределяют это сами.
+        vi.spyOn(account, 'fetchLimits').mockResolvedValue({
+            tier: 'free',
+            max_tables: 10,
+            max_cloud_diagrams: 3,
+            cloud_diagrams_used: 0,
+        });
         Object.defineProperty(window, 'location', {
             configurable: true,
             value: {
@@ -128,6 +136,65 @@ describe('AccountMenu', () => {
         fireEvent.click(support);
         expect(await screen.findByRole('dialog')).toBeInTheDocument();
         expect(screen.getByText('sqllab@yandex.ru')).toBeInTheDocument();
+    });
+
+    it('shows no tier badge for a user on the free tier', async () => {
+        vi.spyOn(account, 'isLoggedIn').mockReturnValue(true);
+        vi.spyOn(account, 'fetchProfile').mockResolvedValue({
+            full_name: 'Denis S',
+            email: 'den@example.com',
+        });
+        renderMenu();
+        await waitFor(() =>
+            expect(screen.getByText('Denis S')).toBeInTheDocument()
+        );
+        fireEvent.pointerDown(screen.getByText('Denis S'));
+
+        expect(screen.queryByText(/Тариф:/)).toBeNull();
+    });
+
+    it('shows a "Тариф: ERD Pro" badge for ERD Pro subscribers', async () => {
+        vi.spyOn(account, 'isLoggedIn').mockReturnValue(true);
+        vi.spyOn(account, 'fetchProfile').mockResolvedValue({
+            full_name: 'Denis S',
+            email: 'den@example.com',
+        });
+        vi.spyOn(account, 'fetchLimits').mockResolvedValue({
+            tier: 'erd',
+            max_tables: 200,
+            max_cloud_diagrams: null,
+            cloud_diagrams_used: 0,
+        });
+        renderMenu();
+        await waitFor(() =>
+            expect(screen.getByText('Denis S')).toBeInTheDocument()
+        );
+        fireEvent.pointerDown(screen.getByText('Denis S'));
+
+        expect(await screen.findByText('Тариф: ERD Pro')).toBeInTheDocument();
+    });
+
+    it('shows a "Тариф: Pro (вся платформа)" badge for platform Pro subscribers', async () => {
+        vi.spyOn(account, 'isLoggedIn').mockReturnValue(true);
+        vi.spyOn(account, 'fetchProfile').mockResolvedValue({
+            full_name: 'Denis S',
+            email: 'den@example.com',
+        });
+        vi.spyOn(account, 'fetchLimits').mockResolvedValue({
+            tier: 'pro',
+            max_tables: 200,
+            max_cloud_diagrams: null,
+            cloud_diagrams_used: 0,
+        });
+        renderMenu();
+        await waitFor(() =>
+            expect(screen.getByText('Denis S')).toBeInTheDocument()
+        );
+        fireEvent.pointerDown(screen.getByText('Denis S'));
+
+        expect(
+            await screen.findByText('Тариф: Pro (вся платформа)')
+        ).toBeInTheDocument();
     });
 
     it('"Выйти" logs out and redirects to the app root', async () => {

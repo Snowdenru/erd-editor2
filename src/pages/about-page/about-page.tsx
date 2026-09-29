@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import AboutHeroImage from '@/assets/about/hero-light.png';
@@ -17,6 +17,7 @@ import {
     AccordionContent,
 } from '@/components/accordion/accordion';
 import { DatabaseType } from '@/lib/domain/database-type';
+import { trackPageView } from '@/lib/sqllab-account';
 import { databaseLogoMap } from '@/lib/databases';
 import {
     Check,
@@ -213,6 +214,10 @@ const FAQ_ITEMS: Array<{ question: string; answer: string }> = [
 ];
 
 const AboutPageComponent: React.FC = () => {
+    useEffect(() => {
+        trackPageView(window.location.pathname);
+    }, []);
+
     return (
         <>
             <Helmet>

@@ -126,6 +126,45 @@ export function trackEvent(
     }
 }
 
+const VISITOR_KEY = '_vid';
+
+// Тот же анонимный id посетителя, что у основного сайта (localStorage на общем origin sqllab.ru):
+// уникальные посетители не задваиваются при переходе между сайтом и ERD2.
+function getVisitorId(): string {
+    try {
+        let id = localStorage.getItem(VISITOR_KEY);
+        if (!id) {
+            id = Math.random().toString(36).slice(2) + Date.now().toString(36);
+            localStorage.setItem(VISITOR_KEY, id);
+        }
+        return id;
+    } catch {
+        return '';
+    }
+}
+
+// Просмотр страницы в общий счётчик платформы (/admin-dashboard/analytics → «Посещения страниц»).
+// Ботов отсеивает бэкенд. Ошибки глотаем — аналитика не должна ломать страницу.
+export function trackPageView(path: string): void {
+    try {
+        const utmSource = new URLSearchParams(window.location.search).get(
+            'utm_source'
+        );
+        void authFetch('/api/auth/pageview/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                visitor_id: getVisitorId(),
+                utm_source: utmSource ?? '',
+                path,
+                session_id: getSessionId(),
+            }),
+        }).catch(() => undefined);
+    } catch {
+        // ignore
+    }
+}
+
 export interface UserProfileSummary {
     full_name: string;
     email: string;

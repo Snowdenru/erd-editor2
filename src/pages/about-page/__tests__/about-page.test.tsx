@@ -1,9 +1,11 @@
 import React from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { AboutPage } from '../about-page';
+
+vi.mock('@/lib/sqllab-account', () => ({ trackPageView: vi.fn() }));
 
 describe('AboutPage', () => {
     it('renders the hero heading and primary CTA pointing at the editor root, respecting the app basename', () => {

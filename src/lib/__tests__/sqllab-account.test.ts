@@ -9,6 +9,7 @@ import {
     initiatePayment,
     isLoggedIn,
     trackEvent,
+    trackPageView,
 } from '../sqllab-account';
 
 const json = (body: unknown, status = 200) =>
@@ -125,5 +126,23 @@ describe('sqllab-account', () => {
     it('fetchProfile throws on a non-OK response', async () => {
         vi.spyOn(auth, 'authFetch').mockResolvedValue(json({}, 500));
         await expect(fetchProfile()).rejects.toThrow();
+    });
+
+    it('trackPageView posts path, visitor id and session id to the platform pageview counter', () => {
+        const spy = vi
+            .spyOn(auth, 'authFetch')
+            .mockResolvedValue(new Response(null, { status: 200 }));
+        trackPageView('/tools/erd2/about');
+        const [url, init] = spy.mock.calls[0];
+        expect(url).toBe('/api/auth/pageview/');
+        const body = JSON.parse(String(init?.body));
+        expect(body.path).toBe('/tools/erd2/about');
+        expect(body.visitor_id).toMatch(/^[a-z0-9]{10,50}$/);
+        expect(body.session_id).toMatch(/^[a-z0-9]{1,50}$/);
+    });
+
+    it('trackPageView never throws, even when the request fails', () => {
+        vi.spyOn(auth, 'authFetch').mockRejectedValue(new Error('offline'));
+        expect(() => trackPageView('/tools/erd2/about')).not.toThrow();
     });
 });

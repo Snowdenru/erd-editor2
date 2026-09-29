@@ -43,7 +43,7 @@ export const ExportPreview: React.FC<ExportPreviewProps> = ({
                     <Download /> Скачать
                 </Button>
             </div>
-            <div className="min-h-[240px] flex-1 overflow-auto rounded-md border bg-muted/30">
+            <div className="flex min-h-[240px] flex-1 flex-col overflow-auto rounded-md border bg-muted/30">
                 {error ? (
                     <p className="p-4 text-sm text-destructive">{error}</p>
                 ) : !code ? (
@@ -55,7 +55,7 @@ export const ExportPreview: React.FC<ExportPreviewProps> = ({
                         code={code}
                         language={language}
                         allowCopy={false}
-                        className="h-full"
+                        className="min-h-0 flex-1"
                     />
                 ) : (
                     <pre

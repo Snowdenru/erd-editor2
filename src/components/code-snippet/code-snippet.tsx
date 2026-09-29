@@ -196,40 +196,42 @@ export const CodeSnippet: React.FC<CodeSnippetProps> = React.memo(
                             </div>
                         ) : null}
 
-                        <Editor
-                            value={code}
-                            language={language}
-                            loading={<Spinner />}
-                            theme={effectiveTheme}
-                            {...editorProps}
-                            options={{
-                                editContext: false,
-                                readOnly: true,
-                                automaticLayout: true,
-                                scrollBeyondLastLine: false,
-                                renderValidationDecorations: 'off',
-                                lineDecorationsWidth: 0,
-                                overviewRulerBorder: false,
-                                overviewRulerLanes: 0,
-                                hideCursorInOverviewRuler: true,
-                                contextmenu: false,
-                                ...editorProps?.options,
-                                guides: {
-                                    indentation: false,
-                                    ...editorProps?.options?.guides,
-                                },
-                                scrollbar: {
-                                    vertical: 'hidden',
-                                    horizontal: 'hidden',
-                                    alwaysConsumeMouseWheel: false,
-                                    ...editorProps?.options?.scrollbar,
-                                },
-                                minimap: {
-                                    enabled: false,
-                                    ...editorProps?.options?.minimap,
-                                },
-                            }}
-                        />
+                        <div className="absolute inset-0">
+                            <Editor
+                                value={code}
+                                language={language}
+                                loading={<Spinner />}
+                                theme={effectiveTheme}
+                                {...editorProps}
+                                options={{
+                                    editContext: false,
+                                    readOnly: true,
+                                    automaticLayout: true,
+                                    scrollBeyondLastLine: false,
+                                    renderValidationDecorations: 'off',
+                                    lineDecorationsWidth: 0,
+                                    overviewRulerBorder: false,
+                                    overviewRulerLanes: 0,
+                                    hideCursorInOverviewRuler: true,
+                                    contextmenu: false,
+                                    ...editorProps?.options,
+                                    guides: {
+                                        indentation: false,
+                                        ...editorProps?.options?.guides,
+                                    },
+                                    scrollbar: {
+                                        vertical: 'hidden',
+                                        horizontal: 'hidden',
+                                        alwaysConsumeMouseWheel: false,
+                                        ...editorProps?.options?.scrollbar,
+                                    },
+                                    minimap: {
+                                        enabled: false,
+                                        ...editorProps?.options?.minimap,
+                                    },
+                                }}
+                            />
+                        </div>
                         {!isComplete ? (
                             <div className="absolute bottom-2 right-2 size-2 animate-blink rounded-full bg-pink-600" />
                         ) : null}

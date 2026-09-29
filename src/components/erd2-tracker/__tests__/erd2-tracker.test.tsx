@@ -46,11 +46,33 @@ describe('Erd2Tracker', () => {
     beforeEach(() => {
         vi.useFakeTimers();
         vi.spyOn(account, 'trackEvent').mockImplementation(() => undefined);
+        vi.spyOn(account, 'trackPageView').mockImplementation(() => undefined);
         vi.spyOn(account, 'isLoggedIn').mockReturnValue(false);
         sessionStorage.clear();
         setDiagram(0);
     });
     afterEach(() => vi.useRealTimers());
+
+    it('counts an editor page view under one fixed path, once per mount', () => {
+        const { rerender } = render(<Erd2Tracker />);
+        rerender(<Erd2Tracker />);
+        expect(account.trackPageView).toHaveBeenCalledTimes(1);
+        expect(account.trackPageView).toHaveBeenCalledWith('/tools/erd2/');
+    });
+
+    it('does not double count when the router remounts the editor right after a redirect', () => {
+        render(<Erd2Tracker />).unmount();
+        vi.advanceTimersByTime(1000);
+        render(<Erd2Tracker />);
+        expect(account.trackPageView).toHaveBeenCalledTimes(1);
+    });
+
+    it('counts a later visit again', () => {
+        render(<Erd2Tracker />).unmount();
+        vi.advanceTimersByTime(6000);
+        render(<Erd2Tracker />);
+        expect(account.trackPageView).toHaveBeenCalledTimes(2);
+    });
 
     it('sends erd2_open once with the source and cloud flag', () => {
         const { rerender } = render(<Erd2Tracker />);

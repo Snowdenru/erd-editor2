@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useChartDB } from '@/hooks/use-chartdb';
-import { isLoggedIn, trackEvent } from '@/lib/sqllab-account';
+import { isLoggedIn, trackEvent, trackPageView } from '@/lib/sqllab-account';
 import {
     buildSnapshotPayload,
     diffActions,
@@ -15,6 +15,26 @@ const ACTIVITY_EVENTS = ['pointerdown', 'keydown', 'wheel'] as const;
 
 const page = () => window.location.pathname;
 
+// В общий счётчик просмотров — один путь для редактора (без id схемы, иначе каждая схема станет
+// отдельной строкой в «Посещениях страниц»). Маршруты «/» и «/diagrams/:id» — разные элементы
+// роутера: редирект с одного на другой перемонтирует трекер, поэтому повтор в пределах 5 с гасим.
+const EDITOR_PAGEVIEW_PATH = '/tools/erd2/';
+const PAGEVIEW_KEY = 'erd2_last_pageview';
+const PAGEVIEW_DEDUPE_MS = 5000;
+
+function trackEditorPageView(): void {
+    try {
+        const last = Number(sessionStorage.getItem(PAGEVIEW_KEY) ?? 0);
+        if (Date.now() - last < PAGEVIEW_DEDUPE_MS) {
+            return;
+        }
+        sessionStorage.setItem(PAGEVIEW_KEY, String(Date.now()));
+    } catch {
+        // sessionStorage недоступен — лучше посчитать дважды, чем потерять просмотр
+    }
+    trackPageView(EDITOR_PAGEVIEW_PATH);
+}
+
 // Ничего не рисует: отправляет события использования редактора (открытие, пульс вовлечённости,
 // действия, числовой снапшот схемы). Только числа и типы — без названий таблиц и DDL.
 export const Erd2Tracker: React.FC = () => {
@@ -28,6 +48,10 @@ export const Erd2Tracker: React.FC = () => {
 
     const tableCount = currentDiagram.tables?.length ?? 0;
     const relationCount = currentDiagram.relationships?.length ?? 0;
+
+    useEffect(() => {
+        trackEditorPageView();
+    }, []);
 
     // erd2_open — один раз за загрузку страницы, когда диаграмма уже определена
     useEffect(() => {

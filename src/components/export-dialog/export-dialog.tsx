@@ -76,7 +76,10 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="flex max-h-[85vh] min-h-[480px] max-w-4xl flex-col">
+            <DialogContent
+                showClose
+                className="flex max-h-[85vh] min-h-[480px] max-w-4xl flex-col"
+            >
                 <DialogHeader>
                     <DialogTitle>Экспорт схемы</DialogTitle>
                     <DialogDescription>
@@ -123,7 +126,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                     </TabsList>
                     <TabsContent
                         value="image"
-                        className="flex-1 overflow-auto pt-2"
+                        className="flex min-h-0 flex-1 flex-col pt-2"
                     >
                         <ImageTab onExported={handleExported} />
                     </TabsContent>

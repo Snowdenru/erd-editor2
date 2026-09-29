@@ -1,6 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { useChartDB } from '@/hooks/use-chartdb';
-import { isLoggedIn, trackEvent, trackPageView } from '@/lib/sqllab-account';
+import {
+    getVisitorId,
+    isLoggedIn,
+    trackEvent,
+    trackPageView,
+} from '@/lib/sqllab-account';
 import {
     buildSnapshotPayload,
     diffActions,
@@ -62,6 +67,8 @@ export const Erd2Tracker: React.FC = () => {
         trackEvent('erd2_open', page(), {
             source: resolveSource(document.referrer, readStoredSource()),
             is_cloud: isLoggedIn(),
+            // постоянный анонимный id (localStorage) — по нему бэкенд считает уникальных и вернувшихся
+            visitor_id: getVisitorId(),
         });
     }, [diagramId]);
 

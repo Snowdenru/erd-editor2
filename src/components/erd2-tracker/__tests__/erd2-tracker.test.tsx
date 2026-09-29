@@ -48,6 +48,7 @@ describe('Erd2Tracker', () => {
         vi.spyOn(account, 'trackEvent').mockImplementation(() => undefined);
         vi.spyOn(account, 'trackPageView').mockImplementation(() => undefined);
         vi.spyOn(account, 'isLoggedIn').mockReturnValue(false);
+        vi.spyOn(account, 'getVisitorId').mockReturnValue('vid123');
         sessionStorage.clear();
         setDiagram(0);
     });
@@ -81,7 +82,11 @@ describe('Erd2Tracker', () => {
             .mocked(account.trackEvent)
             .mock.calls.filter((c) => c[0] === 'erd2_open');
         expect(opens).toHaveLength(1);
-        expect(opens[0][2]).toEqual({ source: 'direct', is_cloud: false });
+        expect(opens[0][2]).toEqual({
+            source: 'direct',
+            is_cloud: false,
+            visitor_id: 'vid123',
+        });
     });
 
     it('does not count the initial load of a diagram as an action', () => {

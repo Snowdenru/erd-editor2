@@ -130,7 +130,7 @@ const VISITOR_KEY = '_vid';
 
 // Тот же анонимный id посетителя, что у основного сайта (localStorage на общем origin sqllab.ru):
 // уникальные посетители не задваиваются при переходе между сайтом и ERD2.
-function getVisitorId(): string {
+export function getVisitorId(): string {
     try {
         let id = localStorage.getItem(VISITOR_KEY);
         if (!id) {

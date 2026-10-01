@@ -13,7 +13,9 @@ import type { Diagram } from '@/lib/domain';
 import { useStorage } from '@/hooks/use-storage';
 import { cloneDiagram } from '@/lib/clone';
 import { useTranslation } from 'react-i18next';
-import { APP_BASE } from '@/lib/sqllab-account';
+import { useNavigate } from 'react-router-dom';
+import { useDialog } from '@/hooks/use-dialog';
+import { shouldLeaveAfterDelete } from './after-delete';
 import { NEW_DIAGRAM_PATH } from '@/lib/erd-paths';
 
 interface DiagramRowActionsMenuProps {
@@ -32,17 +34,33 @@ export const DiagramRowActionsMenu: React.FC<DiagramRowActionsMenuProps> = ({
     const { diagramId } = useChartDB();
     const { deleteDiagram, addDiagram } = useStorage();
     const { t } = useTranslation();
+    const { closeOpenDiagramDialog } = useDialog();
+    const navigate = useNavigate();
 
     const onDelete = useCallback(async () => {
-        // Ждём удаление: полная перезагрузка ниже иначе может прервать запись в IndexedDB
+        // Ждём удаление: переход ниже иначе может обогнать запись в IndexedDB
         await deleteDiagram(diagram.id);
         refetch();
 
-        if (diagram.id === diagramId || numberOfDiagrams <= 1) {
-            // Приложение живёт под /tools/erd2, а не в корне сайта; /new открывает пустой холст
-            window.location.href = `${APP_BASE}${NEW_DIAGRAM_PATH}`;
+        if (
+            shouldLeaveAfterDelete({
+                deletedId: diagram.id,
+                currentId: diagramId,
+                totalBefore: numberOfDiagrams,
+            })
+        ) {
+            closeOpenDiagramDialog();
+            navigate(NEW_DIAGRAM_PATH);
         }
-    }, [deleteDiagram, diagram.id, diagramId, refetch, numberOfDiagrams]);
+    }, [
+        deleteDiagram,
+        diagram.id,
+        diagramId,
+        refetch,
+        numberOfDiagrams,
+        closeOpenDiagramDialog,
+        navigate,
+    ]);
 
     const onDuplicate = useCallback(async () => {
         const duplicatedDiagram = cloneDiagram(diagram);

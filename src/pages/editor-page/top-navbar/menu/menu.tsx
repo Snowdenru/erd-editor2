@@ -1,4 +1,4 @@
-import { DIAGRAMS_PATH } from '@/lib/erd-paths';
+import { NEW_DIAGRAM_PATH } from '@/lib/erd-paths';
 import React, { useCallback } from 'react';
 import {
     Menubar,
@@ -64,9 +64,9 @@ export const Menu: React.FC<MenuProps> = () => {
     const { redo, undo, hasRedo, hasUndo } = useHistory();
     const navigate = useNavigate();
 
-    const handleDeleteDiagramAction = useCallback(() => {
-        deleteDiagram();
-        navigate(DIAGRAMS_PATH);
+    const handleDeleteDiagramAction = useCallback(async () => {
+        await deleteDiagram();
+        navigate(NEW_DIAGRAM_PATH);
     }, [deleteDiagram, navigate]);
 
     const createNewDiagram = () => {

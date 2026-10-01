@@ -3,6 +3,7 @@ import type { StorageContext } from './storage-context';
 import { storageContext } from './storage-context';
 import Dexie, { type EntityTable } from 'dexie';
 import type { Diagram } from '@/lib/domain/diagram';
+import { clearLastDiagramIfMatches } from '@/lib/last-diagram';
 import type { DBTable } from '@/lib/domain/db-table';
 import type { DBRelationship } from '@/lib/domain/db-relationship';
 import { determineCardinalities } from '@/lib/domain/db-relationship';
@@ -871,6 +872,7 @@ export const StorageProvider: React.FC<React.PropsWithChildren> = ({
                 db.db_custom_types.where('diagramId').equals(id).delete(),
                 db.notes.where('diagramId').equals(id).delete(),
             ]);
+            clearLastDiagramIfMatches(id);
         },
         [db]
     );

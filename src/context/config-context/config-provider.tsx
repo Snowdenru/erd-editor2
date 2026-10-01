@@ -3,6 +3,7 @@ import { ConfigContext } from './config-context';
 
 import { useStorage } from '@/hooks/use-storage';
 import type { ChartDBConfig } from '@/lib/domain/config';
+import { setLastDiagramId } from '@/lib/last-diagram';
 
 export const ConfigProvider: React.FC<React.PropsWithChildren> = ({
     children,
@@ -13,6 +14,9 @@ export const ConfigProvider: React.FC<React.PropsWithChildren> = ({
     useEffect(() => {
         const loadConfig = async () => {
             const config = await getConfig();
+            if (config?.defaultDiagramId) {
+                setLastDiagramId(config.defaultDiagramId);
+            }
             setConfig(config);
         };
 
@@ -34,6 +38,7 @@ export const ConfigProvider: React.FC<React.PropsWithChildren> = ({
                     ? updateFn(baseConfig)
                     : { ...baseConfig, ...config };
 
+                setLastDiagramId(updatedConfig.defaultDiagramId);
                 updateDataConfig(updatedConfig).then(() => {
                     resolve();
                 });

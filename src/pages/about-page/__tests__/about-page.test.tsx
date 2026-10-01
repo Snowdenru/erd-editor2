@@ -4,6 +4,7 @@ import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { AboutPage } from '../about-page';
+import { FAQ_ITEMS } from '../faq-items';
 
 vi.mock('@/lib/sqllab-account', () => ({ trackPageView: vi.fn() }));
 
@@ -117,6 +118,29 @@ describe('AboutPage', () => {
             expect(
                 within(databasesSection).getByText(dialect)
             ).toBeInTheDocument();
+        });
+    });
+
+    it('keeps every FAQ answer in the DOM while collapsed (hidden via class)', () => {
+        render(
+            <HelmetProvider>
+                <MemoryRouter
+                    basename="/tools/erd2"
+                    initialEntries={['/tools/erd2/about']}
+                >
+                    <AboutPage />
+                </MemoryRouter>
+            </HelmetProvider>
+        );
+
+        expect(FAQ_ITEMS.length).toBeGreaterThan(0);
+        FAQ_ITEMS.forEach(({ answer }) => {
+            const el = screen.getByText(answer);
+            expect(el).toBeInTheDocument();
+            const panel = el.closest('[data-state]');
+            expect(panel).toHaveAttribute('data-state', 'closed');
+            // Скрытие в закрытом состоянии обеспечивает Tailwind-класс (в jsdom CSS нет)
+            expect(panel).toHaveClass('data-[state=closed]:hidden');
         });
     });
 });

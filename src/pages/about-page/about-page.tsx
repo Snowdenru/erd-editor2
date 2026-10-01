@@ -6,6 +6,7 @@ import { LocalConfigProvider } from '@/context/local-config-context/local-config
 import { ThemeProvider } from '@/context/theme-context/theme-provider';
 import { Button } from '@/components/button/button';
 import { StorageProvider } from '@/context/storage-context/storage-provider';
+import { FAQ_ITEMS } from './faq-items';
 import { AboutSeo } from './about-seo';
 import { DdlTryBlock } from './ddl-try-block';
 import { MarketingHeader } from '@/components/marketing-layout/marketing-header';
@@ -189,29 +190,6 @@ const IconTile: React.FC<{ icon: IconType }> = ({ icon: Icon }) => (
         <Icon className="size-8" />
     </span>
 );
-
-const FAQ_ITEMS: Array<{ question: string; answer: string }> = [
-    {
-        question: 'Подключается ли ERD2 напрямую к моей базе данных?',
-        answer: 'Нет. Вы либо вставляете готовый DDL/DBML, либо запускаете предложенный SQL-скрипт в своей базе и вставляете результат сюда — прямого доступа к вашей базе инструмент не запрашивает.',
-    },
-    {
-        question: 'Как быстрее всего начать?',
-        answer: 'Нажмите «Импорт из вашей БД», выберите тип базы и вставьте DDL или DBML — или начните с одного из готовых примеров либо из 50 шаблонов.',
-    },
-    {
-        question: 'Чем Free отличается от ERD Pro?',
-        answer: 'Free — схемы до 10 таблиц и 3 схемы в облаке. ERD Pro — до 200 таблиц и без лимита схем в облаке; общий Pro даёт то же самое плюс курсы. Подробности на странице «Тарифы».',
-    },
-    {
-        question: 'В каких форматах можно экспортировать схему?',
-        answer: 'SVG, PNG, SQL DDL, DBML и JSON.',
-    },
-    {
-        question: 'Что если моей СУБД нет в списке?',
-        answer: 'Сейчас поддерживаются PostgreSQL, MySQL, MariaDB, SQLite, SQL Server, Oracle, CockroachDB и ClickHouse — этого достаточно для подавляющего большинства схем.',
-    },
-];
 
 const AboutPageComponent: React.FC = () => {
     useEffect(() => {
@@ -518,7 +496,10 @@ const AboutPageComponent: React.FC = () => {
                                 <AccordionTrigger className="text-left">
                                     {question}
                                 </AccordionTrigger>
-                                <AccordionContent>{answer}</AccordionContent>
+                                {/* forceMount: ответы должны быть в DOM (и в about.html) даже в свёрнутом виде */}
+                                <AccordionContent forceMount>
+                                    {answer}
+                                </AccordionContent>
                             </AccordionItem>
                         ))}
                     </Accordion>

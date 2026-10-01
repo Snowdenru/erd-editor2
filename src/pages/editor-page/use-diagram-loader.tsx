@@ -77,13 +77,16 @@ export const useDiagramLoader = () => {
             }
         };
 
+        // /new и /diagrams оба без diagramId, но ведут себя по-разному: ключ различает их,
+        // иначе переход /diagrams → /new без перемонтирования пропустил бы создание схемы.
+        const loadingKey = `${isNewRoute ? 'new:' : ''}${diagramId ?? ''}`;
         if (
-            currentDiagramLoadingRef.current === (diagramId ?? '') &&
+            currentDiagramLoadingRef.current === loadingKey &&
             currentDiagramLoadingRef.current !== undefined
         ) {
             return;
         }
-        currentDiagramLoadingRef.current = diagramId ?? '';
+        currentDiagramLoadingRef.current = loadingKey;
 
         loadDefaultDiagram();
     }, [

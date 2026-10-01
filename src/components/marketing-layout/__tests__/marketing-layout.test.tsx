@@ -1,6 +1,6 @@
 import React from 'react';
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { LocalConfigProvider } from '@/context/local-config-context/local-config-provider';
 import { ThemeProvider } from '@/context/theme-context/theme-provider';
@@ -45,5 +45,48 @@ describe('marketing layout', () => {
             '/tools/erd2/pricing'
         );
         expect(screen.getByText(/© 2026 SQL Lab/)).toBeInTheDocument();
+    });
+
+    describe('hash links smooth scroll', () => {
+        afterEach(() => {
+            document.getElementById('databases')?.remove();
+            window.history.pushState({}, '', '/');
+        });
+
+        const setup = (path: string) => {
+            window.history.pushState({}, '', path);
+            const target = document.createElement('div');
+            target.id = 'databases';
+            document.body.appendChild(target);
+            const scrollIntoView = vi.fn();
+            Element.prototype.scrollIntoView = scrollIntoView;
+            wrap(<MarketingHeader />);
+            return scrollIntoView;
+        };
+
+        it('on the about page scrolls smoothly without reload', () => {
+            const scrollIntoView = setup('/tools/erd2/about');
+            const notPrevented = fireEvent.click(
+                screen.getByRole('link', { name: 'Поддержка БД' })
+            );
+
+            expect(notPrevented).toBe(false);
+            expect(scrollIntoView).toHaveBeenCalledWith({
+                behavior: 'smooth',
+                block: 'start',
+            });
+            expect(window.location.hash).toBe('#databases');
+            expect(window.location.pathname).toBe('/tools/erd2/about');
+        });
+
+        it('on other pages keeps normal navigation', () => {
+            const scrollIntoView = setup('/tools/erd2/pricing');
+            const notPrevented = fireEvent.click(
+                screen.getByRole('link', { name: 'Поддержка БД' })
+            );
+
+            expect(notPrevented).toBe(true);
+            expect(scrollIntoView).not.toHaveBeenCalled();
+        });
     });
 });

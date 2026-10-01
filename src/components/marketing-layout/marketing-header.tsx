@@ -5,6 +5,7 @@ import ChartDBLogo from '@/assets/sqllab-logo-light.svg';
 import ChartDBDarkLogo from '@/assets/sqllab-logo-dark.svg';
 import { Button } from '@/components/button/button';
 import { useTheme } from '@/hooks/use-theme';
+import { handleAboutHashClick } from './about-hash-link';
 
 // Якоря (#features, #databases) есть только на /about — с других страниц ведём на /about#...
 const HEADER_LINKS: Array<{ label: string; href: string }> = [
@@ -41,6 +42,7 @@ export const MarketingHeader: React.FC = () => {
                         <a
                             key={label}
                             href={href}
+                            onClick={(e) => handleAboutHashClick(e, href)}
                             className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
                         >
                             {label}

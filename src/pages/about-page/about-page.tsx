@@ -218,6 +218,22 @@ const AboutPageComponent: React.FC = () => {
         trackPageView(window.location.pathname);
     }, []);
 
+    // On a full page load React renders after the browser has already tried
+    // (and failed) to jump to the hash target, so scroll there ourselves.
+    useEffect(() => {
+        const rawHash = window.location.hash.slice(1);
+        if (!rawHash) return;
+        let id = rawHash;
+        try {
+            id = decodeURIComponent(rawHash);
+        } catch {
+            // keep the raw value
+        }
+        document
+            .getElementById(id)
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, []);
+
     return (
         <>
             <AboutSeo faqItems={FAQ_ITEMS} />
@@ -332,7 +348,7 @@ const AboutPageComponent: React.FC = () => {
                 {/* 3. Возможности */}
                 <div
                     id="features"
-                    className="scroll-mt-14 bg-slate-100/70 py-20 dark:bg-slate-900/40"
+                    className="scroll-mt-24 bg-slate-100/70 py-20 dark:bg-slate-900/40"
                 >
                     <div className="mx-auto max-w-5xl px-6">
                         <div className="mb-10 flex flex-col items-center gap-4 text-center">
@@ -440,7 +456,7 @@ const AboutPageComponent: React.FC = () => {
                 {/* 5. Поддержка БД */}
                 <div
                     id="databases"
-                    className="mx-auto w-full max-w-5xl scroll-mt-14 px-6 pb-20"
+                    className="mx-auto w-full max-w-5xl scroll-mt-24 px-6 pb-20"
                 >
                     <div className="mb-10 flex flex-col items-center gap-4 text-center">
                         <SectionPill>БД</SectionPill>

@@ -58,7 +58,7 @@ export const MarketingHeader: React.FC = () => {
                         Изучать SQL
                     </a>
                     <Button asChild size="sm" className="hidden sm:inline-flex">
-                        <Link to="/new">Открыть редактор</Link>
+                        <Link to="/diagrams">Открыть редактор</Link>
                     </Button>
                 </div>
             </nav>

@@ -33,7 +33,7 @@ describe('AboutPage', () => {
         });
         expect(openEditorLinks.length).toBeGreaterThan(0);
         openEditorLinks.forEach((link) => {
-            expect(link).toHaveAttribute('href', '/tools/erd2/new');
+            expect(link).toHaveAttribute('href', '/tools/erd2/diagrams');
         });
     });
 

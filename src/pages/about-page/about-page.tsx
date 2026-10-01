@@ -105,7 +105,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: ImageIcon,
         tag: 'Делитесь',
-        to: '/tools/erd2/new',
+        to: '/tools/erd2/diagrams',
         title: 'Экспорт в изображение',
         description:
             'SVG и PNG для документации, JSON для резервной копии, DBML для других инструментов.',
@@ -114,7 +114,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: Undo2,
         tag: 'Удобно',
-        to: '/tools/erd2/new',
+        to: '/tools/erd2/diagrams',
         title: 'Порядок на холсте',
         description:
             'Отмена и повтор, автораскладка, области и заметки — с большими схемами работать легко.',
@@ -237,7 +237,7 @@ const AboutPageComponent: React.FC = () => {
                                 size="lg"
                                 className="h-12 rounded-xl bg-foreground px-8 text-base text-background hover:bg-foreground/85"
                             >
-                                <Link to="/new">Открыть редактор</Link>
+                                <Link to="/diagrams">Открыть редактор</Link>
                             </Button>
                             <Button
                                 asChild
@@ -295,7 +295,7 @@ const AboutPageComponent: React.FC = () => {
                                     size="lg"
                                     className="h-14 rounded-full bg-black px-8 text-lg text-white hover:bg-black/80"
                                 >
-                                    <Link to="/new">
+                                    <Link to="/diagrams">
                                         Открыть редактор
                                         <Zap className="ml-2 size-5" />
                                     </Link>
@@ -509,7 +509,7 @@ const AboutPageComponent: React.FC = () => {
                 <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 px-6 pb-20 text-center">
                     <h2 className="text-2xl font-bold">Готовы начать?</h2>
                     <Button asChild size="lg">
-                        <Link to="/new">Открыть редактор</Link>
+                        <Link to="/diagrams">Открыть редактор</Link>
                     </Button>
                 </div>
 

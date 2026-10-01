@@ -178,7 +178,7 @@ const PricingPageComponent: React.FC = () => {
                                 </p>
                             </div>
                             <Button asChild className="ml-auto">
-                                <Link to="/">Открыть редактор</Link>
+                                <Link to="/diagrams">Открыть редактор</Link>
                             </Button>
                         </div>
                     ) : null}

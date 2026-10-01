@@ -1,6 +1,12 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+    within,
+} from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import * as account from '@/lib/sqllab-account';
@@ -138,6 +144,12 @@ describe('PricingPage', () => {
         renderAt('/pricing?payment=success');
 
         expect(await screen.findByText(/оплата прошла/i)).toBeInTheDocument();
+        // «/» теперь лендинг: кнопка в баннере должна вести сразу в редактор
+        const banner = screen.getByText(/оплата прошла/i).closest('div')
+            ?.parentElement as HTMLElement;
+        expect(
+            within(banner).getByRole('link', { name: 'Открыть редактор' })
+        ).toHaveAttribute('href', '/tools/erd2/diagrams');
     });
 
     it('shows an error with a retry button when the plan cannot be loaded', async () => {

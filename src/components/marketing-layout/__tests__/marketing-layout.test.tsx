@@ -79,6 +79,33 @@ describe('marketing layout', () => {
             expect(window.location.pathname).toBe('/tools/erd2/about');
         });
 
+        it.each([
+            ['ctrl', { ctrlKey: true }],
+            ['meta', { metaKey: true }],
+            ['shift', { shiftKey: true }],
+            ['alt', { altKey: true }],
+            ['middle button', { button: 1 }],
+        ])('ignores %s click so the browser handles it', (_name, init) => {
+            const scrollIntoView = setup('/tools/erd2/about');
+            const notPrevented = fireEvent.click(
+                screen.getByRole('link', { name: 'Поддержка БД' }),
+                init
+            );
+
+            expect(notPrevented).toBe(true);
+            expect(scrollIntoView).not.toHaveBeenCalled();
+        });
+
+        it('keeps the current history.state when pushing the hash', () => {
+            const state = { usr: null, key: 'abc', idx: 3 };
+            setup('/tools/erd2/about');
+            window.history.replaceState(state, '');
+            fireEvent.click(screen.getByRole('link', { name: 'Поддержка БД' }));
+
+            expect(window.history.state).toEqual(state);
+            expect(window.location.hash).toBe('#databases');
+        });
+
         it('on other pages keeps normal navigation', () => {
             const scrollIntoView = setup('/tools/erd2/pricing');
             const notPrevented = fireEvent.click(

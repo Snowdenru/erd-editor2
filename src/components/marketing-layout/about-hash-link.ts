@@ -5,6 +5,9 @@ export const handleAboutHashClick = (
     e: React.MouseEvent<HTMLAnchorElement>,
     href: string
 ) => {
+    // Клики с модификаторами и не основной кнопкой (новая вкладка/окно) — на откуп браузеру
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
+        return;
     const [path, hash] = href.split('#');
     if (!hash || !path) return;
     const current = window.location.pathname.replace(/\/+$/, '');
@@ -13,5 +16,5 @@ export const handleAboutHashClick = (
     if (!element) return;
     e.preventDefault();
     element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    window.history.pushState({}, '', href);
+    window.history.pushState(window.history.state, '', href);
 };

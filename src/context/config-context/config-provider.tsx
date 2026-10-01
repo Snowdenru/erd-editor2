@@ -3,7 +3,7 @@ import { ConfigContext } from './config-context';
 
 import { useStorage } from '@/hooks/use-storage';
 import type { ChartDBConfig } from '@/lib/domain/config';
-import { setLastDiagramId } from '@/lib/last-diagram';
+import { getLastDiagramId, setLastDiagramId } from '@/lib/last-diagram';
 
 export const ConfigProvider: React.FC<React.PropsWithChildren> = ({
     children,
@@ -18,6 +18,12 @@ export const ConfigProvider: React.FC<React.PropsWithChildren> = ({
     useEffect(() => {
         const loadConfig = async () => {
             const config = await getConfig();
+            // IndexedDB могли очистить, а localStorage остался: маркер указывал бы на
+            // несуществующую схему, и скрипт быстрого входа вёл бы в пустоту.
+            const markerId = getLastDiagramId();
+            if (markerId && !(await getDiagram(markerId))) {
+                setLastDiagramId('');
+            }
             if (config?.defaultDiagramId) {
                 const exists = await getDiagram(config.defaultDiagramId);
                 setLastDiagramId(exists ? config.defaultDiagramId : '');

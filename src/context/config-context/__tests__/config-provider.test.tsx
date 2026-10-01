@@ -68,4 +68,35 @@ describe('ConfigProvider и маркер последней схемы', () => {
             expect(localStorage.getItem(LAST_DIAGRAM_KEY)).toBeNull()
         );
     });
+
+    it('чистит устаревший маркер, если IndexedDB очищена, а localStorage нет', async () => {
+        storage.getConfig.mockResolvedValue(undefined);
+        storage.getDiagram.mockResolvedValue(undefined);
+        localStorage.setItem(LAST_DIAGRAM_KEY, 'ghost');
+        render(
+            <ConfigProvider>
+                <Probe />
+            </ConfigProvider>
+        );
+        await waitFor(() =>
+            expect(localStorage.getItem(LAST_DIAGRAM_KEY)).toBeNull()
+        );
+        expect(storage.getDiagram).toHaveBeenCalledWith('ghost');
+    });
+
+    it('не трогает маркер, если схема существует, а defaultDiagramId пуст', async () => {
+        storage.getConfig.mockResolvedValue({ defaultDiagramId: '' });
+        storage.getDiagram.mockResolvedValue({ id: 'keep' });
+        localStorage.setItem(LAST_DIAGRAM_KEY, 'keep');
+        render(
+            <ConfigProvider>
+                <Probe />
+            </ConfigProvider>
+        );
+        await waitFor(() => expect(storage.getDiagram).toHaveBeenCalled());
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(localStorage.getItem(LAST_DIAGRAM_KEY)).toBe('keep');
+    });
 });

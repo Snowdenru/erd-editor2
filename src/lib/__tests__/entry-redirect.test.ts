@@ -96,6 +96,12 @@ describe('скрипт быстрого входа erd2-entry', () => {
         ).not.toHaveBeenCalled();
     });
 
+    it('с якорем (#features) не редиректит', () => {
+        expect(
+            run({ pathname: '/tools/erd2/', hash: '#features', marker: 'abc' })
+        ).not.toHaveBeenCalled();
+    });
+
     it('не редиректит при предрендере', () => {
         expect(
             run({ pathname: '/tools/erd2/', marker: 'abc', prerender: true })

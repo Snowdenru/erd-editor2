@@ -87,6 +87,23 @@ describe('marketing layout', () => {
             expect(window.location.pathname).toBe('/tools/erd2/about');
         });
 
+        it.each([['/tools/erd2/'], ['/tools/erd2']])(
+            'on the app root %s scrolls smoothly without reload',
+            (root) => {
+                const scrollIntoView = setup(root);
+                const notPrevented = fireEvent.click(
+                    screen.getByRole('link', { name: 'Поддержка БД' })
+                );
+
+                expect(notPrevented).toBe(false);
+                expect(scrollIntoView).toHaveBeenCalledWith({
+                    behavior: 'smooth',
+                    block: 'start',
+                });
+                expect(window.location.hash).toBe('#databases');
+            }
+        );
+
         it.each([
             ['ctrl', { ctrlKey: true }],
             ['meta', { metaKey: true }],

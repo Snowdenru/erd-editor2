@@ -11,7 +11,10 @@ export const handleAboutHashClick = (
     const [path, hash] = href.split('#');
     if (!hash || !path) return;
     const current = window.location.pathname.replace(/\/+$/, '');
-    if (!current.endsWith('/about') || current !== path) return;
+    // Лендинг живёт и на /about, и на корне приложения (/tools/erd2/): на обоих скроллим на месте.
+    const root = path.replace(/\/about$/, '');
+    if (!path.endsWith('/about') || (current !== path && current !== root))
+        return;
     const element = document.getElementById(hash);
     if (!element) return;
     e.preventDefault();

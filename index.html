@@ -62,6 +62,8 @@
                     if (location.pathname.replace(/\/+$/, '') !== '/tools/erd2')
                         return;
                     if (location.search) return;
+                    // Якорные ссылки на корень (/tools/erd2/#features) не перехватываем.
+                    if (location.hash) return;
                     var id = localStorage.getItem('erd2_last_diagram');
                     if (id && /^[A-Za-z0-9_-]+$/.test(id)) {
                         // replace только начинает навигацию: пока грузится схема, лендинг

@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 
 // Основная гарантия этого изменения: на пустом аккаунте (0 диаграмм)
 // загрузчик создаёт пустую диаграмму напрямую (createEmptyDiagram),
@@ -100,26 +100,37 @@ describe('useDiagramLoader', () => {
         expect(mockOpenOpenDiagramDialog).not.toHaveBeenCalled();
     });
 
-    it('на /new создаёт новую схему (с reuseEmptyLast), если последняя схема непустая', async () => {
-        mockConfig.defaultDiagramId = 'default-1';
-        mockLoadDiagram.mockResolvedValue({ id: 'default-1' });
-        mockListDiagrams.mockResolvedValue([{ id: 'default-1' }]);
+    let currentPath = '';
+    const LocationProbe = () => {
+        currentPath = useLocation().pathname;
+        return null;
+    };
 
+    const renderAt = (url: string) =>
         renderHook(() => useDiagramLoader(), {
             wrapper: ({ children }) => (
-                <MemoryRouter
-                    basename="/tools/erd2"
-                    initialEntries={['/tools/erd2/new']}
-                >
+                <MemoryRouter basename="/tools/erd2" initialEntries={[url]}>
+                    <LocationProbe />
                     <Routes>
                         <Route path="new" element={<>{children}</>} />
+                        <Route
+                            path="d/:diagramId"
+                            element={<div data-testid="diagram-route" />}
+                        />
                     </Routes>
                 </MemoryRouter>
             ),
         });
 
-        // Решение «переиспользовать или создать» принимает сам хук
-        // createEmptyDiagram (покрыт его тестами); загрузчик лишь передаёт опции.
+    it('обычный /new: пустой холст через createEmptyDiagram с reuseEmptyLast', async () => {
+        mockConfig.defaultDiagramId = 'default-1';
+        mockLoadDiagram.mockResolvedValue({ id: 'default-1' });
+        mockListDiagrams.mockResolvedValue([{ id: 'default-1' }]);
+
+        renderAt('/tools/erd2/new');
+
+        // Решение «переиспользовать или создать» принимает сам хук createEmptyDiagram
+        // (покрыт его тестами); загрузчик лишь передаёт опции.
         await waitFor(() =>
             expect(mockCreateEmptyDiagram).toHaveBeenCalledWith({
                 replace: true,
@@ -130,59 +141,29 @@ describe('useDiagramLoader', () => {
         expect(mockLoadDiagram).not.toHaveBeenCalled();
     });
 
-    it('на /new при пустой последней схеме делегирует переиспользование в createEmptyDiagram', async () => {
-        mockConfig.defaultDiagramId = 'empty-1';
-        mockListDiagrams.mockResolvedValue([{ id: 'empty-1' }]);
+    it.each(['/tools/erd2/new?open=import', '/tools/erd2/new?tab=ddl'])(
+        '%s с глубокой ссылкой не создаёт пустую схему, а открывает схему по умолчанию',
+        async (url) => {
+            mockConfig.defaultDiagramId = 'default-1';
+            mockLoadDiagram.mockResolvedValue({ id: 'default-1' });
+            mockListDiagrams.mockResolvedValue([{ id: 'default-1' }]);
 
-        renderHook(() => useDiagramLoader(), {
-            wrapper: ({ children }) => (
-                <MemoryRouter
-                    basename="/tools/erd2"
-                    initialEntries={['/tools/erd2/new']}
-                >
-                    <Routes>
-                        <Route path="new" element={<>{children}</>} />
-                    </Routes>
-                </MemoryRouter>
-            ),
-        });
+            renderAt(url);
+
+            await waitFor(() => expect(currentPath).toBe('/d/default-1'));
+            expect(mockLoadDiagram).toHaveBeenCalledWith('default-1');
+            expect(mockCreateEmptyDiagram).not.toHaveBeenCalled();
+        }
+    );
+
+    it('/new?open=import без схем создаёт пустую схему обычным путём (без reuse)', async () => {
+        mockListDiagrams.mockResolvedValue([]);
+
+        renderAt('/tools/erd2/new?open=import');
 
         await waitFor(() =>
             expect(mockCreateEmptyDiagram).toHaveBeenCalledTimes(1)
         );
-        expect(mockCreateEmptyDiagram).toHaveBeenCalledWith({
-            replace: true,
-            reuseEmptyLast: true,
-        });
-        expect(mockLoadDiagram).not.toHaveBeenCalled();
-    });
-
-    it('на /new с глубокой ссылкой (?open=import) тоже использует пустую схему, а не продолжает последнюю', async () => {
-        mockConfig.defaultDiagramId = 'default-1';
-        mockLoadDiagram.mockResolvedValue({ id: 'default-1' });
-        mockListDiagrams.mockResolvedValue([{ id: 'default-1' }]);
-        window.history.pushState({}, '', '/tools/erd2/new?open=import');
-
-        renderHook(() => useDiagramLoader(), {
-            wrapper: ({ children }) => (
-                <MemoryRouter
-                    basename="/tools/erd2"
-                    initialEntries={['/tools/erd2/new?open=import']}
-                >
-                    <Routes>
-                        <Route path="new" element={<>{children}</>} />
-                    </Routes>
-                </MemoryRouter>
-            ),
-        });
-
-        await waitFor(() =>
-            expect(mockCreateEmptyDiagram).toHaveBeenCalledWith({
-                replace: true,
-                reuseEmptyLast: true,
-            })
-        );
-        expect(mockLoadDiagram).not.toHaveBeenCalled();
-        window.history.pushState({}, '', '/');
+        expect(mockCreateEmptyDiagram).toHaveBeenCalledWith();
     });
 });

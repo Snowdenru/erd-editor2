@@ -7,7 +7,12 @@ import { useRedoUndoStack } from '@/hooks/use-redo-undo-stack';
 import { useStorage } from '@/hooks/use-storage';
 import type { Diagram } from '@/lib/domain/diagram';
 import { useEffect, useRef, useState } from 'react';
-import { useMatch, useNavigate, useParams } from 'react-router-dom';
+import {
+    useLocation,
+    useMatch,
+    useNavigate,
+    useParams,
+} from 'react-router-dom';
 import { NEW_DIAGRAM_PATH, diagramPath } from '@/lib/erd-paths';
 
 export const useDiagramLoader = () => {
@@ -21,6 +26,7 @@ export const useDiagramLoader = () => {
     const { openOpenDiagramDialog } = useDialog();
     const { createEmptyDiagram } = useCreateEmptyDiagram();
     const navigate = useNavigate();
+    const { search } = useLocation();
     const { listDiagrams } = useStorage();
 
     const currentDiagramLoadingRef = useRef<string | undefined>(undefined);
@@ -53,9 +59,15 @@ export const useDiagramLoader = () => {
                 return;
             }
 
-            // /new (в т.ч. с глубокой ссылкой ?open=import / ?tab=…) открывает пустой холст:
-            // переиспользуем пустую последнюю схему, чтобы не плодить пустые в списке.
-            if (isNewRoute) {
+            // Глубокие ссылки лендинга (?open=import, ?tab=…) открывают диалог/вкладку поверх
+            // последней схемы: пустую схему под них не создаём (импорт создаёт свою новую,
+            // а пустая осталась бы в списке сиротой).
+            const params = new URLSearchParams(search);
+            const hasDeepLink =
+                params.get('open') === 'import' || params.has('tab');
+            // Обычный /new открывает пустой холст: переиспользуем пустую последнюю схему,
+            // чтобы не плодить пустые в списке.
+            if (isNewRoute && !hasDeepLink) {
                 await createEmptyDiagram({
                     replace: true,
                     reuseEmptyLast: true,
@@ -97,6 +109,7 @@ export const useDiagramLoader = () => {
     }, [
         diagramId,
         isNewRoute,
+        search,
         createEmptyDiagram,
         config,
         navigate,

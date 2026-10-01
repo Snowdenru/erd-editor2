@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
 import AboutHeroImage from '@/assets/about/hero-light.png';
 import AboutEditorDarkImage from '@/assets/about/editor-dark.png';
 import { LocalConfigProvider } from '@/context/local-config-context/local-config-provider';
 import { ThemeProvider } from '@/context/theme-context/theme-provider';
 import { Button } from '@/components/button/button';
 import { StorageProvider } from '@/context/storage-context/storage-provider';
+import { AboutSeo } from './about-seo';
 import { DdlTryBlock } from './ddl-try-block';
 import { MarketingHeader } from '@/components/marketing-layout/marketing-header';
 import { MarketingFooter } from '@/components/marketing-layout/marketing-footer';
@@ -220,13 +220,7 @@ const AboutPageComponent: React.FC = () => {
 
     return (
         <>
-            <Helmet>
-                <title>SQL Lab ERD — визуальный редактор баз данных</title>
-                <meta
-                    name="description"
-                    content="Бесплатный онлайн-редактор ER-диаграмм: вставьте DDL или SQL-запрос — получите готовую схему за секунды."
-                />
-            </Helmet>
+            <AboutSeo faqItems={FAQ_ITEMS} />
             <section className="flex w-screen flex-col overflow-x-hidden bg-background">
                 <MarketingHeader />
 
@@ -466,7 +460,7 @@ const AboutPageComponent: React.FC = () => {
                                 <span className="flex size-20 items-center justify-center rounded-2xl bg-white p-2 shadow-sm">
                                     <img
                                         src={databaseLogoMap[type]}
-                                        alt=""
+                                        alt={`Логотип ${name}`}
                                         className="max-h-full max-w-full object-contain"
                                     />
                                 </span>

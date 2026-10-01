@@ -121,6 +121,16 @@ async function main() {
         await page.waitForSelector('#databases', { timeout: 60000 });
         await page.waitForNetworkIdle({ idleTime: 1000, timeout: 60000 });
 
+        // onload в index.html уже переключил media у шрифтового <link> на "all";
+        // возвращаем "print", чтобы about.html не блокировал рендер запросом к Google Fonts
+        await page.evaluate(() => {
+            document
+                .querySelectorAll(
+                    'link[rel="stylesheet"][href*="fonts.googleapis.com"]'
+                )
+                .forEach((link) => link.setAttribute('media', 'print'));
+        });
+
         const html = await page.content();
         const textLen = await page.evaluate(
             () => document.body.innerText.length
@@ -128,6 +138,8 @@ async function main() {
         if (!html.includes('<h1')) fail('в результате нет <h1');
         if (textLen < 1500)
             fail(`видимого текста слишком мало: ${textLen} < 1500`);
+        if (/<link[^>]*fonts\.googleapis\.com[^>]*media="all"/.test(html))
+            fail('шрифтовой <link> остался с media="all" (блокирует рендер)');
         if (!html.includes('application/ld+json'))
             fail('нет application/ld+json');
 

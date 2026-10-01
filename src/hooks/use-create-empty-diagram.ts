@@ -9,11 +9,28 @@ import { diagramPath } from '@/lib/erd-paths';
 
 export function useCreateEmptyDiagram() {
     const navigate = useNavigate();
-    const { addDiagram, listDiagrams } = useStorage();
-    const { updateConfig } = useConfig();
+    const { addDiagram, listDiagrams, listTables } = useStorage();
+    const { config, updateConfig } = useConfig();
 
     const createEmptyDiagram = useCallback(
-        async (options?: { replace?: boolean }) => {
+        async (options?: { replace?: boolean; reuseEmptyLast?: boolean }) => {
+            if (options?.reuseEmptyLast && config?.defaultDiagramId) {
+                const lastId = config.defaultDiagramId;
+                const diagrams = await listDiagrams();
+                if (diagrams.some((d) => d.id === lastId)) {
+                    const tables = await listTables(lastId);
+                    if (tables.length === 0) {
+                        const lastPath = diagramPath(lastId);
+                        if (options.replace) {
+                            navigate(lastPath, { replace: true });
+                        } else {
+                            navigate(lastPath);
+                        }
+                        return;
+                    }
+                }
+            }
+
             const existingDiagrams = await listDiagrams();
             const now = new Date();
             const diagram: Diagram = {
@@ -33,7 +50,7 @@ export function useCreateEmptyDiagram() {
                 navigate(path);
             }
         },
-        [addDiagram, listDiagrams, updateConfig, navigate]
+        [addDiagram, listDiagrams, listTables, config, updateConfig, navigate]
     );
 
     return { createEmptyDiagram };

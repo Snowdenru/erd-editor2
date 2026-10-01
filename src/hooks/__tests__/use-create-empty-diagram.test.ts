@@ -5,16 +5,22 @@ const mockAddDiagram = vi.fn();
 const mockListDiagrams = vi.fn();
 const mockUpdateConfig = vi.fn();
 const mockNavigate = vi.fn();
+const mockListTables = vi.fn();
+const mockConfig: { defaultDiagramId: string | undefined } = {
+    defaultDiagramId: undefined,
+};
 
 vi.mock('@/hooks/use-storage', () => ({
     useStorage: () => ({
         addDiagram: mockAddDiagram,
         listDiagrams: mockListDiagrams,
+        listTables: mockListTables,
     }),
 }));
 
 vi.mock('@/hooks/use-config', () => ({
     useConfig: () => ({
+        config: mockConfig,
         updateConfig: mockUpdateConfig,
     }),
 }));
@@ -29,6 +35,8 @@ describe('useCreateEmptyDiagram', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockListDiagrams.mockResolvedValue([]);
+        mockListTables.mockResolvedValue([]);
+        mockConfig.defaultDiagramId = undefined;
     });
 
     it('creates a PostgreSQL diagram, saves it, sets it as default and navigates to it', async () => {
@@ -78,5 +86,52 @@ describe('useCreateEmptyDiagram', () => {
                 diagram: expect.objectContaining({ name: 'Diagram 3' }),
             })
         );
+    });
+
+    describe('reuseEmptyLast', () => {
+        beforeEach(() => {
+            mockConfig.defaultDiagramId = 'last';
+            mockListDiagrams.mockResolvedValue([{ id: 'last' }]);
+        });
+
+        it('открывает пустую последнюю схему вместо создания новой', async () => {
+            mockListTables.mockResolvedValue([]);
+            const { result } = renderHook(() => useCreateEmptyDiagram());
+            await act(async () => {
+                await result.current.createEmptyDiagram({
+                    replace: true,
+                    reuseEmptyLast: true,
+                });
+            });
+            expect(mockAddDiagram).not.toHaveBeenCalled();
+            expect(mockNavigate).toHaveBeenCalledWith('/d/last', {
+                replace: true,
+            });
+        });
+
+        it('создаёт новую, если в последней схеме есть таблицы', async () => {
+            mockListTables.mockResolvedValue([{ id: 't1' }]);
+            const { result } = renderHook(() => useCreateEmptyDiagram());
+            await act(async () => {
+                await result.current.createEmptyDiagram({
+                    replace: true,
+                    reuseEmptyLast: true,
+                });
+            });
+            expect(mockAddDiagram).toHaveBeenCalledTimes(1);
+            const saved = mockAddDiagram.mock.calls[0][0].diagram;
+            expect(mockNavigate).toHaveBeenCalledWith(`/d/${saved.id}`, {
+                replace: true,
+            });
+        });
+
+        it('без reuseEmptyLast создаёт новую, даже если последняя пустая', async () => {
+            mockListTables.mockResolvedValue([]);
+            const { result } = renderHook(() => useCreateEmptyDiagram());
+            await act(async () => {
+                await result.current.createEmptyDiagram();
+            });
+            expect(mockAddDiagram).toHaveBeenCalledTimes(1);
+        });
     });
 });

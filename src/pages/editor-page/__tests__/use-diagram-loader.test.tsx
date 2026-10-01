@@ -100,7 +100,7 @@ describe('useDiagramLoader', () => {
         expect(mockOpenOpenDiagramDialog).not.toHaveBeenCalled();
     });
 
-    it('на /new всегда создаёт новую схему, даже если есть схема по умолчанию и другие схемы', async () => {
+    it('на /new создаёт новую схему (с reuseEmptyLast), если последняя схема непустая', async () => {
         mockConfig.defaultDiagramId = 'default-1';
         mockLoadDiagram.mockResolvedValue({ id: 'default-1' });
         mockListDiagrams.mockResolvedValue([{ id: 'default-1' }]);
@@ -118,15 +118,46 @@ describe('useDiagramLoader', () => {
             ),
         });
 
+        // Решение «переиспользовать или создать» принимает сам хук
+        // createEmptyDiagram (покрыт его тестами); загрузчик лишь передаёт опции.
         await waitFor(() =>
             expect(mockCreateEmptyDiagram).toHaveBeenCalledWith({
                 replace: true,
+                reuseEmptyLast: true,
             })
         );
         expect(mockOpenOpenDiagramDialog).not.toHaveBeenCalled();
         expect(mockLoadDiagram).not.toHaveBeenCalled();
     });
-    it('на /new с глубокой ссылкой (?open=import) продолжает последнюю схему, а не плодит пустую', async () => {
+
+    it('на /new при пустой последней схеме делегирует переиспользование в createEmptyDiagram', async () => {
+        mockConfig.defaultDiagramId = 'empty-1';
+        mockListDiagrams.mockResolvedValue([{ id: 'empty-1' }]);
+
+        renderHook(() => useDiagramLoader(), {
+            wrapper: ({ children }) => (
+                <MemoryRouter
+                    basename="/tools/erd2"
+                    initialEntries={['/tools/erd2/new']}
+                >
+                    <Routes>
+                        <Route path="new" element={<>{children}</>} />
+                    </Routes>
+                </MemoryRouter>
+            ),
+        });
+
+        await waitFor(() =>
+            expect(mockCreateEmptyDiagram).toHaveBeenCalledTimes(1)
+        );
+        expect(mockCreateEmptyDiagram).toHaveBeenCalledWith({
+            replace: true,
+            reuseEmptyLast: true,
+        });
+        expect(mockLoadDiagram).not.toHaveBeenCalled();
+    });
+
+    it('на /new с глубокой ссылкой (?open=import) тоже использует пустую схему, а не продолжает последнюю', async () => {
         mockConfig.defaultDiagramId = 'default-1';
         mockLoadDiagram.mockResolvedValue({ id: 'default-1' });
         mockListDiagrams.mockResolvedValue([{ id: 'default-1' }]);
@@ -146,9 +177,12 @@ describe('useDiagramLoader', () => {
         });
 
         await waitFor(() =>
-            expect(mockLoadDiagram).toHaveBeenCalledWith('default-1')
+            expect(mockCreateEmptyDiagram).toHaveBeenCalledWith({
+                replace: true,
+                reuseEmptyLast: true,
+            })
         );
-        expect(mockCreateEmptyDiagram).not.toHaveBeenCalled();
+        expect(mockLoadDiagram).not.toHaveBeenCalled();
         window.history.pushState({}, '', '/');
     });
 });

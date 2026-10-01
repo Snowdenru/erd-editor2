@@ -53,13 +53,13 @@ export const useDiagramLoader = () => {
                 return;
             }
 
-            // Глубокие ссылки лендинга (?open=import, ?tab=…) открывают диалог/вкладку поверх
-            // последней схемы: пустую схему под них не создаём, иначе она останется в списке.
-            const params = new URLSearchParams(window.location.search);
-            const hasDeepLink =
-                params.get('open') === 'import' || params.has('tab');
-            if (isNewRoute && !hasDeepLink) {
-                await createEmptyDiagram({ replace: true });
+            // /new (в т.ч. с глубокой ссылкой ?open=import / ?tab=…) открывает пустой холст:
+            // переиспользуем пустую последнюю схему, чтобы не плодить пустые в списке.
+            if (isNewRoute) {
+                await createEmptyDiagram({
+                    replace: true,
+                    reuseEmptyLast: true,
+                });
                 return;
             }
 

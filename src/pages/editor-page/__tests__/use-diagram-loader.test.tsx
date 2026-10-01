@@ -71,10 +71,12 @@ vi.mock('@/hooks/use-storage', () => ({
 }));
 
 import { useDiagramLoader } from '../use-diagram-loader';
+import { getLastDiagramId } from '@/lib/last-diagram';
 
 describe('useDiagramLoader', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        localStorage.clear();
         mockConfig.defaultDiagramId = undefined;
         mockCreateEmptyDiagram.mockResolvedValue(undefined);
         mockListDiagrams.mockResolvedValue([]);
@@ -165,5 +167,63 @@ describe('useDiagramLoader', () => {
             expect(mockCreateEmptyDiagram).toHaveBeenCalledTimes(1)
         );
         expect(mockCreateEmptyDiagram).toHaveBeenCalledWith();
+    });
+
+    it('успешная загрузка /d/:id записывает маркер последней схемы', async () => {
+        mockLoadDiagram.mockResolvedValue({ id: 'abc' });
+        renderHook(() => useDiagramLoader(), {
+            wrapper: ({ children }) => (
+                <MemoryRouter
+                    basename="/tools/erd2"
+                    initialEntries={['/tools/erd2/d/abc']}
+                >
+                    <Routes>
+                        <Route path="d/:diagramId" element={<>{children}</>} />
+                    </Routes>
+                </MemoryRouter>
+            ),
+        });
+
+        await waitFor(() => expect(getLastDiagramId()).toBe('abc'));
+    });
+
+    it('не найденная схема /d/:id маркер не пишет', async () => {
+        mockLoadDiagram.mockResolvedValue(undefined);
+        renderHook(() => useDiagramLoader(), {
+            wrapper: ({ children }) => (
+                <MemoryRouter
+                    basename="/tools/erd2"
+                    initialEntries={['/tools/erd2/d/gone']}
+                >
+                    <Routes>
+                        <Route path="d/:diagramId" element={<>{children}</>} />
+                    </Routes>
+                </MemoryRouter>
+            ),
+        });
+
+        await waitFor(() =>
+            expect(mockOpenOpenDiagramDialog).toHaveBeenCalled()
+        );
+        expect(getLastDiagramId()).toBe('');
+    });
+
+    it('открытие схемы по умолчанию (/diagrams) тоже записывает маркер', async () => {
+        mockConfig.defaultDiagramId = 'default-1';
+        mockLoadDiagram.mockResolvedValue({ id: 'default-1' });
+        renderHook(() => useDiagramLoader(), {
+            wrapper: ({ children }) => (
+                <MemoryRouter
+                    basename="/tools/erd2"
+                    initialEntries={['/tools/erd2/diagrams']}
+                >
+                    <Routes>
+                        <Route path="diagrams" element={<>{children}</>} />
+                    </Routes>
+                </MemoryRouter>
+            ),
+        });
+
+        await waitFor(() => expect(getLastDiagramId()).toBe('default-1'));
     });
 });

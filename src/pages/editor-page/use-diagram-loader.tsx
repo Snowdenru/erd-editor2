@@ -14,6 +14,7 @@ import {
     useParams,
 } from 'react-router-dom';
 import { NEW_DIAGRAM_PATH, diagramPath } from '@/lib/erd-paths';
+import { setLastDiagramId } from '@/lib/last-diagram';
 
 export const useDiagramLoader = () => {
     const [initialDiagram, setInitialDiagram] = useState<Diagram | undefined>();
@@ -53,6 +54,9 @@ export const useDiagramLoader = () => {
                     return;
                 }
 
+                // Маркер быстрого входа пишем здесь, а не только в ConfigProvider: шаблоны,
+                // DDL-блок лендинга и прямые /d/:id не меняют config.defaultDiagramId.
+                setLastDiagramId(diagramId);
                 setInitialDiagram(diagram);
                 hideLoader();
 
@@ -78,6 +82,7 @@ export const useDiagramLoader = () => {
             if (config.defaultDiagramId) {
                 const diagram = await loadDiagram(config.defaultDiagramId);
                 if (diagram) {
+                    setLastDiagramId(config.defaultDiagramId);
                     navigate(diagramPath(config.defaultDiagramId), {
                         replace: true,
                     });

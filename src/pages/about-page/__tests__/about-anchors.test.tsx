@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, waitFor } from '@testing-library/react';
+import { fireEvent, render, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { AboutPage } from '../about-page';
@@ -50,5 +50,76 @@ describe('AboutPage anchor scrolling', () => {
         renderAbout('/tools/erd2/about');
 
         expect(scrollIntoView).not.toHaveBeenCalled();
+    });
+
+    describe('re-scroll after the page settles', () => {
+        const mockLoading = () =>
+            vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
+
+        const setup = () => {
+            const scrollIntoView = vi.fn();
+            Element.prototype.scrollIntoView = scrollIntoView;
+            window.history.pushState({}, '', '/tools/erd2/about#databases');
+            return scrollIntoView;
+        };
+
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it('repeats the scroll once on window load', async () => {
+            mockLoading();
+            const scrollIntoView = setup();
+            renderAbout('/tools/erd2/about#databases');
+            await waitFor(() =>
+                expect(scrollIntoView).toHaveBeenCalledTimes(1)
+            );
+
+            window.dispatchEvent(new Event('load'));
+            expect(scrollIntoView).toHaveBeenCalledTimes(2);
+
+            window.dispatchEvent(new Event('load'));
+            expect(scrollIntoView).toHaveBeenCalledTimes(2);
+        });
+
+        it.each([['wheel'], ['touchmove'], ['keydown']])(
+            'does not repeat the scroll after a manual %s',
+            async (type) => {
+                mockLoading();
+                const scrollIntoView = setup();
+                renderAbout('/tools/erd2/about#databases');
+                await waitFor(() =>
+                    expect(scrollIntoView).toHaveBeenCalledTimes(1)
+                );
+
+                fireEvent(window, new Event(type));
+                window.dispatchEvent(new Event('load'));
+                expect(scrollIntoView).toHaveBeenCalledTimes(1);
+            }
+        );
+
+        it('removes listeners on unmount', async () => {
+            mockLoading();
+            const scrollIntoView = setup();
+            const { unmount } = renderAbout('/tools/erd2/about#databases');
+            await waitFor(() =>
+                expect(scrollIntoView).toHaveBeenCalledTimes(1)
+            );
+
+            unmount();
+            window.dispatchEvent(new Event('load'));
+            expect(scrollIntoView).toHaveBeenCalledTimes(1);
+        });
+
+        it('does not register a load handler when the page is already loaded', async () => {
+            const scrollIntoView = setup();
+            renderAbout('/tools/erd2/about#databases');
+            await waitFor(() =>
+                expect(scrollIntoView).toHaveBeenCalledTimes(1)
+            );
+
+            window.dispatchEvent(new Event('load'));
+            expect(scrollIntoView).toHaveBeenCalledTimes(1);
+        });
     });
 });

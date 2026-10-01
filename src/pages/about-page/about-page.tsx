@@ -211,9 +211,35 @@ const AboutPageComponent: React.FC = () => {
         } catch {
             // keep the raw value
         }
-        document
-            .getElementById(id)
-            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const scrollToTarget = () =>
+            document
+                .getElementById(id)
+                ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        scrollToTarget();
+
+        // Картинки и ленивый блок DDL после первого скролла сдвигают вёрстку — один раз
+        // повторяем скролл на window load, но только если пользователь сам ещё не листал.
+        if (document.readyState === 'complete') return;
+        let userScrolled = false;
+        const markUserScroll = () => {
+            userScrolled = true;
+        };
+        const userEvents = ['wheel', 'touchmove', 'keydown'] as const;
+        const cleanup = () => {
+            window.removeEventListener('load', onLoad);
+            userEvents.forEach((t) =>
+                window.removeEventListener(t, markUserScroll)
+            );
+        };
+        const onLoad = () => {
+            if (!userScrolled) scrollToTarget();
+            cleanup();
+        };
+        window.addEventListener('load', onLoad);
+        userEvents.forEach((t) =>
+            window.addEventListener(t, markUserScroll, { passive: true })
+        );
+        return cleanup;
     }, []);
 
     return (
@@ -266,6 +292,8 @@ const AboutPageComponent: React.FC = () => {
                         </span>
                         <img
                             src={AboutHeroImage}
+                            width={940}
+                            height={435}
                             alt="Пример ER-диаграммы в редакторе SQL Lab"
                             className="w-full rounded-2xl border bg-white shadow-xl"
                         />
@@ -318,6 +346,8 @@ const AboutPageComponent: React.FC = () => {
                         </div>
                         <img
                             src={AboutEditorDarkImage}
+                            width={1600}
+                            height={1000}
                             alt="Редактор SQL Lab ERD в тёмной теме"
                             className="w-full rounded-xl shadow-2xl"
                         />

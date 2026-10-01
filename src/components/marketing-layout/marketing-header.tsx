@@ -34,7 +34,9 @@ export const MarketingHeader: React.FC = () => {
                                 : ChartDBDarkLogo
                         }
                         alt="SQL Lab"
-                        className="h-6 max-w-fit"
+                        width={200}
+                        height={52}
+                        className="h-6 w-auto max-w-fit"
                     />
                 </a>
                 <div className="hidden items-center gap-1 md:flex">

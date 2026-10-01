@@ -62,7 +62,9 @@
                         process.env &&
                         process.env.VITE_DISABLE_ANALYTICS === 'true');
 
-                if (!disableAnalytics) {
+                // При предрендере (scripts/prerender-about.mjs) счётчик не грузим:
+                // ни визит со сборки, ни тег в сохранённом about.html не нужны.
+                if (!disableAnalytics && !window.__ERD2_PRERENDER__) {
                     const script = document.createElement('script');
                     script.src = 'https://cdn.usefathom.com/script.js';
                     script.setAttribute('data-site', 'PRHIVBNN');

@@ -47,6 +47,14 @@ describe('marketing layout', () => {
         expect(screen.getByText(/© 2026 SQL Lab/)).toBeInTheDocument();
     });
 
+    it('footer import link opens the import dialog', () => {
+        wrap(<MarketingFooter />);
+
+        expect(
+            screen.getByRole('link', { name: 'Импорт из вашей БД' })
+        ).toHaveAttribute('href', '/tools/erd2/new?open=import');
+    });
+
     describe('hash links smooth scroll', () => {
         afterEach(() => {
             document.getElementById('databases')?.remove();

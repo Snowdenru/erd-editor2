@@ -7,6 +7,7 @@
         "dev": "vite",
         "build": "npm run lint && tsc -b && vite build && npm run prerender",
         "prerender": "node scripts/prerender-about.mjs",
+        "smoke": "node scripts/smoke-erd2.mjs",
         "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
         "lint:fix": "npm run lint -- --fix",
         "preview": "vite preview",

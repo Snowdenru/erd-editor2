@@ -82,7 +82,18 @@
 
                 // При предрендере (scripts/prerender-about.mjs) счётчик не грузим:
                 // ни визит со сборки, ни тег в сохранённом about.html не нужны.
-                if (!disableAnalytics && !window.__ERD2_PRERENDER__) {
+                // Флаг erd2_no_track=1 в localStorage — выключатель для smoke и ручных проверок.
+                var noTrack = false;
+                try {
+                    noTrack = localStorage.getItem('erd2_no_track') === '1';
+                } catch (e) {
+                    // localStorage недоступен — обычный режим
+                }
+                if (
+                    !disableAnalytics &&
+                    !noTrack &&
+                    !window.__ERD2_PRERENDER__
+                ) {
                     const script = document.createElement('script');
                     script.src = 'https://cdn.usefathom.com/script.js';
                     script.setAttribute('data-site', 'PRHIVBNN');

@@ -102,6 +102,19 @@ export type FunnelEvent =
     | 'erd2_review_prompt'
     | 'erd2_review_submit';
 
+// Аналитика выключена при предрендере и при ручном флаге erd2_no_track=1
+// (для smoke-проверок и ручных прогонов, чтобы не портить статистику).
+function isTrackingDisabled(): boolean {
+    if ((window as { __ERD2_PRERENDER__?: boolean }).__ERD2_PRERENDER__) {
+        return true;
+    }
+    try {
+        return localStorage.getItem('erd2_no_track') === '1';
+    } catch {
+        return false;
+    }
+}
+
 // Аналитика не должна ломать интерфейс: любые ошибки глотаем
 export function trackEvent(
     eventType: FunnelEvent,
@@ -109,7 +122,7 @@ export function trackEvent(
     payload: Record<string, unknown> = {},
     options: { keepalive?: boolean } = {}
 ): void {
-    if ((window as { __ERD2_PRERENDER__?: boolean }).__ERD2_PRERENDER__) {
+    if (isTrackingDisabled()) {
         return;
     }
     try {
@@ -149,7 +162,7 @@ export function getVisitorId(): string {
 // Просмотр страницы в общий счётчик платформы (/admin-dashboard/analytics → «Посещения страниц»).
 // Ботов отсеивает бэкенд. Ошибки глотаем — аналитика не должна ломать страницу.
 export function trackPageView(path: string): void {
-    if ((window as { __ERD2_PRERENDER__?: boolean }).__ERD2_PRERENDER__) {
+    if (isTrackingDisabled()) {
         return;
     }
     try {

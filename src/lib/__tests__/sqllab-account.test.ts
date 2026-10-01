@@ -160,4 +160,23 @@ describe('sqllab-account', () => {
                 .__ERD2_PRERENDER__;
         }
     });
+
+    it('respects the erd2_no_track opt-out flag', () => {
+        const spy = vi
+            .spyOn(auth, 'authFetch')
+            .mockResolvedValue(new Response(null, { status: 200 }));
+        try {
+            localStorage.setItem('erd2_no_track', '1');
+            trackPageView('/tools/erd2/about');
+            trackEvent('erd2_open', '/tools/erd2/about');
+            expect(spy).not.toHaveBeenCalled();
+
+            localStorage.clear();
+            trackPageView('/tools/erd2/about');
+            trackEvent('erd2_open', '/tools/erd2/about');
+            expect(spy).toHaveBeenCalledTimes(2);
+        } finally {
+            localStorage.clear();
+        }
+    });
 });

@@ -2,6 +2,18 @@ server {
     listen       80;
     listen  [::]:80;
 
+    location = /about {
+        root   /usr/share/nginx/html;
+        add_header Cache-Control "no-cache";
+        try_files /about.html /index.html;
+    }
+
+    location = /about/ {
+        root   /usr/share/nginx/html;
+        add_header Cache-Control "no-cache";
+        try_files /about.html /index.html;
+    }
+
     location / {
         root   /usr/share/nginx/html;
         index  index.html index.htm;

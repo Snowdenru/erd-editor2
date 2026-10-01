@@ -3,11 +3,12 @@ interface InitializableRouter {
     subscribe: (fn: (state: { initialized: boolean }) => void) => () => void;
 }
 
-// Предрендеренная страница (например, about.html) лежит в #root. Первый commit
-// createRoot() очищает контейнер, а пока ленивый маршрут не загружен, роутер
-// рендерит null — страница бы мигнула пустотой. Поэтому ждём инициализации роутера.
+// В #root до старта React лежит либо предрендеренная страница (about.html), либо
+// сплэш-спиннер из index.html. Первый commit createRoot() очищает контейнер, а пока
+// ленивый маршрут не загружен, роутер рендерит null — вместо страницы/спиннера был бы
+// белый экран. Поэтому, если в #root что-то есть, ждём инициализации роутера.
 export const hasPrerenderedContent = (root: Element): boolean =>
-    root.querySelector('h1') !== null;
+    root.firstElementChild !== null;
 
 export const waitForPrerenderedPage = (
     root: Element,

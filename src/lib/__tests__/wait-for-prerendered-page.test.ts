@@ -24,13 +24,25 @@ const makeRoot = (html: string) => {
 describe('waitForPrerenderedPage', () => {
     afterEach(() => vi.useRealTimers());
 
-    it('не ждёт, если в #root только сплэш', async () => {
+    it('не ждёт, если #root пуст', async () => {
         const router = makeRouter(false);
-        await waitForPrerenderedPage(
-            makeRoot('<div class="app-splash"></div>'),
-            router
-        );
+        await waitForPrerenderedPage(makeRoot(''), router);
         expect(router.subscribe).not.toHaveBeenCalled();
+    });
+
+    it('ждёт инициализации роутера, если в #root только сплэш (холодный запуск /tools/erd2)', async () => {
+        const router = makeRouter(false);
+        let resolved = false;
+        const p = waitForPrerenderedPage(
+            makeRoot('<div class="app-splash"><span></span></div>'),
+            router
+        ).then(() => (resolved = true));
+        await Promise.resolve();
+        expect(router.subscribe).toHaveBeenCalled();
+        expect(resolved).toBe(false);
+        router.emit(true);
+        await p;
+        expect(resolved).toBe(true);
     });
 
     it('не ждёт, если роутер уже инициализирован', async () => {

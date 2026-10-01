@@ -5,7 +5,7 @@ const mockAddDiagram = vi.fn();
 const mockListDiagrams = vi.fn();
 const mockUpdateConfig = vi.fn();
 const mockNavigate = vi.fn();
-const mockListTables = vi.fn();
+const mockGetDiagram = vi.fn();
 const mockConfig: { defaultDiagramId: string | undefined } = {
     defaultDiagramId: undefined,
 };
@@ -14,7 +14,7 @@ vi.mock('@/hooks/use-storage', () => ({
     useStorage: () => ({
         addDiagram: mockAddDiagram,
         listDiagrams: mockListDiagrams,
-        listTables: mockListTables,
+        getDiagram: mockGetDiagram,
     }),
 }));
 
@@ -35,7 +35,7 @@ describe('useCreateEmptyDiagram', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockListDiagrams.mockResolvedValue([]);
-        mockListTables.mockResolvedValue([]);
+        mockGetDiagram.mockResolvedValue(undefined);
         mockConfig.defaultDiagramId = undefined;
     });
 
@@ -89,13 +89,16 @@ describe('useCreateEmptyDiagram', () => {
     });
 
     describe('reuseEmptyLast', () => {
-        beforeEach(() => {
-            mockConfig.defaultDiagramId = 'last';
-            mockListDiagrams.mockResolvedValue([{ id: 'last' }]);
-        });
-
-        it('открывает пустую последнюю схему вместо создания новой', async () => {
-            mockListTables.mockResolvedValue([]);
+        const emptyDiagram = {
+            id: 'last',
+            tables: [],
+            relationships: [],
+            areas: [],
+            notes: [],
+            customTypes: [],
+            dependencies: [],
+        };
+        const run = async () => {
             const { result } = renderHook(() => useCreateEmptyDiagram());
             await act(async () => {
                 await result.current.createEmptyDiagram({
@@ -103,30 +106,65 @@ describe('useCreateEmptyDiagram', () => {
                     reuseEmptyLast: true,
                 });
             });
-            expect(mockAddDiagram).not.toHaveBeenCalled();
-            expect(mockNavigate).toHaveBeenCalledWith('/d/last', {
-                replace: true,
-            });
-        });
-
-        it('создаёт новую, если в последней схеме есть таблицы', async () => {
-            mockListTables.mockResolvedValue([{ id: 't1' }]);
-            const { result } = renderHook(() => useCreateEmptyDiagram());
-            await act(async () => {
-                await result.current.createEmptyDiagram({
-                    replace: true,
-                    reuseEmptyLast: true,
-                });
-            });
+        };
+        const expectCreatedNew = () => {
             expect(mockAddDiagram).toHaveBeenCalledTimes(1);
             const saved = mockAddDiagram.mock.calls[0][0].diagram;
             expect(mockNavigate).toHaveBeenCalledWith(`/d/${saved.id}`, {
                 replace: true,
             });
+        };
+
+        beforeEach(() => {
+            mockConfig.defaultDiagramId = 'last';
+            mockListDiagrams.mockResolvedValue([{ id: 'last' }]);
+            mockGetDiagram.mockResolvedValue(emptyDiagram);
+        });
+
+        it('открывает полностью пустую последнюю схему вместо создания новой', async () => {
+            await run();
+            expect(mockAddDiagram).not.toHaveBeenCalled();
+            expect(mockNavigate).toHaveBeenCalledWith('/d/last', {
+                replace: true,
+            });
+            expect(mockListDiagrams).not.toHaveBeenCalled();
+        });
+
+        it('запрашивает схему со всеми дочерними сущностями', async () => {
+            await run();
+            expect(mockGetDiagram).toHaveBeenCalledWith('last', {
+                includeTables: true,
+                includeRelationships: true,
+                includeDependencies: true,
+                includeAreas: true,
+                includeCustomTypes: true,
+                includeNotes: true,
+            });
+        });
+
+        it.each([
+            ['таблицы', { tables: [{ id: 't1' }] }],
+            ['связи', { relationships: [{ id: 'r1' }] }],
+            ['область', { areas: [{ id: 'a1' }] }],
+            ['заметка', { notes: [{ id: 'n1' }] }],
+            ['кастомный тип', { customTypes: [{ id: 'c1' }] }],
+            ['зависимость', { dependencies: [{ id: 'd1' }] }],
+        ])(
+            'создаёт новую, если в последней схеме есть %s',
+            async (_n, extra) => {
+                mockGetDiagram.mockResolvedValue({ ...emptyDiagram, ...extra });
+                await run();
+                expectCreatedNew();
+            }
+        );
+
+        it('создаёт новую, если последней схемы нет в хранилище', async () => {
+            mockGetDiagram.mockResolvedValue(undefined);
+            await run();
+            expectCreatedNew();
         });
 
         it('без reuseEmptyLast создаёт новую, даже если последняя пустая', async () => {
-            mockListTables.mockResolvedValue([]);
             const { result } = renderHook(() => useCreateEmptyDiagram());
             await act(async () => {
                 await result.current.createEmptyDiagram();

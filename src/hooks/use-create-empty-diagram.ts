@@ -9,25 +9,38 @@ import { diagramPath } from '@/lib/erd-paths';
 
 export function useCreateEmptyDiagram() {
     const navigate = useNavigate();
-    const { addDiagram, listDiagrams, listTables } = useStorage();
+    const { addDiagram, listDiagrams, getDiagram } = useStorage();
     const { config, updateConfig } = useConfig();
 
     const createEmptyDiagram = useCallback(
         async (options?: { replace?: boolean; reuseEmptyLast?: boolean }) => {
             if (options?.reuseEmptyLast && config?.defaultDiagramId) {
                 const lastId = config.defaultDiagramId;
-                const diagrams = await listDiagrams();
-                if (diagrams.some((d) => d.id === lastId)) {
-                    const tables = await listTables(lastId);
-                    if (tables.length === 0) {
-                        const lastPath = diagramPath(lastId);
-                        if (options.replace) {
-                            navigate(lastPath, { replace: true });
-                        } else {
-                            navigate(lastPath);
-                        }
-                        return;
+                const last = await getDiagram(lastId, {
+                    includeTables: true,
+                    includeRelationships: true,
+                    includeDependencies: true,
+                    includeAreas: true,
+                    includeCustomTypes: true,
+                    includeNotes: true,
+                });
+                // «Пустая» — совсем ничего нет: заметка или область тоже работа пользователя.
+                const isEmpty =
+                    !!last &&
+                    !last.tables?.length &&
+                    !last.relationships?.length &&
+                    !last.areas?.length &&
+                    !last.notes?.length &&
+                    !last.customTypes?.length &&
+                    !last.dependencies?.length;
+                if (isEmpty) {
+                    const lastPath = diagramPath(lastId);
+                    if (options.replace) {
+                        navigate(lastPath, { replace: true });
+                    } else {
+                        navigate(lastPath);
                     }
+                    return;
                 }
             }
 
@@ -50,7 +63,7 @@ export function useCreateEmptyDiagram() {
                 navigate(path);
             }
         },
-        [addDiagram, listDiagrams, listTables, config, updateConfig, navigate]
+        [addDiagram, listDiagrams, getDiagram, config, updateConfig, navigate]
     );
 
     return { createEmptyDiagram };

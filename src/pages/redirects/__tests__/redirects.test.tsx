@@ -22,7 +22,10 @@ const renderAt = (url: string) => {
         [
             { path: '/', element: <RedirectToDiagrams /> },
             { path: '/diagrams', element: <Where /> },
-            { path: '/diagrams/:diagramId', element: <LegacyDiagramRedirect /> },
+            {
+                path: '/diagrams/:diagramId',
+                element: <LegacyDiagramRedirect />,
+            },
             { path: '/d/:diagramId', element: <Where /> },
             {
                 path: '/templates/clone/:templateSlug',

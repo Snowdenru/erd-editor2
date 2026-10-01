@@ -161,6 +161,22 @@ describe('sqllab-account', () => {
         }
     });
 
+    it('does not send analytics while the entry script is redirecting', () => {
+        const spy = vi
+            .spyOn(auth, 'authFetch')
+            .mockResolvedValue(new Response(null, { status: 200 }));
+        (window as { __ERD2_REDIRECTING__?: boolean }).__ERD2_REDIRECTING__ =
+            true;
+        try {
+            trackPageView('/tools/erd2/about');
+            trackEvent('erd2_open', '/tools/erd2/about');
+            expect(spy).not.toHaveBeenCalled();
+        } finally {
+            delete (window as { __ERD2_REDIRECTING__?: boolean })
+                .__ERD2_REDIRECTING__;
+        }
+    });
+
     it('respects the erd2_no_track opt-out flag', () => {
         const spy = vi
             .spyOn(auth, 'authFetch')

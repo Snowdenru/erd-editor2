@@ -14,6 +14,7 @@ const run = (opts: {
     search?: string;
     marker?: string | null;
     prerender?: boolean;
+    sessionThrows?: boolean;
 }) => {
     const replace = vi.fn();
     const fakeLocation = {
@@ -24,13 +25,30 @@ const run = (opts: {
     const fakeStorage = {
         getItem: () => (opts.marker === undefined ? null : opts.marker),
     };
-    const fakeWindow = { __ERD2_PRERENDER__: opts.prerender };
-    new Function('window', 'location', 'localStorage', body ?? '')(
-        fakeWindow,
-        fakeLocation,
-        fakeStorage
-    );
-    return replace;
+    const sessionData: Record<string, string> = {};
+    const fakeSession = {
+        setItem: (k: string, v: string) => {
+            if (opts.sessionThrows) throw new Error('private mode');
+            sessionData[k] = v;
+        },
+    };
+    const style = { visibility: '' };
+    const fakeWindow: {
+        __ERD2_PRERENDER__?: boolean;
+        __ERD2_REDIRECTING__?: boolean;
+    } = {
+        __ERD2_PRERENDER__: opts.prerender,
+    };
+    const fakeDocument = { documentElement: { style } };
+    new Function(
+        'window',
+        'location',
+        'localStorage',
+        'sessionStorage',
+        'document',
+        body ?? ''
+    )(fakeWindow, fakeLocation, fakeStorage, fakeSession, fakeDocument);
+    return Object.assign(replace, { fakeWindow, sessionData, style });
 };
 
 describe('скрипт быстрого входа erd2-entry', () => {
@@ -85,5 +103,33 @@ describe('скрипт быстрого входа erd2-entry', () => {
         expect(
             run({ pathname: '/tools/erd2/', marker: 'a/b' })
         ).not.toHaveBeenCalled();
+    });
+
+    it('перед редиректом ставит флаг, прячет страницу и помечает сессию', () => {
+        const r = run({ pathname: '/tools/erd2/', marker: 'abc_1' });
+        expect(r.fakeWindow.__ERD2_REDIRECTING__).toBe(true);
+        expect(r.style.visibility).toBe('hidden');
+    });
+
+    it('без редиректа флаг, скрытие и пометка сессии не ставятся', () => {
+        for (const o of [
+            { pathname: '/tools/erd2/', marker: null },
+            { pathname: '/tools/erd2/about', marker: 'abc' },
+            { pathname: '/tools/erd2/', marker: 'abc', prerender: true },
+            { pathname: '/tools/erd2/', marker: '../evil' },
+        ]) {
+            const r = run(o);
+            expect(r.fakeWindow.__ERD2_REDIRECTING__).toBeUndefined();
+            expect(r.style.visibility).toBe('');
+        }
+    });
+
+    it('sessionStorage недоступен (приватный режим) — редирект всё равно выполняется', () => {
+        const r = run({
+            pathname: '/tools/erd2/',
+            marker: 'abc_1',
+            sessionThrows: true,
+        });
+        expect(r).toHaveBeenCalledWith('/tools/erd2/d/abc_1');
     });
 });

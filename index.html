@@ -64,6 +64,11 @@
                     if (location.search) return;
                     var id = localStorage.getItem('erd2_last_diagram');
                     if (id && /^[A-Za-z0-9_-]+$/.test(id)) {
+                        // replace только начинает навигацию: пока грузится схема, лендинг
+                        // продолжил бы рисоваться и слать аналитику. Прячем страницу и
+                        // выключаем счётчики (window.stop() не используем — может отменить переход).
+                        window.__ERD2_REDIRECTING__ = true;
+                        document.documentElement.style.visibility = 'hidden';
                         location.replace('/tools/erd2/d/' + id);
                     }
                 } catch (e) {
@@ -92,7 +97,8 @@
                 if (
                     !disableAnalytics &&
                     !noTrack &&
-                    !window.__ERD2_PRERENDER__
+                    !window.__ERD2_PRERENDER__ &&
+                    !window.__ERD2_REDIRECTING__
                 ) {
                     const script = document.createElement('script');
                     script.src = 'https://cdn.usefathom.com/script.js';

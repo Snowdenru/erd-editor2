@@ -102,10 +102,16 @@ export type FunnelEvent =
     | 'erd2_review_prompt'
     | 'erd2_review_submit';
 
-// Аналитика выключена при предрендере и при ручном флаге erd2_no_track=1
+// Аналитика выключена при предрендере, при редиректе быстрого входа и при ручном флаге erd2_no_track=1
 // (для smoke-проверок и ручных прогонов, чтобы не портить статистику).
 function isTrackingDisabled(): boolean {
-    if ((window as { __ERD2_PRERENDER__?: boolean }).__ERD2_PRERENDER__) {
+    const w = window as {
+        __ERD2_PRERENDER__?: boolean;
+        __ERD2_REDIRECTING__?: boolean;
+    };
+    // __ERD2_REDIRECTING__ ставит скрипт erd2-entry: страница уходит на последнюю схему,
+    // лендинг не должен засчитываться как просмотр.
+    if (w.__ERD2_PRERENDER__ || w.__ERD2_REDIRECTING__) {
         return true;
     }
     try {

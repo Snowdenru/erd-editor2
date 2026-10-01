@@ -1,0 +1,166 @@
+{
+  "id": "legacy-shop",
+  "name": "Фикстура shop",
+  "databaseType": "generic",
+  "tables": [
+    {
+      "id": "t28f4btwx6n8l96fzot8l19xf",
+      "name": "users",
+      "x": 10.0,
+      "y": 20.0,
+      "fields": [
+        {
+          "id": "ufep6krw4pfahtov05llek12c",
+          "name": "id",
+          "type": {
+            "id": "int",
+            "name": "int"
+          },
+          "primaryKey": true,
+          "unique": false,
+          "nullable": false,
+          "increment": true,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null,
+          "createdAt": 1777636800000
+        },
+        {
+          "id": "nbxwrtn6n1zq1q9jjnri9muqr",
+          "name": "email",
+          "type": {
+            "id": "varchar",
+            "name": "varchar"
+          },
+          "primaryKey": false,
+          "unique": true,
+          "nullable": false,
+          "increment": false,
+          "characterMaximumLength": "255",
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null,
+          "createdAt": 1777636800000
+        },
+        {
+          "id": "wkryirro6shw10dfw1m2gq32g",
+          "name": "created_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "increment": false,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "NOW()",
+          "comments": null,
+          "createdAt": 1777636800000
+        }
+      ],
+      "indexes": [
+        {
+          "id": "aokigr6x1sjtuhcakzffgzt47",
+          "name": "idx_users_email",
+          "unique": false,
+          "fieldIds": [
+            "nbxwrtn6n1zq1q9jjnri9muqr"
+          ],
+          "createdAt": 1777636800000
+        }
+      ],
+      "color": "#4f46e5",
+      "isView": false,
+      "createdAt": 1777636800000,
+      "comments": "Покупатели"
+    },
+    {
+      "id": "u2s6j9y7kkiglyvhn42ahx73a",
+      "name": "orders",
+      "x": 400.0,
+      "y": 20.0,
+      "fields": [
+        {
+          "id": "ut8pzv7t0y00nqre538nd6i4x",
+          "name": "id",
+          "type": {
+            "id": "bigint",
+            "name": "bigint"
+          },
+          "primaryKey": true,
+          "unique": false,
+          "nullable": false,
+          "increment": true,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null,
+          "createdAt": 1777636800000
+        },
+        {
+          "id": "63l76zj8sbpwspgxkshyusn8f",
+          "name": "user_id",
+          "type": {
+            "id": "int",
+            "name": "int"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "increment": false,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null,
+          "createdAt": 1777636800000
+        },
+        {
+          "id": "jt2z2etmtk6i5p1pw6coi8l8g",
+          "name": "total",
+          "type": {
+            "id": "numeric",
+            "name": "numeric"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "increment": false,
+          "characterMaximumLength": null,
+          "precision": 10,
+          "scale": 2,
+          "default": null,
+          "comments": null,
+          "createdAt": 1777636800000
+        }
+      ],
+      "indexes": [],
+      "color": "#16a34a",
+      "isView": false,
+      "createdAt": 1777636800000,
+      "comments": null
+    }
+  ],
+  "relationships": [
+    {
+      "id": "bexwid1cxthkq0gn7qfmcab27",
+      "name": "fk_orders_user_id",
+      "sourceTableId": "t28f4btwx6n8l96fzot8l19xf",
+      "targetTableId": "u2s6j9y7kkiglyvhn42ahx73a",
+      "sourceFieldId": "ufep6krw4pfahtov05llek12c",
+      "targetFieldId": "63l76zj8sbpwspgxkshyusn8f",
+      "sourceCardinality": "one",
+      "targetCardinality": "many",
+      "createdAt": 1777636800000
+    }
+  ],
+  "createdAt": "2026-05-01T12:00:00.000Z",
+  "updatedAt": "2026-09-01T08:30:00.000Z"
+}

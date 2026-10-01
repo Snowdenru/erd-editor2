@@ -1,0 +1,255 @@
+{
+  "id": "legacy-messy",
+  "name": "Фикстура messy",
+  "databaseType": "generic",
+  "tables": [
+    {
+      "id": "v1ylb9cgllb1d8x0peq9l1hcv",
+      "name": "items",
+      "x": 5.0,
+      "y": 7.0,
+      "fields": [
+        {
+          "id": "rab45jfxcrccszt6row1a2ky2",
+          "name": "id",
+          "type": {
+            "id": "int",
+            "name": "int"
+          },
+          "primaryKey": true,
+          "unique": false,
+          "nullable": false,
+          "increment": false,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null,
+          "createdAt": 1777636800000
+        },
+        {
+          "id": "yxabhkpl6htqvbro0dm0rnb1e",
+          "name": "sku",
+          "type": {
+            "id": "fortnite",
+            "name": "FORTNITE"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "increment": false,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null,
+          "createdAt": 1777636800000
+        },
+        {
+          "id": "ar55mtxvizi5d2gtcyke8dypu",
+          "name": "owner_id",
+          "type": {
+            "id": "int",
+            "name": "int"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "increment": false,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null,
+          "createdAt": 1777636800000
+        }
+      ],
+      "indexes": [
+        {
+          "id": "1k3f4fpqnf2913seq3xtsi565",
+          "name": "idx_items_sku",
+          "unique": false,
+          "fieldIds": [
+            "yxabhkpl6htqvbro0dm0rnb1e"
+          ],
+          "createdAt": 1777636800000
+        }
+      ],
+      "color": "#111111",
+      "isView": false,
+      "createdAt": 1777636800000,
+      "comments": null
+    },
+    {
+      "id": "6j0pk6yf04do6pki89kxz4hg0",
+      "name": "items_2",
+      "x": 0.0,
+      "y": 427.0,
+      "fields": [
+        {
+          "id": "efkyqnf5kvdt0v2xipwp6f0uh",
+          "name": "id",
+          "type": {
+            "id": "int",
+            "name": "int"
+          },
+          "primaryKey": true,
+          "unique": false,
+          "nullable": false,
+          "increment": false,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null,
+          "createdAt": 1777636800000
+        },
+        {
+          "id": "ex4wb71g9baxzctascixmkzya",
+          "name": "item_id",
+          "type": {
+            "id": "int",
+            "name": "int"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "increment": false,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null,
+          "createdAt": 1777636800000
+        },
+        {
+          "id": "6e96ii2ytgvdgow7gcv5b0sy0",
+          "name": "column_3",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "increment": false,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null,
+          "createdAt": 1777636800000
+        }
+      ],
+      "indexes": [],
+      "color": "#222222",
+      "isView": false,
+      "createdAt": 1777636800000,
+      "comments": null
+    },
+    {
+      "id": "rgd4njjaxl4xatm9h0amash78",
+      "name": "profiles",
+      "x": 320.0,
+      "y": 427.0,
+      "fields": [
+        {
+          "id": "el8z8kuqgdqjiojav8gfp1q3x",
+          "name": "id",
+          "type": {
+            "id": "int",
+            "name": "int"
+          },
+          "primaryKey": true,
+          "unique": false,
+          "nullable": false,
+          "increment": false,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null,
+          "createdAt": 1777636800000
+        },
+        {
+          "id": "8k3c2624zg92qe7s0xn855z3u",
+          "name": "item_id",
+          "type": {
+            "id": "int",
+            "name": "int"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "increment": false,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null,
+          "createdAt": 1777636800000
+        },
+        {
+          "id": "8z782br5jo07e42f9c1qcugzx",
+          "name": "other",
+          "type": {
+            "id": "int",
+            "name": "int"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "increment": false,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null,
+          "createdAt": 1777636800000
+        }
+      ],
+      "indexes": [],
+      "color": "#333333",
+      "isView": false,
+      "createdAt": 1777636800000,
+      "comments": null
+    }
+  ],
+  "relationships": [
+    {
+      "id": "nni7c1meszb51dgxxfc41zmoj",
+      "name": "fk_items_2_item_id",
+      "sourceTableId": "v1ylb9cgllb1d8x0peq9l1hcv",
+      "targetTableId": "6j0pk6yf04do6pki89kxz4hg0",
+      "sourceFieldId": "rab45jfxcrccszt6row1a2ky2",
+      "targetFieldId": "ex4wb71g9baxzctascixmkzya",
+      "sourceCardinality": "many",
+      "targetCardinality": "one",
+      "createdAt": 1777636800000
+    },
+    {
+      "id": "5cejdhb1gq9gfh4bnx1gm2ly6",
+      "name": "fk_profiles_item_id",
+      "sourceTableId": "v1ylb9cgllb1d8x0peq9l1hcv",
+      "targetTableId": "rgd4njjaxl4xatm9h0amash78",
+      "sourceFieldId": "rab45jfxcrccszt6row1a2ky2",
+      "targetFieldId": "8k3c2624zg92qe7s0xn855z3u",
+      "sourceCardinality": "one",
+      "targetCardinality": "one",
+      "createdAt": 1777636800000
+    },
+    {
+      "id": "d7s91he9fyv87590almqiu4ck",
+      "name": "fk_profiles_other",
+      "sourceTableId": "v1ylb9cgllb1d8x0peq9l1hcv",
+      "targetTableId": "rgd4njjaxl4xatm9h0amash78",
+      "sourceFieldId": "rab45jfxcrccszt6row1a2ky2",
+      "targetFieldId": "8z782br5jo07e42f9c1qcugzx",
+      "sourceCardinality": "one",
+      "targetCardinality": "many",
+      "createdAt": 1777636800000
+    }
+  ],
+  "createdAt": "2026-05-01T12:00:00.000Z",
+  "updatedAt": "2026-09-01T08:30:00.000Z"
+}

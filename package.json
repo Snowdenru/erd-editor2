@@ -5,7 +5,8 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "npm run lint && tsc -b && vite build",
+        "build": "npm run lint && tsc -b && vite build && npm run prerender",
+        "prerender": "node scripts/prerender-about.mjs",
         "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
         "lint:fix": "npm run lint -- --fix",
         "preview": "vite preview",
@@ -107,6 +108,7 @@
         "husky": "^9.1.5",
         "postcss": "^8.4.40",
         "prettier": "^3.3.3",
+        "puppeteer-core": "^24.43.1",
         "rollup-plugin-visualizer": "^6.0.5",
         "tailwindcss": "^3.4.7",
         "typescript": "^5.2.2",

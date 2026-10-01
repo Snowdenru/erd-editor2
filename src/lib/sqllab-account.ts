@@ -109,6 +109,9 @@ export function trackEvent(
     payload: Record<string, unknown> = {},
     options: { keepalive?: boolean } = {}
 ): void {
+    if ((window as { __ERD2_PRERENDER__?: boolean }).__ERD2_PRERENDER__) {
+        return;
+    }
     try {
         void authFetch('/api/auth/event/', {
             method: 'POST',
@@ -146,6 +149,9 @@ export function getVisitorId(): string {
 // Просмотр страницы в общий счётчик платформы (/admin-dashboard/analytics → «Посещения страниц»).
 // Ботов отсеивает бэкенд. Ошибки глотаем — аналитика не должна ломать страницу.
 export function trackPageView(path: string): void {
+    if ((window as { __ERD2_PRERENDER__?: boolean }).__ERD2_PRERENDER__) {
+        return;
+    }
     try {
         const utmSource = new URLSearchParams(window.location.search).get(
             'utm_source'

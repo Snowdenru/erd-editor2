@@ -145,4 +145,19 @@ describe('sqllab-account', () => {
         vi.spyOn(auth, 'authFetch').mockRejectedValue(new Error('offline'));
         expect(() => trackPageView('/tools/erd2/about')).not.toThrow();
     });
+
+    it('does not send analytics while prerendering', () => {
+        const spy = vi
+            .spyOn(auth, 'authFetch')
+            .mockResolvedValue(new Response(null, { status: 200 }));
+        (window as { __ERD2_PRERENDER__?: boolean }).__ERD2_PRERENDER__ = true;
+        try {
+            trackPageView('/tools/erd2/about');
+            trackEvent('erd2_open', '/tools/erd2/about');
+            expect(spy).not.toHaveBeenCalled();
+        } finally {
+            delete (window as { __ERD2_PRERENDER__?: boolean })
+                .__ERD2_PRERENDER__;
+        }
+    });
 });

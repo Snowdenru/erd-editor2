@@ -1,3 +1,4 @@
+import { diagramPath } from '@/lib/erd-paths';
 import { Spinner } from '@/components/spinner/spinner';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { useLoaderData, useNavigate } from 'react-router-dom';
@@ -43,7 +44,7 @@ export const CloneTemplateComponent: React.FC = () => {
             type: 'template_use',
         });
         await addDiagram({ diagram: diagramToAdd });
-        navigate(`/diagrams/${diagramToAdd.id}`);
+        navigate(diagramPath(diagramToAdd.id));
     }, [addDiagram, navigate, template]);
 
     useEffect(() => {

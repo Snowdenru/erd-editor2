@@ -9,7 +9,7 @@ const FOOTER_COLUMNS: Array<{
         links: [
             { label: 'Цены', href: '/tools/erd2/pricing' },
             { label: 'Общий тариф Pro (с курсами)', href: '/plans' },
-            { label: 'Импорт из вашей БД', href: '/tools/erd2/' },
+            { label: 'Импорт из вашей БД', href: '/tools/erd2/new' },
             { label: 'Шаблоны', href: '/tools/erd2/templates' },
             { label: 'Старый ERD-редактор', href: '/tools/erd' },
         ],

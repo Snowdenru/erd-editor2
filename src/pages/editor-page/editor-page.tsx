@@ -37,7 +37,7 @@ import { CloudPullProvider } from '@/components/cloud-pull/cloud-pull-provider';
 import { Erd2Tracker } from '@/components/erd2-tracker/erd2-tracker';
 
 // Глубокие ссылки со страницы /about: ?open=import, ?tab=ddl|dbml|tables|refs.
-// Читаем один раз при загрузке модуля — редирект / → /diagrams/:id теряет query.
+// Читаем один раз при загрузке модуля — редирект / → /diagrams теряет query.
 const DEEP_LINK_TABS: readonly SidebarSection[] = [
     'tables',
     'dbml',

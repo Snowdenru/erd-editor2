@@ -1,3 +1,4 @@
+import { diagramPath } from '@/lib/erd-paths';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Dialog, DialogContent } from '@/components/dialog/dialog';
 import { DatabaseType } from '@/lib/domain/database-type';
@@ -133,7 +134,7 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
             });
 
             closeCreateDiagramDialog();
-            navigate(`/diagrams/${diagram.id}`);
+            navigate(diagramPath(diagram.id));
         },
         [
             importMethod,
@@ -164,7 +165,7 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
         await addDiagram({ diagram });
         await updateConfig({ config: { defaultDiagramId: diagram.id } });
         closeCreateDiagramDialog();
-        navigate(`/diagrams/${diagram.id}`);
+        navigate(diagramPath(diagram.id));
     }, [
         databaseType,
         addDiagram,

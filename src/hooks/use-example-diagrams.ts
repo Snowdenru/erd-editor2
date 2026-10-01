@@ -1,3 +1,4 @@
+import { diagramPath } from '@/lib/erd-paths';
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStorage } from '@/hooks/use-storage';
@@ -31,7 +32,7 @@ export function useExampleDiagrams() {
                 };
 
                 await addDiagram({ diagram: diagramToAdd });
-                navigate(`/diagrams/${diagramToAdd.id}`);
+                navigate(diagramPath(diagramToAdd.id));
             } finally {
                 setLoadingExampleId(undefined);
             }

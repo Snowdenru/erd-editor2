@@ -1,3 +1,4 @@
+import { diagramPath } from '@/lib/erd-paths';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDialog } from '@/hooks/use-dialog';
 import {
@@ -63,7 +64,7 @@ export const ImportDiagramDialog: React.FC<ImportDiagramDialogProps> = ({
                 closeImportDiagramDialog();
                 closeCreateDiagramDialog();
 
-                navigate(`/diagrams/${diagram.id}`);
+                navigate(diagramPath(diagram.id));
             } catch (e) {
                 setError(true);
 

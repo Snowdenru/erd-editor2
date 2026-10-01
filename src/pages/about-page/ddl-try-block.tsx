@@ -1,3 +1,4 @@
+import { diagramPath } from '@/lib/erd-paths';
 import React, { Suspense, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, TriangleAlert } from 'lucide-react';
@@ -121,7 +122,7 @@ export const DdlTryBlock: React.FC = () => {
         });
 
         if (isLoggedIn()) {
-            navigate(`/diagrams/${diagram.id}`);
+            navigate(diagramPath(diagram.id));
             return;
         }
         // Схема уже лежит в браузере: после входа пользователь вернётся прямо в неё
@@ -210,12 +211,12 @@ export const DdlTryBlock: React.FC = () => {
                 reason="save_landing"
                 returnPath={
                     promptForId
-                        ? `${APP_BASE}/diagrams/${promptForId}`
+                        ? `${APP_BASE}${diagramPath(promptForId)}`
                         : undefined
                 }
                 onSecondary={() => {
                     if (promptForId) {
-                        navigate(`/diagrams/${promptForId}`);
+                        navigate(diagramPath(promptForId));
                     }
                 }}
             />

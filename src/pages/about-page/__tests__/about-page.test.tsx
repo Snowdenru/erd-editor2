@@ -8,7 +8,7 @@ import { AboutPage } from '../about-page';
 vi.mock('@/lib/sqllab-account', () => ({ trackPageView: vi.fn() }));
 
 describe('AboutPage', () => {
-    it('renders the hero heading and primary CTA pointing at the editor root, respecting the app basename', () => {
+    it('renders the hero heading and primary CTA pointing at the new-diagram editor entry, respecting the app basename', () => {
         render(
             <HelmetProvider>
                 <MemoryRouter
@@ -32,7 +32,7 @@ describe('AboutPage', () => {
         });
         expect(openEditorLinks.length).toBeGreaterThan(0);
         openEditorLinks.forEach((link) => {
-            expect(link).toHaveAttribute('href', '/tools/erd2');
+            expect(link).toHaveAttribute('href', '/tools/erd2/new');
         });
     });
 

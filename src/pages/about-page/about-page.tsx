@@ -50,7 +50,7 @@ const DIALECTS: Array<{ name: string; type: DatabaseType }> = [
 const FEATURE_CARD_MAIN = {
     icon: Database as IconType,
     tag: 'Любая БД',
-    to: '/tools/erd2/?open=import',
+    to: '/tools/erd2/new?open=import',
     title: 'Импорт из вашей базы',
     description:
         'Вставьте DDL, DBML или результат нашего SQL-запроса — схема строится сразу, а живой предпросмотр обновляется по мере ввода.',
@@ -68,7 +68,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: Zap,
         tag: 'Быстро',
-        to: '/tools/erd2/?open=import',
+        to: '/tools/erd2/new?open=import',
         title: 'Мгновенный импорт',
         description:
             'Один запрос забирает всю схему вашей базы целиком — без доступа к самой базе данных.',
@@ -77,7 +77,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: FileCode,
         tag: 'Просто',
-        to: '/tools/erd2/?tab=ddl',
+        to: '/tools/erd2/new?tab=ddl',
         title: 'Экспорт SQL',
         description:
             'Чистые DDL-скрипты для нужного диалекта: PostgreSQL, MySQL, SQL Server и других.',
@@ -86,7 +86,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: Code2,
         tag: 'Онлайн',
-        to: '/tools/erd2/?tab=ddl',
+        to: '/tools/erd2/new?tab=ddl',
         title: 'Вкладки DDL и DBML',
         description:
             'Схема всегда под рукой как код: DDL для базы и DBML для правок прямо в боковой панели.',
@@ -104,7 +104,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: ImageIcon,
         tag: 'Делитесь',
-        to: '/tools/erd2/',
+        to: '/tools/erd2/new',
         title: 'Экспорт в изображение',
         description:
             'SVG и PNG для документации, JSON для резервной копии, DBML для других инструментов.',
@@ -113,7 +113,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: Undo2,
         tag: 'Удобно',
-        to: '/tools/erd2/',
+        to: '/tools/erd2/new',
         title: 'Порядок на холсте',
         description:
             'Отмена и повтор, автораскладка, области и заметки — с большими схемами работать легко.',
@@ -249,7 +249,7 @@ const AboutPageComponent: React.FC = () => {
                                 size="lg"
                                 className="h-12 rounded-xl bg-foreground px-8 text-base text-background hover:bg-foreground/85"
                             >
-                                <Link to="/">Открыть редактор</Link>
+                                <Link to="/new">Открыть редактор</Link>
                             </Button>
                             <Button
                                 asChild
@@ -307,7 +307,7 @@ const AboutPageComponent: React.FC = () => {
                                     size="lg"
                                     className="h-14 rounded-full bg-black px-8 text-lg text-white hover:bg-black/80"
                                 >
-                                    <Link to="/">
+                                    <Link to="/new">
                                         Открыть редактор
                                         <Zap className="ml-2 size-5" />
                                     </Link>
@@ -518,7 +518,7 @@ const AboutPageComponent: React.FC = () => {
                 <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 px-6 pb-20 text-center">
                     <h2 className="text-2xl font-bold">Готовы начать?</h2>
                     <Button asChild size="lg">
-                        <Link to="/">Открыть редактор</Link>
+                        <Link to="/new">Открыть редактор</Link>
                     </Button>
                 </div>
 

@@ -41,7 +41,7 @@ describe('useExampleDiagrams', () => {
         expect(added.name).toBe(example.diagram.name);
         expect(added.tables).toHaveLength(example.diagram.tables?.length ?? 0);
         expect(added.tables[0].id).not.toBe(example.diagram.tables?.[0].id);
-        expect(mockNavigate).toHaveBeenCalledWith(`/diagrams/${added.id}`);
+        expect(mockNavigate).toHaveBeenCalledWith(`/d/${added.id}`);
     });
 
     it('creates a separate copy on every click, so examples never overwrite each other', async () => {

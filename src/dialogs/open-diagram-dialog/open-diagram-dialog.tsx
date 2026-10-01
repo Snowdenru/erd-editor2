@@ -1,3 +1,4 @@
+import { diagramPath } from '@/lib/erd-paths';
 import { Button } from '@/components/button/button';
 import { DiagramIcon } from '@/components/diagram-icon/diagram-icon';
 import {
@@ -68,7 +69,7 @@ export const OpenDiagramDialog: React.FC<OpenDiagramDialogProps> = ({
         (diagramId: string) => {
             if (diagramId) {
                 updateConfig({ config: { defaultDiagramId: diagramId } });
-                navigate(`/diagrams/${diagramId}`);
+                navigate(diagramPath(diagramId));
             }
         },
         [updateConfig, navigate]

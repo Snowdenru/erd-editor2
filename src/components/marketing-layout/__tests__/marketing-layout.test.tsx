@@ -34,7 +34,7 @@ describe('marketing layout', () => {
         ).toHaveAttribute('href', '/courses');
         expect(
             screen.getByRole('link', { name: /открыть редактор/i })
-        ).toHaveAttribute('href', '/tools/erd2');
+        ).toHaveAttribute('href', '/tools/erd2/new');
     });
 
     it('footer links "Цены" to the ERD pricing page', () => {

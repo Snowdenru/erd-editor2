@@ -21,7 +21,7 @@ const ACTIVITY_EVENTS = ['pointerdown', 'keydown', 'wheel'] as const;
 const page = () => window.location.pathname;
 
 // В общий счётчик просмотров — один путь для редактора (без id схемы, иначе каждая схема станет
-// отдельной строкой в «Посещениях страниц»). Маршруты «/» и «/diagrams/:id» — разные элементы
+// отдельной строкой в «Посещениях страниц»). Маршруты «/diagrams» и «/d/:id» — разные элементы
 // роутера: редирект с одного на другой перемонтирует трекер, поэтому повтор в пределах 5 с гасим.
 const EDITOR_PAGEVIEW_PATH = '/tools/erd2/';
 const PAGEVIEW_KEY = 'erd2_last_pageview';

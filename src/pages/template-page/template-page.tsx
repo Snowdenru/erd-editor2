@@ -1,3 +1,4 @@
+import { templateUsePath } from '@/lib/erd-paths';
 import React, { useCallback, useEffect, useRef } from 'react';
 import ChartDBLogo from '@/assets/sqllab-logo-light.svg';
 import ChartDBDarkLogo from '@/assets/sqllab-logo-dark.svg';
@@ -62,10 +63,11 @@ const TemplatePageComponent: React.FC = () => {
     const canvasContainerRef = useRef<HTMLDivElement>(null);
 
     const cloneTemplate = useCallback(async () => {
+        if (!templateSlug) return;
         if (APP_URL) {
-            window.location.href = `${APP_URL}/templates/clone/${templateSlug}`;
+            window.location.href = `${APP_URL}${templateUsePath(templateSlug)}`;
         } else {
-            navigate(`/templates/clone/${templateSlug}`);
+            navigate(templateUsePath(templateSlug));
         }
     }, [navigate, templateSlug]);
 

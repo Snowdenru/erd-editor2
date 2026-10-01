@@ -8,20 +8,25 @@ import { setLastDiagramId } from '@/lib/last-diagram';
 export const ConfigProvider: React.FC<React.PropsWithChildren> = ({
     children,
 }) => {
-    const { getConfig, updateConfig: updateDataConfig } = useStorage();
+    const {
+        getConfig,
+        getDiagram,
+        updateConfig: updateDataConfig,
+    } = useStorage();
     const [config, setConfig] = useState<ChartDBConfig | undefined>();
 
     useEffect(() => {
         const loadConfig = async () => {
             const config = await getConfig();
             if (config?.defaultDiagramId) {
-                setLastDiagramId(config.defaultDiagramId);
+                const exists = await getDiagram(config.defaultDiagramId);
+                setLastDiagramId(exists ? config.defaultDiagramId : '');
             }
             setConfig(config);
         };
 
         loadConfig();
-    }, [getConfig]);
+    }, [getConfig, getDiagram]);
 
     const updateConfig: ConfigContext['updateConfig'] = async ({
         config,

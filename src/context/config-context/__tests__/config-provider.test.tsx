@@ -8,6 +8,7 @@ import { LAST_DIAGRAM_KEY } from '@/lib/last-diagram';
 const storage = vi.hoisted(() => ({
     getConfig: vi.fn(),
     updateConfig: vi.fn(),
+    getDiagram: vi.fn(),
 }));
 vi.mock('@/hooks/use-storage', () => ({ useStorage: () => storage }));
 
@@ -22,6 +23,7 @@ describe('ConfigProvider и маркер последней схемы', () => {
         localStorage.clear();
         storage.getConfig.mockResolvedValue({ defaultDiagramId: 'abc' });
         storage.updateConfig.mockResolvedValue(undefined);
+        storage.getDiagram.mockResolvedValue({ id: 'abc' });
     });
 
     it('при загрузке конфига записывает маркер', async () => {
@@ -52,5 +54,18 @@ describe('ConfigProvider и маркер последней схемы', () => {
         });
         await done;
         expect(localStorage.getItem(LAST_DIAGRAM_KEY)).toBe('xyz');
+    });
+
+    it('не записывает маркер, если схема из конфига удалена', async () => {
+        storage.getDiagram.mockResolvedValue(undefined);
+        localStorage.setItem(LAST_DIAGRAM_KEY, 'abc');
+        render(
+            <ConfigProvider>
+                <Probe />
+            </ConfigProvider>
+        );
+        await waitFor(() =>
+            expect(localStorage.getItem(LAST_DIAGRAM_KEY)).toBeNull()
+        );
     });
 });

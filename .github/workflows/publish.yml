@@ -6,7 +6,22 @@ on:
 
 jobs:
   build-and-push:
+    name: build-and-push (${{ matrix.name }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # :latest — сборка без build-args (умолчания из кода, /tools/erd2)
+          - name: default
+            tag: latest
+            build_args: ''
+          # :erd-root — корень /tools/erd, лендинг открыт для индексации
+          - name: erd-root
+            tag: erd-root
+            build_args: |
+              VITE_APP_BASE=/tools/erd
+              VITE_ABOUT_INDEXABLE=true
     permissions:
       contents: read
       packages: write
@@ -30,4 +45,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ env.OWNER_LC }}/erd-editor2:latest
+          build-args: ${{ matrix.build_args }}
+          tags: |
+            ghcr.io/${{ env.OWNER_LC }}/erd-editor2:${{ matrix.tag }}
+            ghcr.io/${{ env.OWNER_LC }}/erd-editor2:${{ matrix.name == 'default' && 'sha' || 'erd-root-sha' }}-${{ github.sha }}

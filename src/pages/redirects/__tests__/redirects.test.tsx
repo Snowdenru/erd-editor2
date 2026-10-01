@@ -7,7 +7,6 @@ import {
     useLocation,
 } from 'react-router-dom';
 import {
-    RedirectToDiagrams,
     LegacyDiagramRedirect,
     LegacyTemplateCloneRedirect,
 } from '../redirects';
@@ -20,8 +19,6 @@ const Where = () => {
 const renderAt = (url: string) => {
     const router = createMemoryRouter(
         [
-            { path: '/', element: <RedirectToDiagrams /> },
-            { path: '/diagrams', element: <Where /> },
             {
                 path: '/diagrams/:diagramId',
                 element: <LegacyDiagramRedirect />,
@@ -40,13 +37,6 @@ const renderAt = (url: string) => {
 };
 
 describe('редиректы старых адресов', () => {
-    it('/ → /diagrams с сохранением query и hash', () => {
-        renderAt('/?open=import&tab=ddl#x');
-        expect(screen.getByTestId('where').textContent).toBe(
-            '/diagrams?open=import&tab=ddl#x'
-        );
-    });
-
     it('/diagrams/:id → /d/:id', () => {
         renderAt('/diagrams/abc');
         expect(screen.getByTestId('where').textContent).toBe('/d/abc');

@@ -191,9 +191,13 @@ const IconTile: React.FC<{ icon: IconType }> = ({ icon: Icon }) => (
     </span>
 );
 
+// Лендинг отдаётся и на корне, и на /about; путь фиксирован, чтобы не смешиваться
+// с просмотрами редактора ('/tools/erd2/') в page_stats.
+const ABOUT_PAGEVIEW_PATH = '/tools/erd2/about';
+
 const AboutPageComponent: React.FC = () => {
     useEffect(() => {
-        trackPageView(window.location.pathname);
+        trackPageView(ABOUT_PAGEVIEW_PATH);
     }, []);
 
     // On a full page load React renders after the browser has already tried

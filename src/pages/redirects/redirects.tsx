@@ -1,13 +1,6 @@
 import React from 'react';
 import { Navigate, useLocation, useParams } from 'react-router-dom';
-import { DIAGRAMS_PATH, diagramPath, templateUsePath } from '@/lib/erd-paths';
-
-// «/» теперь — это «/diagrams» (продолжить с последней схемы или выбрать). Query нужен
-// глубоким ссылкам лендинга: ?open=import, ?tab=ddl.
-export const RedirectToDiagrams: React.FC = () => {
-    const { search, hash } = useLocation();
-    return <Navigate to={{ pathname: DIAGRAMS_PATH, search, hash }} replace />;
-};
+import { diagramPath, templateUsePath } from '@/lib/erd-paths';
 
 // Старый адрес редактора схемы: /diagrams/:id → /d/:id.
 export const LegacyDiagramRedirect: React.FC = () => {

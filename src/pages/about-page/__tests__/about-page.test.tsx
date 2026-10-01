@@ -5,10 +5,26 @@ import { MemoryRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { AboutPage } from '../about-page';
 import { FAQ_ITEMS } from '../faq-items';
+import { trackPageView } from '@/lib/sqllab-account';
 
 vi.mock('@/lib/sqllab-account', () => ({ trackPageView: vi.fn() }));
 
 describe('AboutPage', () => {
+    it('на корне приложения шлёт просмотр как /tools/erd2/about, а не путь редактора', () => {
+        render(
+            <HelmetProvider>
+                <MemoryRouter
+                    basename="/tools/erd2"
+                    initialEntries={['/tools/erd2/']}
+                >
+                    <AboutPage />
+                </MemoryRouter>
+            </HelmetProvider>
+        );
+        expect(trackPageView).toHaveBeenCalledWith('/tools/erd2/about');
+        expect(trackPageView).not.toHaveBeenCalledWith('/tools/erd2/');
+    });
+
     it('renders the hero heading and primary CTA pointing at the new-diagram editor entry, respecting the app basename', () => {
         render(
             <HelmetProvider>

@@ -1,7 +1,8 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 
-// Пока false — страница закрыта от индексации (noindex) и canonical указывает на /tools/erd2/about.
+// Пока false — страница закрыта от индексации (noindex); canonical указывает на /tools/erd2/ —
+// лендинг отдаётся на корне и на /about.
 // После переезда на /tools/erd переключить в true.
 export const ABOUT_INDEXABLE = false;
 
@@ -17,9 +18,7 @@ export interface AboutSeoProps {
 }
 
 export const AboutSeo: React.FC<AboutSeoProps> = ({ faqItems }) => {
-    const url = ABOUT_INDEXABLE
-        ? `${SITE}/tools/erd`
-        : `${SITE}/tools/erd2/about`;
+    const url = ABOUT_INDEXABLE ? `${SITE}/tools/erd` : `${SITE}/tools/erd2/`;
 
     const softwareApplication = {
         '@context': 'https://schema.org',

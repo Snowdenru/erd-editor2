@@ -8,7 +8,6 @@ import { RouteError } from './components/route-error/route-error';
 import {
     LegacyDiagramRedirect,
     LegacyTemplateCloneRedirect,
-    RedirectToDiagrams,
 } from './pages/redirects/redirects';
 
 const editorRoute = (path: string): RouteObject => ({
@@ -23,7 +22,15 @@ const editorRoute = (path: string): RouteObject => ({
 });
 
 const routes: RouteObject[] = [
-    { path: '', element: <RedirectToDiagrams /> },
+    {
+        path: '',
+        async lazy() {
+            const { AboutPage } = await import('./pages/about-page/about-page');
+            return {
+                element: <AboutPage />,
+            };
+        },
+    },
     editorRoute('diagrams'),
     editorRoute('new'),
     editorRoute('d/:diagramId'),

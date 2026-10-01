@@ -29,7 +29,7 @@ describe('AboutSeo', () => {
             document.head
                 .querySelector('link[rel="canonical"]')
                 ?.getAttribute('href')
-        ).toBe('https://sqllab.ru/tools/erd2/about');
+        ).toBe('https://sqllab.ru/tools/erd2/');
     });
 
     it('renders Open Graph and Twitter tags', async () => {
@@ -54,6 +54,7 @@ describe('AboutSeo', () => {
         const app = jsons.find((j) => j['@type'] === 'SoftwareApplication');
         expect(app.applicationCategory).toBe('DeveloperApplication');
         expect(app.offers.price).toBe('0');
+        expect(app.url).toBe('https://sqllab.ru/tools/erd2/');
     });
 });
 

@@ -53,6 +53,24 @@
             }
         </style>
         <script src="/config.js"></script>
+        <script id="erd2-entry">
+            // Возвращающегося пользователя с корня приложения ведём в последнюю схему до отрисовки
+            // лендинга. У бота и нового посетителя маркера нет — они видят лендинг.
+            (function () {
+                try {
+                    if (window.__ERD2_PRERENDER__) return;
+                    if (location.pathname.replace(/\/+$/, '') !== '/tools/erd2')
+                        return;
+                    if (location.search) return;
+                    var id = localStorage.getItem('erd2_last_diagram');
+                    if (id && /^[A-Za-z0-9_-]+$/.test(id)) {
+                        location.replace('/tools/erd2/d/' + id);
+                    }
+                } catch (e) {
+                    // localStorage недоступен — остаёмся на лендинге
+                }
+            })();
+        </script>
         <script>
             // Load analytics only if not disabled
             (function () {

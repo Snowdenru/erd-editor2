@@ -20,6 +20,14 @@ server {
         try_files /about.html /index.html;
     }
 
+    # Предрендеренный файл отдаётся только через try_files выше (внутренний переход);
+    # прямой внешний запрос /about.html даёт 404.
+    location = /about.html {
+        internal;
+        root   /usr/share/nginx/html;
+        add_header Cache-Control "no-cache";
+    }
+
     location / {
         root   /usr/share/nginx/html;
         index  index.html index.htm;

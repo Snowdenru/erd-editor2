@@ -7,11 +7,13 @@ import { useRedoUndoStack } from '@/hooks/use-redo-undo-stack';
 import { useStorage } from '@/hooks/use-storage';
 import type { Diagram } from '@/lib/domain/diagram';
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useMatch, useNavigate, useParams } from 'react-router-dom';
+import { NEW_DIAGRAM_PATH, diagramPath } from '@/lib/erd-paths';
 
 export const useDiagramLoader = () => {
     const [initialDiagram, setInitialDiagram] = useState<Diagram | undefined>();
     const { diagramId } = useParams<{ diagramId: string }>();
+    const isNewRoute = !!useMatch(NEW_DIAGRAM_PATH);
     const { config } = useConfig();
     const { loadDiagram, currentDiagram } = useChartDB();
     const { resetRedoStack, resetUndoStack } = useRedoUndoStack();
@@ -49,10 +51,19 @@ export const useDiagramLoader = () => {
                 hideLoader();
 
                 return;
-            } else if (!diagramId && config.defaultDiagramId) {
+            }
+
+            if (isNewRoute) {
+                await createEmptyDiagram({ replace: true });
+                return;
+            }
+
+            if (config.defaultDiagramId) {
                 const diagram = await loadDiagram(config.defaultDiagramId);
                 if (diagram) {
-                    navigate(`/diagrams/${config.defaultDiagramId}`);
+                    navigate(diagramPath(config.defaultDiagramId), {
+                        replace: true,
+                    });
 
                     return;
                 }
@@ -77,6 +88,7 @@ export const useDiagramLoader = () => {
         loadDefaultDiagram();
     }, [
         diagramId,
+        isNewRoute,
         createEmptyDiagram,
         config,
         navigate,

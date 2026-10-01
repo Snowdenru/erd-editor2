@@ -5,19 +5,29 @@ import type { TemplatePageLoaderData } from './pages/template-page/template-page
 import type { TemplatesPageLoaderData } from './pages/templates-page/templates-page';
 import { getTemplatesAndAllTags } from './templates-data/template-utils';
 import { RouteError } from './components/route-error/route-error';
+import {
+    LegacyDiagramRedirect,
+    LegacyTemplateCloneRedirect,
+    RedirectToDiagrams,
+} from './pages/redirects/redirects';
+
+const editorRoute = (path: string): RouteObject => ({
+    path,
+    async lazy() {
+        const { EditorPage } = await import('./pages/editor-page/editor-page');
+
+        return {
+            element: <EditorPage />,
+        };
+    },
+});
 
 const routes: RouteObject[] = [
-    ...['', 'diagrams/:diagramId'].map((path) => ({
-        path,
-        async lazy() {
-            const { EditorPage } =
-                await import('./pages/editor-page/editor-page');
-
-            return {
-                element: <EditorPage />,
-            };
-        },
-    })),
+    { path: '', element: <RedirectToDiagrams /> },
+    editorRoute('diagrams'),
+    editorRoute('new'),
+    editorRoute('d/:diagramId'),
+    { path: 'diagrams/:diagramId', element: <LegacyDiagramRedirect /> },
     {
         path: 'examples',
         async lazy() {
@@ -130,8 +140,8 @@ const routes: RouteObject[] = [
         },
     },
     {
-        id: 'templates_load',
-        path: 'templates/clone/:templateSlug',
+        id: 'templates_use',
+        path: 'templates/:templateSlug/use',
         async lazy() {
             const { CloneTemplatePage } =
                 await import('./pages/clone-template-page/clone-template-page');
@@ -148,6 +158,10 @@ const routes: RouteObject[] = [
                 ),
             };
         },
+    },
+    {
+        path: 'templates/clone/:templateSlug',
+        element: <LegacyTemplateCloneRedirect />,
     },
     {
         path: '*',

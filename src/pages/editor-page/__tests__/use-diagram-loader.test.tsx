@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 // Основная гарантия этого изменения: на пустом аккаунте (0 диаграмм)
 // загрузчик создаёт пустую диаграмму напрямую (createEmptyDiagram),
@@ -16,6 +16,9 @@ const mockOpenOpenDiagramDialog = vi.fn();
 const mockOpenCreateDiagramDialog = vi.fn();
 const mockCreateEmptyDiagram = vi.fn().mockResolvedValue(undefined);
 const mockListDiagrams = vi.fn();
+const mockConfig: { defaultDiagramId: string | undefined } = {
+    defaultDiagramId: undefined,
+};
 
 vi.mock('@/hooks/use-chartdb', () => ({
     useChartDB: () => ({
@@ -30,7 +33,7 @@ vi.mock('@/hooks/use-chartdb', () => ({
 
 vi.mock('@/hooks/use-config', () => ({
     useConfig: () => ({
-        config: { defaultDiagramId: undefined },
+        config: mockConfig,
     }),
 }));
 
@@ -72,6 +75,7 @@ import { useDiagramLoader } from '../use-diagram-loader';
 describe('useDiagramLoader', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockConfig.defaultDiagramId = undefined;
         mockCreateEmptyDiagram.mockResolvedValue(undefined);
         mockListDiagrams.mockResolvedValue([]);
     });
@@ -94,5 +98,32 @@ describe('useDiagramLoader', () => {
 
         expect(mockOpenCreateDiagramDialog).not.toHaveBeenCalled();
         expect(mockOpenOpenDiagramDialog).not.toHaveBeenCalled();
+    });
+
+    it('на /new всегда создаёт новую схему, даже если есть схема по умолчанию и другие схемы', async () => {
+        mockConfig.defaultDiagramId = 'default-1';
+        mockLoadDiagram.mockResolvedValue({ id: 'default-1' });
+        mockListDiagrams.mockResolvedValue([{ id: 'default-1' }]);
+
+        renderHook(() => useDiagramLoader(), {
+            wrapper: ({ children }) => (
+                <MemoryRouter
+                    basename="/tools/erd2"
+                    initialEntries={['/tools/erd2/new']}
+                >
+                    <Routes>
+                        <Route path="new" element={<>{children}</>} />
+                    </Routes>
+                </MemoryRouter>
+            ),
+        });
+
+        await waitFor(() =>
+            expect(mockCreateEmptyDiagram).toHaveBeenCalledWith({
+                replace: true,
+            })
+        );
+        expect(mockOpenOpenDiagramDialog).not.toHaveBeenCalled();
+        expect(mockLoadDiagram).not.toHaveBeenCalled();
     });
 });

@@ -51,9 +51,18 @@ describe('useCreateEmptyDiagram', () => {
         expect(mockUpdateConfig).toHaveBeenCalledWith({
             config: { defaultDiagramId: savedDiagram.id },
         });
-        expect(mockNavigate).toHaveBeenCalledWith(
-            `/diagrams/${savedDiagram.id}`
-        );
+        expect(mockNavigate).toHaveBeenCalledWith(`/d/${savedDiagram.id}`);
+    });
+
+    it('с replace: true заменяет запись истории', async () => {
+        const { result } = renderHook(() => useCreateEmptyDiagram());
+        await act(async () => {
+            await result.current.createEmptyDiagram({ replace: true });
+        });
+        const saved = mockAddDiagram.mock.calls[0][0].diagram;
+        expect(mockNavigate).toHaveBeenCalledWith(`/d/${saved.id}`, {
+            replace: true,
+        });
     });
 
     it('numbers the diagram after the count of existing diagrams', async () => {

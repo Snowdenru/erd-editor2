@@ -10,6 +10,7 @@ import {
     buildSnapshotPayload,
     diffActions,
     readStoredSource,
+    consumeEntryRedirect,
     resolveSource,
     type Counts,
 } from '@/lib/erd2-tracking';
@@ -65,7 +66,11 @@ export const Erd2Tracker: React.FC = () => {
         }
         openedRef.current = true;
         trackEvent('erd2_open', page(), {
-            source: resolveSource(document.referrer, readStoredSource()),
+            source: resolveSource(
+                document.referrer,
+                readStoredSource(),
+                consumeEntryRedirect()
+            ),
             is_cloud: isLoggedIn(),
             // постоянный анонимный id (localStorage) — по нему бэкенд считает уникальных и вернувшихся
             visitor_id: getVisitorId(),

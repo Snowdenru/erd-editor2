@@ -68,6 +68,13 @@
                         // продолжил бы рисоваться и слать аналитику. Прячем страницу и
                         // выключаем счётчики (window.stop() не используем — может отменить переход).
                         window.__ERD2_REDIRECTING__ = true;
+                        // Следующий документ увидит referrer /tools/erd2/ — помечаем сессию,
+                        // чтобы трекинг не принял редирект за переход с лендинга.
+                        try {
+                            sessionStorage.setItem('erd2_entry_redirect', '1');
+                        } catch (e) {
+                            // приватный режим — источник останется неточным, редирект важнее
+                        }
                         document.documentElement.style.visibility = 'hidden';
                         location.replace('/tools/erd2/d/' + id);
                     }

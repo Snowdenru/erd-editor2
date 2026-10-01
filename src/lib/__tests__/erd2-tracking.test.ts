@@ -1,9 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, it, expect } from 'vitest';
 import { DatabaseType } from '@/lib/domain/database-type';
 import type { Diagram } from '@/lib/domain/diagram';
 import {
     buildSnapshotPayload,
+    consumeEntryRedirect,
     diffActions,
+    resetEntryRedirectCache,
     resolveSource,
 } from '../erd2-tracking';
 
@@ -111,5 +113,48 @@ describe('resolveSource', () => {
     it('falls back to direct', () => {
         expect(resolveSource('', null)).toBe('direct');
         expect(resolveSource('https://google.com/', null)).toBe('direct');
+    });
+});
+
+describe('resolveSource после редиректа быстрого входа', () => {
+    it('referrer /tools/erd2/ при флаге редиректа — direct, а не landing', () => {
+        expect(resolveSource('https://sqllab.ru/tools/erd2/', null, true)).toBe(
+            'direct'
+        );
+    });
+    it('шаблон важнее флага редиректа', () => {
+        expect(resolveSource('', 'template', true)).toBe('template');
+    });
+    it('без флага поведение прежнее', () => {
+        expect(
+            resolveSource('https://sqllab.ru/tools/erd2/', null, false)
+        ).toBe('landing');
+    });
+});
+
+describe('consumeEntryRedirect', () => {
+    beforeEach(() => {
+        sessionStorage.clear();
+        resetEntryRedirectCache();
+    });
+    it('false, если флага нет', () => {
+        expect(consumeEntryRedirect()).toBe(false);
+    });
+    it('читает флаг, чистит его и отдаёт то же значение при повторных вызовах', () => {
+        sessionStorage.setItem('erd2_entry_redirect', '1');
+        expect(consumeEntryRedirect()).toBe(true);
+        expect(sessionStorage.getItem('erd2_entry_redirect')).toBeNull();
+        expect(consumeEntryRedirect()).toBe(true);
+    });
+    it('не бросает, если sessionStorage недоступен', () => {
+        const orig = Storage.prototype.getItem;
+        Storage.prototype.getItem = () => {
+            throw new Error('denied');
+        };
+        try {
+            expect(consumeEntryRedirect()).toBe(false);
+        } finally {
+            Storage.prototype.getItem = orig;
+        }
     });
 });

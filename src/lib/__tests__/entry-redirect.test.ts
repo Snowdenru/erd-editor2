@@ -109,6 +109,7 @@ describe('скрипт быстрого входа erd2-entry', () => {
         const r = run({ pathname: '/tools/erd2/', marker: 'abc_1' });
         expect(r.fakeWindow.__ERD2_REDIRECTING__).toBe(true);
         expect(r.style.visibility).toBe('hidden');
+        expect(r.sessionData.erd2_entry_redirect).toBe('1');
     });
 
     it('без редиректа флаг, скрытие и пометка сессии не ставятся', () => {
@@ -121,6 +122,7 @@ describe('скрипт быстрого входа erd2-entry', () => {
             const r = run(o);
             expect(r.fakeWindow.__ERD2_REDIRECTING__).toBeUndefined();
             expect(r.style.visibility).toBe('');
+            expect(r.sessionData.erd2_entry_redirect).toBeUndefined();
         }
     });
 

@@ -53,12 +53,44 @@ export function readStoredSource(): string | null {
     }
 }
 
+const ENTRY_REDIRECT_KEY = 'erd2_entry_redirect';
+let entryRedirectCache: boolean | null = null;
+
+// Флаг ставит скрипт erd2-entry (index.html) перед location.replace: у документа после него
+// referrer = /tools/erd2/, хотя лендинг пользователь не видел. Читаем флаг один раз за загрузку
+// страницы, удаляем из sessionStorage (чтобы он не влиял на следующие полные загрузки в этой
+// вкладке) и кешируем в модуле — повторные вызовы за ту же загрузку получают то же значение.
+export function consumeEntryRedirect(): boolean {
+    if (entryRedirectCache !== null) {
+        return entryRedirectCache;
+    }
+    let flag = false;
+    try {
+        flag = sessionStorage.getItem(ENTRY_REDIRECT_KEY) === '1';
+        if (flag) {
+            sessionStorage.removeItem(ENTRY_REDIRECT_KEY);
+        }
+    } catch {
+        // sessionStorage недоступен
+    }
+    entryRedirectCache = flag;
+    return flag;
+}
+
+export function resetEntryRedirectCache(): void {
+    entryRedirectCache = null;
+}
+
 export function resolveSource(
     referrer: string,
-    stored: string | null
+    stored: string | null,
+    entryRedirect = false
 ): 'template' | 'landing' | 'direct' {
     if (stored === 'template') {
         return 'template';
+    }
+    if (entryRedirect) {
+        return 'direct';
     }
     try {
         const path = new URL(referrer).pathname.replace(/\/+$/, '');

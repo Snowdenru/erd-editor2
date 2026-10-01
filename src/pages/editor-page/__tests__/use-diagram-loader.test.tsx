@@ -126,4 +126,29 @@ describe('useDiagramLoader', () => {
         expect(mockOpenOpenDiagramDialog).not.toHaveBeenCalled();
         expect(mockLoadDiagram).not.toHaveBeenCalled();
     });
+    it('на /new с глубокой ссылкой (?open=import) продолжает последнюю схему, а не плодит пустую', async () => {
+        mockConfig.defaultDiagramId = 'default-1';
+        mockLoadDiagram.mockResolvedValue({ id: 'default-1' });
+        mockListDiagrams.mockResolvedValue([{ id: 'default-1' }]);
+        window.history.pushState({}, '', '/tools/erd2/new?open=import');
+
+        renderHook(() => useDiagramLoader(), {
+            wrapper: ({ children }) => (
+                <MemoryRouter
+                    basename="/tools/erd2"
+                    initialEntries={['/tools/erd2/new?open=import']}
+                >
+                    <Routes>
+                        <Route path="new" element={<>{children}</>} />
+                    </Routes>
+                </MemoryRouter>
+            ),
+        });
+
+        await waitFor(() =>
+            expect(mockLoadDiagram).toHaveBeenCalledWith('default-1')
+        );
+        expect(mockCreateEmptyDiagram).not.toHaveBeenCalled();
+        window.history.pushState({}, '', '/');
+    });
 });

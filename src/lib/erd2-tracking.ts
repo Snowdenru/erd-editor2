@@ -1,3 +1,4 @@
+import { APP_BASE } from '@/lib/app-config';
 import type { Diagram } from '@/lib/domain/diagram';
 
 export interface Counts {
@@ -57,7 +58,7 @@ const ENTRY_REDIRECT_KEY = 'erd2_entry_redirect';
 let entryRedirectCache: boolean | null = null;
 
 // Флаг ставит скрипт erd2-entry (index.html) перед location.replace: у документа после него
-// referrer = /tools/erd2/, хотя лендинг пользователь не видел. Читаем флаг один раз за загрузку
+// referrer = <APP_BASE>/, хотя лендинг пользователь не видел. Читаем флаг один раз за загрузку
 // страницы, удаляем из sessionStorage (чтобы он не влиял на следующие полные загрузки в этой
 // вкладке) и кешируем в модуле — повторные вызовы за ту же загрузку получают то же значение.
 export function consumeEntryRedirect(): boolean {
@@ -94,7 +95,7 @@ export function resolveSource(
     }
     try {
         const path = new URL(referrer).pathname.replace(/\/+$/, '');
-        if (path === '/tools/erd2' || path === '/tools/erd2/about') {
+        if (path === APP_BASE || path === `${APP_BASE}/about`) {
             return 'landing';
         }
     } catch {

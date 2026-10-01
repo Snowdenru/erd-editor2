@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { appUrl } from '@/lib/app-config';
 import { useChartDB } from '@/hooks/use-chartdb';
 import {
     getVisitorId,
@@ -24,7 +25,7 @@ const page = () => window.location.pathname;
 // В общий счётчик просмотров — один путь для редактора (без id схемы, иначе каждая схема станет
 // отдельной строкой в «Посещениях страниц»). Маршруты «/diagrams» и «/d/:id» — разные элементы
 // роутера: редирект с одного на другой перемонтирует трекер, поэтому повтор в пределах 5 с гасим.
-const EDITOR_PAGEVIEW_PATH = '/tools/erd2/';
+const EDITOR_PAGEVIEW_PATH = appUrl('/');
 const PAGEVIEW_KEY = 'erd2_last_pageview';
 const PAGEVIEW_DEDUPE_MS = 5000;
 

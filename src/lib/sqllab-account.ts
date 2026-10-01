@@ -1,7 +1,8 @@
 import { authFetch, getAccessToken } from '@/lib/sqllab-auth';
 import { getSessionId } from '@/lib/erd2-session';
+import { APP_BASE } from '@/lib/app-config';
 
-export const APP_BASE = '/tools/erd2';
+export { APP_BASE };
 
 export type ErdTier = 'free' | 'erd' | 'pro';
 

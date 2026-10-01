@@ -1,11 +1,12 @@
-// Предрендер страницы /tools/erd2/about в dist/about.html (puppeteer-core + системный Chromium).
+// Предрендер страницы <база>/about (по умолчанию /tools/erd2) в dist/about.html (puppeteer-core + системный Chromium).
 import http from 'node:http';
 import { readFile, writeFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
-const BASE = '/tools/erd2/';
+// База приложения — та же, что у сборки (VITE_APP_BASE), по умолчанию /tools/erd2
+const BASE = `${(process.env.VITE_APP_BASE ?? '').trim().replace(/\/+$/, '') || '/tools/erd2'}/`;
 const ROUTE = `${BASE}about`;
 const DIST = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),

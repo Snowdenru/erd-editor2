@@ -5,6 +5,8 @@ ARG VITE_OPENAI_API_ENDPOINT
 ARG VITE_LLM_MODEL_NAME
 ARG VITE_HIDE_CHARTDB_CLOUD
 ARG VITE_DISABLE_ANALYTICS
+ARG VITE_APP_BASE
+ARG VITE_ABOUT_INDEXABLE
 
 # Chromium for build-time prerender of /about (scripts/prerender-about.mjs)
 RUN apk add --no-cache chromium nss freetype harfbuzz ca-certificates ttf-freefont
@@ -26,6 +28,8 @@ RUN echo "VITE_OPENAI_API_KEY=${VITE_OPENAI_API_KEY}" > .env && \
 
 # vite build peaks at ~5 GB RSS (measured), above Node's default heap limit
 ENV NODE_OPTIONS=--max-old-space-size=4096
+# Пустые значения — умолчания из кода (/tools/erd2, лендинг закрыт от индексации)
+ENV VITE_APP_BASE=${VITE_APP_BASE} VITE_ABOUT_INDEXABLE=${VITE_ABOUT_INDEXABLE}
 RUN npm run build
 
 FROM nginx:stable-alpine AS production

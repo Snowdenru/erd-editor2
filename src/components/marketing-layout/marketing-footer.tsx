@@ -1,4 +1,5 @@
 import React from 'react';
+import { appUrl } from '@/lib/app-config';
 
 const FOOTER_COLUMNS: Array<{
     title: string;
@@ -7,13 +8,13 @@ const FOOTER_COLUMNS: Array<{
     {
         title: 'Продукт',
         links: [
-            { label: 'Цены', href: '/tools/erd2/pricing' },
+            { label: 'Цены', href: appUrl('/pricing') },
             { label: 'Общий тариф Pro (с курсами)', href: '/plans' },
             {
                 label: 'Импорт из вашей БД',
-                href: '/tools/erd2/new?open=import',
+                href: appUrl('/new?open=import'),
             },
-            { label: 'Шаблоны', href: '/tools/erd2/templates' },
+            { label: 'Шаблоны', href: appUrl('/templates') },
             { label: 'Старый ERD-редактор', href: '/tools/erd' },
         ],
     },

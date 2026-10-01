@@ -1,12 +1,14 @@
 // Дымовая проверка ERD2 после выкатки: холодные заходы не дают белого экрана и ведут куда надо.
-// Запуск: CHROMIUM_PATH=/путь/к/chrome BASE_URL=https://sqllab.ru node scripts/smoke-erd2.mjs
+// Запуск: [APP_BASE=/tools/erd] CHROMIUM_PATH=/путь/к/chrome BASE_URL=https://sqllab.ru node scripts/smoke-erd2.mjs
 // Скрипт выставляет erd2_no_track=1, чтобы проверки не попадали в статистику посещений.
 // Для ручных проверок достаточно выполнить в консоли: localStorage.setItem('erd2_no_track','1')
 import process from 'node:process';
 import puppeteer from 'puppeteer-core';
 
 const BASE = (process.env.BASE_URL ?? 'https://sqllab.ru').replace(/\/$/, '');
-const APP = `${BASE}/tools/erd2`;
+const APP_PATH =
+    (process.env.APP_BASE ?? '').trim().replace(/\/+$/, '') || '/tools/erd2';
+const APP = `${BASE}${APP_PATH}`;
 const CHROMIUM = process.env.CHROMIUM_PATH;
 if (!CHROMIUM) {
     console.error('CHROMIUM_PATH не задан');
@@ -87,8 +89,8 @@ try {
             await page.goto(`${APP}/`, { waitUntil: 'load', timeout: 60000 });
             const blank = await watchRoot(page, 4000);
             check(
-                'корень: остаётся на /tools/erd2/',
-                pathOf(page).replace(/\/$/, '') === '/tools/erd2',
+                `корень: остаётся на ${APP_PATH}/`,
+                pathOf(page).replace(/\/$/, '') === APP_PATH,
                 pathOf(page)
             );
             check('корень: есть h1 лендинга', await hasH1(page));

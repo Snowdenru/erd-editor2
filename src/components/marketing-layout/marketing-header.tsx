@@ -6,14 +6,15 @@ import ChartDBDarkLogo from '@/assets/sqllab-logo-dark.svg';
 import { Button } from '@/components/button/button';
 import { useTheme } from '@/hooks/use-theme';
 import { handleAboutHashClick } from './about-hash-link';
+import { appUrl } from '@/lib/app-config';
 
 // Якоря (#features, #databases) есть только на /about — с других страниц ведём на /about#...
 const HEADER_LINKS: Array<{ label: string; href: string }> = [
-    { label: 'Возможности', href: '/tools/erd2/about#features' },
-    { label: 'Поддержка БД', href: '/tools/erd2/about#databases' },
-    { label: 'Шаблоны', href: '/tools/erd2/templates' },
+    { label: 'Возможности', href: appUrl('/about#features') },
+    { label: 'Поддержка БД', href: appUrl('/about#databases') },
+    { label: 'Шаблоны', href: appUrl('/templates') },
     { label: 'Инструменты', href: '/tools' },
-    { label: 'Цены', href: '/tools/erd2/pricing' },
+    { label: 'Цены', href: appUrl('/pricing') },
 ];
 
 export const MarketingHeader: React.FC = () => {

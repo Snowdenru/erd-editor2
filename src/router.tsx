@@ -4,6 +4,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import type { TemplatePageLoaderData } from './pages/template-page/template-page';
 import type { TemplatesPageLoaderData } from './pages/templates-page/templates-page';
 import { getTemplatesAndAllTags } from './templates-data/template-utils';
+import { APP_BASE } from './lib/app-config';
 import { RouteError } from './components/route-error/route-error';
 import {
     LegacyDiagramRedirect,
@@ -184,5 +185,5 @@ const routes: RouteObject[] = [
 
 export const router = createBrowserRouter(
     routes.map((route) => ({ ...route, errorElement: <RouteError /> })),
-    { basename: '/tools/erd2' }
+    { basename: APP_BASE }
 );

@@ -7,7 +7,10 @@ const html = readFileSync(
     fileURLToPath(new URL('../../../index.html', import.meta.url)),
     'utf8'
 );
-const body = /<script id="erd2-entry">([\s\S]*?)<\/script>/.exec(html)?.[1];
+const rawBody = /<script id="erd2-entry">([\s\S]*?)<\/script>/.exec(html)?.[1];
+// В index.html вместо адреса приложения стоит плейсхолдер, плагин vite подставляет его при сборке
+const withBase = (base: string) => rawBody?.replaceAll('%APP_BASE%', base);
+const body = withBase('/tools/erd2');
 
 const run = (opts: {
     pathname: string;
@@ -16,6 +19,7 @@ const run = (opts: {
     marker?: string | null;
     prerender?: boolean;
     sessionThrows?: boolean;
+    base?: string;
 }) => {
     const replace = vi.fn();
     const fakeLocation = {
@@ -52,7 +56,7 @@ const run = (opts: {
         'localStorage',
         'sessionStorage',
         'document',
-        body ?? ''
+        (opts.base ? withBase(opts.base) : body) ?? ''
     )(fakeWindow, fakeLocation, fakeStorage, fakeSession, fakeDocument);
     return Object.assign(replace, { fakeWindow, sessionData, style });
 };
@@ -69,6 +73,23 @@ describe('скрипт быстрого входа erd2-entry', () => {
         expect(
             run({ pathname: '/tools/erd2', marker: 'abc_1' })
         ).toHaveBeenCalledWith('/tools/erd2/d/abc_1');
+    });
+
+    it('другая база (/tools/erd): корень → редирект на /tools/erd/d/<id>', () => {
+        expect(
+            run({
+                pathname: '/tools/erd/',
+                marker: 'abc_1',
+                base: '/tools/erd',
+            })
+        ).toHaveBeenCalledWith('/tools/erd/d/abc_1');
+        expect(
+            run({
+                pathname: '/tools/erd2/',
+                marker: 'abc_1',
+                base: '/tools/erd',
+            })
+        ).not.toHaveBeenCalled();
     });
 
     it('нет маркера → лендинг (редиректа нет)', () => {

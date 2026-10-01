@@ -1,10 +1,11 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
+import { ABOUT_INDEXABLE, APP_BASE } from '@/lib/app-config';
 
-// Пока false — страница закрыта от индексации (noindex); canonical указывает на /tools/erd2/ —
-// лендинг отдаётся на корне и на /about.
-// После переезда на /tools/erd переключить в true.
-export const ABOUT_INDEXABLE = false;
+// Флаг VITE_ABOUT_INDEXABLE (по умолчанию false) — страница закрыта от индексации (noindex);
+// canonical указывает на корень приложения — лендинг отдаётся на корне и на /about.
+// После переезда на /tools/erd включить сборкой с VITE_ABOUT_INDEXABLE=true.
+export { ABOUT_INDEXABLE };
 
 const SITE = 'https://sqllab.ru';
 const TITLE =
@@ -18,7 +19,7 @@ export interface AboutSeoProps {
 }
 
 export const AboutSeo: React.FC<AboutSeoProps> = ({ faqItems }) => {
-    const url = ABOUT_INDEXABLE ? `${SITE}/tools/erd` : `${SITE}/tools/erd2/`;
+    const url = ABOUT_INDEXABLE ? `${SITE}${APP_BASE}` : `${SITE}${APP_BASE}/`;
 
     const softwareApplication = {
         '@context': 'https://schema.org',

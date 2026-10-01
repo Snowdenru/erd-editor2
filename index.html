@@ -59,7 +59,7 @@
             (function () {
                 try {
                     if (window.__ERD2_PRERENDER__) return;
-                    if (location.pathname.replace(/\/+$/, '') !== '/tools/erd2')
+                    if (location.pathname.replace(/\/+$/, '') !== '%APP_BASE%')
                         return;
                     if (location.search) return;
                     // Якорные ссылки на корень (/tools/erd2/#features) не перехватываем.
@@ -78,7 +78,7 @@
                             // приватный режим — источник останется неточным, редирект важнее
                         }
                         document.documentElement.style.visibility = 'hidden';
-                        location.replace('/tools/erd2/d/' + id);
+                        location.replace('%APP_BASE%/d/' + id);
                         // Страховка: если переход не состоялся (отмена, ошибка сети) или
                         // страница вернулась из bfcache — не оставляем пользователя с пустым экраном.
                         var restore = function () {

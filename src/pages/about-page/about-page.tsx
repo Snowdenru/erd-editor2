@@ -8,6 +8,7 @@ import { Button } from '@/components/button/button';
 import { StorageProvider } from '@/context/storage-context/storage-provider';
 import { FAQ_ITEMS } from './faq-items';
 import { AboutSeo } from './about-seo';
+import { appUrl } from '@/lib/app-config';
 import { DdlTryBlock } from './ddl-try-block';
 import { MarketingHeader } from '@/components/marketing-layout/marketing-header';
 import { MarketingFooter } from '@/components/marketing-layout/marketing-footer';
@@ -51,7 +52,7 @@ const DIALECTS: Array<{ name: string; type: DatabaseType }> = [
 const FEATURE_CARD_MAIN = {
     icon: Database as IconType,
     tag: 'Любая БД',
-    to: '/tools/erd2/new?open=import',
+    to: appUrl('/new?open=import'),
     title: 'Импорт из вашей базы',
     description:
         'Вставьте DDL, DBML или результат нашего SQL-запроса — схема строится сразу, а живой предпросмотр обновляется по мере ввода.',
@@ -69,7 +70,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: Zap,
         tag: 'Быстро',
-        to: '/tools/erd2/new?open=import',
+        to: appUrl('/new?open=import'),
         title: 'Мгновенный импорт',
         description:
             'Один запрос забирает всю схему вашей базы целиком — без доступа к самой базе данных.',
@@ -78,7 +79,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: FileCode,
         tag: 'Просто',
-        to: '/tools/erd2/new?tab=ddl',
+        to: appUrl('/new?tab=ddl'),
         title: 'Экспорт SQL',
         description:
             'Чистые DDL-скрипты для нужного диалекта: PostgreSQL, MySQL, SQL Server и других.',
@@ -87,7 +88,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: Code2,
         tag: 'Онлайн',
-        to: '/tools/erd2/new?tab=ddl',
+        to: appUrl('/new?tab=ddl'),
         title: 'Вкладки DDL и DBML',
         description:
             'Схема всегда под рукой как код: DDL для базы и DBML для правок прямо в боковой панели.',
@@ -96,7 +97,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: LayoutTemplate,
         tag: 'Готово',
-        to: '/tools/erd2/templates',
+        to: appUrl('/templates'),
         title: 'Готовые шаблоны',
         description:
             '50 схем реальных проектов и учебные базы — Employees, Bike Stores, DVD Rental.',
@@ -105,7 +106,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: ImageIcon,
         tag: 'Делитесь',
-        to: '/tools/erd2/diagrams',
+        to: appUrl('/diagrams'),
         title: 'Экспорт в изображение',
         description:
             'SVG и PNG для документации, JSON для резервной копии, DBML для других инструментов.',
@@ -114,7 +115,7 @@ const FEATURE_CARDS: Array<{
     {
         icon: Undo2,
         tag: 'Удобно',
-        to: '/tools/erd2/diagrams',
+        to: appUrl('/diagrams'),
         title: 'Порядок на холсте',
         description:
             'Отмена и повтор, автораскладка, области и заметки — с большими схемами работать легко.',
@@ -192,8 +193,8 @@ const IconTile: React.FC<{ icon: IconType }> = ({ icon: Icon }) => (
 );
 
 // Лендинг отдаётся и на корне, и на /about; путь фиксирован, чтобы не смешиваться
-// с просмотрами редактора ('/tools/erd2/') в page_stats.
-const ABOUT_PAGEVIEW_PATH = '/tools/erd2/about';
+// с просмотрами редактора (appUrl('/')) в page_stats.
+const ABOUT_PAGEVIEW_PATH = appUrl('/about');
 
 const AboutPageComponent: React.FC = () => {
     useEffect(() => {

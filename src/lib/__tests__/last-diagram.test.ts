@@ -3,6 +3,7 @@ import {
     LAST_DIAGRAM_KEY,
     clearLastDiagramIfMatches,
     getLastDiagramId,
+    keepLastDiagramMarker,
     setLastDiagramId,
 } from '../last-diagram';
 
@@ -40,5 +41,39 @@ describe('last-diagram', () => {
         });
         expect(getLastDiagramId()).toBe('');
         expect(() => setLastDiagramId('abc')).not.toThrow();
+    });
+
+    describe('keepLastDiagramMarker', () => {
+        it('возвращает маркер, если операция его стёрла (удаление+добавление той же схемы)', async () => {
+            setLastDiagramId('d1');
+            await keepLastDiagramMarker('d1', async () => {
+                clearLastDiagramIfMatches('d1');
+            });
+            expect(getLastDiagramId()).toBe('d1');
+        });
+
+        it('не ставит маркер, если он указывал на другую схему', async () => {
+            setLastDiagramId('other');
+            await keepLastDiagramMarker('d1', async () => {
+                clearLastDiagramIfMatches('d1');
+            });
+            expect(getLastDiagramId()).toBe('other');
+        });
+
+        it('не создаёт маркер, если его не было', async () => {
+            await keepLastDiagramMarker('d1', async () => undefined);
+            expect(getLastDiagramId()).toBe('');
+        });
+
+        it('при ошибке операции маркер не трогает', async () => {
+            setLastDiagramId('d1');
+            await expect(
+                keepLastDiagramMarker('d1', async () => {
+                    clearLastDiagramIfMatches('d1');
+                    throw new Error('boom');
+                })
+            ).rejects.toThrow('boom');
+            expect(getLastDiagramId()).toBe('');
+        });
     });
 });

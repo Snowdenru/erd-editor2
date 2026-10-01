@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
+import { keepLastDiagramMarker } from '@/lib/last-diagram';
 import type { DBTable } from '@/lib/domain/db-table';
 import { deepCopy, generateId } from '@/lib/utils';
 import { defaultTableColor, randomColor, viewColor } from '@/lib/colors';
@@ -1924,8 +1925,11 @@ export const ChartDBProvider: React.FC<
     const updateDiagramData: ChartDBContext['updateDiagramData'] = useCallback(
         async (diagram, options) => {
             const st = options?.forceUpdateStorage ? storageDB : db;
-            await st.deleteDiagram(diagram.id);
-            await st.addDiagram({ diagram });
+            // deleteDiagram стирает маркер «последняя схема» — возвращаем его после повторного add
+            await keepLastDiagramMarker(diagram.id, async () => {
+                await st.deleteDiagram(diagram.id);
+                await st.addDiagram({ diagram });
+            });
             loadDiagramFromData(diagram);
         },
         [db, storageDB, loadDiagramFromData]

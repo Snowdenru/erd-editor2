@@ -27,3 +27,16 @@ export function clearLastDiagramIfMatches(id: string): void {
         setLastDiagramId('');
     }
 }
+
+// Операция «удалить и снова добавить ту же схему» (updateDiagramData) стирает маркер через
+// storage.deleteDiagram. Запоминаем маркер до операции и возвращаем его после успеха.
+export async function keepLastDiagramMarker(
+    id: string,
+    op: () => Promise<void>
+): Promise<void> {
+    const wasLast = getLastDiagramId() === id;
+    await op();
+    if (wasLast) {
+        setLastDiagramId(id);
+    }
+}

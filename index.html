@@ -77,6 +77,16 @@
                         }
                         document.documentElement.style.visibility = 'hidden';
                         location.replace('/tools/erd2/d/' + id);
+                        // Страховка: если переход не состоялся (отмена, ошибка сети) или
+                        // страница вернулась из bfcache — не оставляем пользователя с пустым экраном.
+                        var restore = function () {
+                            document.documentElement.style.visibility = '';
+                            window.__ERD2_REDIRECTING__ = false;
+                        };
+                        window.setTimeout(restore, 5000);
+                        window.addEventListener('pageshow', function (event) {
+                            if (event.persisted) restore();
+                        });
                     }
                 } catch (e) {
                     // localStorage недоступен — остаёмся на лендинге

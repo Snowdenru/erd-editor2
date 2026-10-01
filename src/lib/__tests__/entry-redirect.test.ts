@@ -12,6 +12,7 @@ const body = /<script id="erd2-entry">([\s\S]*?)<\/script>/.exec(html)?.[1];
 const run = (opts: {
     pathname: string;
     search?: string;
+    hash?: string;
     marker?: string | null;
     prerender?: boolean;
     sessionThrows?: boolean;
@@ -20,6 +21,7 @@ const run = (opts: {
     const fakeLocation = {
         pathname: opts.pathname,
         search: opts.search ?? '',
+        hash: opts.hash ?? '',
         replace,
     };
     const fakeStorage = {
@@ -36,8 +38,12 @@ const run = (opts: {
     const fakeWindow: {
         __ERD2_PRERENDER__?: boolean;
         __ERD2_REDIRECTING__?: boolean;
+        setTimeout: ReturnType<typeof vi.fn>;
+        addEventListener: ReturnType<typeof vi.fn>;
     } = {
         __ERD2_PRERENDER__: opts.prerender,
+        setTimeout: vi.fn(),
+        addEventListener: vi.fn(),
     };
     const fakeDocument = { documentElement: { style } };
     new Function(
@@ -133,5 +139,36 @@ describe('скрипт быстрого входа erd2-entry', () => {
             sessionThrows: true,
         });
         expect(r).toHaveBeenCalledWith('/tools/erd2/d/abc_1');
+    });
+
+    it('страховка: таймер 5 с снимает скрытие и флаг', () => {
+        const r = run({ pathname: '/tools/erd2/', marker: 'abc_1' });
+        expect(r.fakeWindow.setTimeout).toHaveBeenCalledTimes(1);
+        const [cb, ms] = r.fakeWindow.setTimeout.mock.calls[0];
+        expect(ms).toBe(5000);
+        expect(r.style.visibility).toBe('hidden');
+        cb();
+        expect(r.style.visibility).toBe('');
+        expect(r.fakeWindow.__ERD2_REDIRECTING__).toBe(false);
+    });
+
+    it('страховка: pageshow с persisted (bfcache) восстанавливает страницу', () => {
+        const r = run({ pathname: '/tools/erd2/', marker: 'abc_1' });
+        const call = r.fakeWindow.addEventListener.mock.calls.find(
+            (c) => c[0] === 'pageshow'
+        );
+        expect(call).toBeTruthy();
+        const handler = call![1];
+        handler({ persisted: false });
+        expect(r.style.visibility).toBe('hidden');
+        handler({ persisted: true });
+        expect(r.style.visibility).toBe('');
+        expect(r.fakeWindow.__ERD2_REDIRECTING__).toBe(false);
+    });
+
+    it('без редиректа таймер и pageshow-слушатель не ставятся', () => {
+        const r = run({ pathname: '/tools/erd2/', marker: null });
+        expect(r.fakeWindow.setTimeout).not.toHaveBeenCalled();
+        expect(r.fakeWindow.addEventListener).not.toHaveBeenCalled();
     });
 });

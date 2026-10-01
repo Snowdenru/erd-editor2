@@ -2,6 +2,7 @@
 import http from 'node:http';
 import { readFile, writeFile, stat } from 'node:fs/promises';
 import path from 'node:path';
+import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 const BASE = '/tools/erd2/';
@@ -93,11 +94,7 @@ async function main() {
         browser = await puppeteer.launch({
             executablePath: chromium,
             headless: true,
-            args: [
-                '--no-sandbox',
-                '--disable-gpu',
-                '--disable-dev-shm-usage',
-            ],
+            args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
         });
         const page = await browser.newPage();
         await page.evaluateOnNewDocument(() => {

@@ -8,10 +8,9 @@ import { ABOUT_INDEXABLE, APP_BASE } from '@/lib/app-config';
 export { ABOUT_INDEXABLE };
 
 const SITE = 'https://sqllab.ru';
-const TITLE =
-    'ERD онлайн: бесплатный редактор ER-диаграмм баз данных — SQL Lab';
+const TITLE = 'ERD онлайн: бесплатный редактор ER-диаграмм — SQL Lab';
 const DESCRIPTION =
-    'Бесплатный онлайн-редактор ER-диаграмм: вставьте DDL или SQL-запрос — получите готовую схему за секунды. PostgreSQL, MySQL, SQL Server, SQLite, Oracle. Экспорт в SQL, PNG, SVG, DBML.';
+    'Бесплатный онлайн-редактор ER-диаграмм: вставьте DDL или SQL — получите схему за секунды. PostgreSQL, MySQL, SQLite, Oracle. Экспорт в SQL, PNG, SVG, DBML.';
 const OG_IMAGE = `${SITE}/og/erd-tool.png`;
 
 export interface AboutSeoProps {

@@ -101,7 +101,7 @@ describe('AboutPage', () => {
 
         expect(
             screen.getByText(
-                /подключается ли erd2 напрямую к моей базе данных/i
+                /подключается ли редактор напрямую к моей базе данных/i
             )
         ).toBeInTheDocument();
     });

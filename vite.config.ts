@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
     const APP_BASE = resolveBase(mode);
     const htmlAppBase: Plugin = {
         name: 'html-app-base',
-        transformIndexHtml: (html) => html.replaceAll('%APP_BASE%', APP_BASE),
+        transformIndexHtml: (html) => html.split('%APP_BASE%').join(APP_BASE),
     };
     return {
         base: `${APP_BASE}/`,

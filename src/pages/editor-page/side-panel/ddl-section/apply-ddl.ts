@@ -22,16 +22,6 @@ export const parseDdl = async (
 
     const validation = validateSQL(sql, databaseType);
 
-    // Check for obvious syntax errors like trailing commas in column definitions
-    const trailingCommaMatch = sql.match(/\(\s*[^)]*,\s*,\s*[^)]*\)/);
-    if (trailingCommaMatch) {
-        return {
-            status: 'error',
-            message: 'SQL contains syntax errors: invalid comma placement',
-            validation,
-        };
-    }
-
     // Те же правила, что в диалоге импорта: ошибки с автоисправлением
     // не парсим, остальные отдаём парсеру
     if (validation.fixedSQL && validation.errors.length > 0) {

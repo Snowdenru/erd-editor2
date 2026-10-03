@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
     render,
     screen,
@@ -79,9 +79,6 @@ describe('DDLSection', () => {
         fitView.mockClear();
         toast.mockClear();
     });
-    afterEach(() => {
-        vi.useRealTimers();
-    });
 
     it('при сбое записи откатывает снимок, сохраняет SQL и режим', async () => {
         updateDiagramData
@@ -131,6 +128,24 @@ describe('DDLSection', () => {
             expect(screen.getByTestId('code-snippet')).toBeInTheDocument()
         );
         unmount();
+        await act(async () => {
+            await new Promise((r) => setTimeout(r, 400));
+        });
+        expect(fitView).not.toHaveBeenCalled();
+    });
+
+    it('размонтирование до завершения записи не планирует fitView', async () => {
+        let resolveWrite: () => void = () => undefined;
+        updateDiagramData.mockImplementation(
+            () => new Promise<void>((resolve) => (resolveWrite = resolve))
+        );
+        const { unmount } = render(<DDLSection />);
+        openCustom();
+        await typeAndApply();
+        await waitFor(() => expect(updateDiagramData).toHaveBeenCalledTimes(1));
+
+        unmount();
+        resolveWrite();
         await act(async () => {
             await new Promise((r) => setTimeout(r, 400));
         });

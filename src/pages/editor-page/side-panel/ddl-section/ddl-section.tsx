@@ -54,7 +54,14 @@ export const DDLSection: React.FC = () => {
         }
     }, [diagram]);
 
-    useEffect(() => () => clearTimeout(fitTimerRef.current), []);
+    const isMountedRef = useRef(true);
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+            clearTimeout(fitTimerRef.current);
+        };
+    }, []);
 
     const handleApply = useCallback(
         async (next: Diagram) => {
@@ -69,6 +76,9 @@ export const DDLSection: React.FC = () => {
                     console.error('Failed to roll back diagram', rollbackError);
                 }
                 throw error;
+            }
+            if (!isMountedRef.current) {
+                return;
             }
             setMode('diagram');
             // Даём узлам отрисоваться и возвращаем холст в кадр

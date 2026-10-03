@@ -99,6 +99,18 @@ describe('parseDdl', () => {
         expect(result.validation.errors[0].line).toBe(1);
     });
 
+    it('SQL Server: фикстура с «,)» (как в тестах импорта) не даёт syntax', async () => {
+        const sql = `CREATE TABLE [DBO].[SpellDefinition](
+  [SPELLID]  (VARCHAR)(32),    
+  [HASVERBALCOMP] BOOLEAN,  
+  [INCANTATION] [VARCHAR](128),  
+  [INCANTATIONFIX] BOOLEAN,  
+  [ITSCOMPONENTREL]  [VARCHAR](32), FOREIGN KEY (itscomponentrel) REFERENCES SpellComponent(SPELLID), 
+  [SHOWVISUALS] BOOLEAN,    ) ON [PRIMARY]`;
+        const result = await parseDdl(sql, DatabaseType.SQL_SERVER);
+        expect(result.status).not.toBe('syntax');
+    });
+
     it('возвращает too-large сразу, не запуская парсер', async () => {
         const sql = 'x'.repeat(MAX_DDL_CHARS + 1);
         const result = await parseDdl(sql, DatabaseType.POSTGRESQL);

@@ -20,6 +20,12 @@ interface ScanOptions {
     dashCommentNeedsSpace: boolean;
     // PostgreSQL: E'...' — строка с обратным слэшем
     eStrings: boolean;
+    // «,)» допустима в T-SQL: не считаем ошибкой
+    commaBeforeClose: boolean;
+    // Oracle SQL*Plus: строки PROMPT / REM / REMARK целиком пропускаем
+    sqlPlusLines: boolean;
+    // pg_dump: данные COPY ... FROM stdin и мета-команды psql
+    psqlMeta: boolean;
 }
 
 const isIdentChar = (ch: string | undefined): boolean =>
@@ -78,6 +84,16 @@ const scan = (sql: string, o: ScanOptions): SqlSanityProblem | null => {
             j++;
         }
         return -1;
+    };
+
+    const atLineStart = (pos: number): boolean => {
+        let j = pos - 1;
+        while (j >= 0 && (sql[j] === ' ' || sql[j] === '\t')) j--;
+        return j < 0 || sql[j] === '\n' || sql[j] === '\r';
+    };
+    const lineEnd = (pos: number): number => {
+        const eol = sql.indexOf('\n', pos);
+        return eol < 0 ? n : eol;
     };
 
     // Возвращает true, если область пропущена; false — оборвана (неуверенность)
@@ -140,6 +156,39 @@ const scan = (sql: string, o: ScanOptions): SqlSanityProblem | null => {
             continue;
         }
 
+        // Oracle SQL*Plus: PROMPT / REM / REMARK
+        if (
+            o.sqlPlusLines &&
+            (c === 'p' || c === 'P' || c === 'r' || c === 'R') &&
+            atLineStart(i) &&
+            /^(prompt|remark|rem)(?=[ \t\r\n]|$)/i.test(sql.slice(i, i + 8))
+        ) {
+            moveTo(lineEnd(i));
+            continue;
+        }
+
+        // PostgreSQL: мета-команды psql и данные COPY ... FROM stdin
+        if (o.psqlMeta && atLineStart(i)) {
+            if (c === '\\') {
+                moveTo(lineEnd(i));
+                pendingComma = null;
+                continue;
+            }
+            if (
+                (c === 'c' || c === 'C') &&
+                /^copy\b[^\n]*\bfrom\s+stdin\b/i.test(sql.slice(i, lineEnd(i)))
+            ) {
+                const eol = lineEnd(i);
+                const re = /\n\\\.[ \t]*\r?(?=\n|$)/g;
+                re.lastIndex = eol;
+                const m = re.exec(sql);
+                if (!m) return null;
+                moveTo(m.index + m[0].length);
+                pendingComma = null;
+                continue;
+            }
+        }
+
         // Дальше идёт значимый токен: он «съедает» ожидание запятой,
         // кроме самой запятой и закрывающей скобки
         if (c === ',') {
@@ -151,7 +200,7 @@ const scan = (sql: string, o: ScanOptions): SqlSanityProblem | null => {
             continue;
         }
         if (c === ')') {
-            if (pendingComma !== null) {
+            if (pendingComma !== null && o.commaBeforeClose) {
                 report({ code: 'comma-before-close', line: pendingComma });
             }
             pendingComma = null;
@@ -176,7 +225,9 @@ const scan = (sql: string, o: ScanOptions): SqlSanityProblem | null => {
             o.oracleQQuotes &&
             (c === 'q' || c === 'Q') &&
             next === "'" &&
-            !isIdentChar(sql[i - 1])
+            (!isIdentChar(sql[i - 1]) ||
+                ((sql[i - 1] === 'n' || sql[i - 1] === 'N') &&
+                    !isIdentChar(sql[i - 2])))
         ) {
             const d = sql[i + 2];
             if (d === undefined || /\s/.test(d)) return null;
@@ -241,20 +292,37 @@ export const findSqlSanityProblem = (
     const isMy =
         databaseType === DatabaseType.MYSQL ||
         databaseType === DatabaseType.MARIADB;
+    const isMs = databaseType === DatabaseType.SQL_SERVER;
+    const isCh = databaseType === DatabaseType.CLICKHOUSE;
+
+    // Диалекты, которых мы не знаем (GENERIC и др.), не проверяем вовсе
+    const known =
+        isPg ||
+        isMy ||
+        isMs ||
+        isCh ||
+        databaseType === DatabaseType.SQLITE ||
+        databaseType === DatabaseType.ORACLE;
+    if (!known) {
+        return null;
+    }
 
     const base: ScanOptions = {
         backslashEscapes: false,
-        nestedBlockComments: isPg,
+        nestedBlockComments: isPg || isMs,
         dollarQuotes: isPg,
         hashComments: isMy,
-        bracketIdentifiers: databaseType === DatabaseType.SQL_SERVER,
+        bracketIdentifiers: isMs || databaseType === DatabaseType.SQLITE,
         oracleQQuotes: databaseType === DatabaseType.ORACLE,
         dashCommentNeedsSpace: isMy,
         eStrings: isPg,
+        commaBeforeClose: !isMs,
+        sqlPlusLines: databaseType === DatabaseType.ORACLE,
+        psqlMeta: isPg,
     };
 
     try {
-        if (isMy) {
+        if (isMy || isCh) {
             // Режим NO_BACKSLASH_ESCAPES заранее неизвестен: ошибку
             // заявляем, только если оба разбора с ней согласны
             const a = scan(sql, { ...base, backslashEscapes: true });

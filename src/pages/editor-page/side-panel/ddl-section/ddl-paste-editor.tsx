@@ -48,6 +48,13 @@ export const DdlPasteEditor: React.FC<DdlPasteEditorProps> = ({
     });
     const [applying, setApplying] = useState(false);
     const applyingRef = useRef(false);
+    const isMountedRef = useRef(true);
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
     const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
     // Подтверждение может прийти позже клика: берём самую свежую диаграмму
     const currentDiagramRef = useRef(currentDiagram);
@@ -74,7 +81,7 @@ export const DdlPasteEditor: React.FC<DdlPasteEditorProps> = ({
                     validation: { isValid: false, errors: [], warnings: [] },
                 };
             }
-            if (!cancelled) {
+            if (!cancelled && isMountedRef.current) {
                 setResult(parsed);
             }
         }, PARSE_DEBOUNCE_MS);
@@ -96,10 +103,13 @@ export const DdlPasteEditor: React.FC<DdlPasteEditorProps> = ({
                 await onApply(
                     replaceDiagramContent(currentDiagramRef.current, parsed)
                 );
-                onSqlChange('');
+                if (isMountedRef.current) {
+                    onSqlChange('');
+                }
             } catch (error) {
                 // SQL остаётся в редакторе, чтобы можно было повторить
                 console.error('Failed to apply DDL', error);
+                // тост показываем и после размонтирования: пользователь должен узнать о сбое
                 toast({
                     variant: 'destructive',
                     title: t('side_panel.ddl_section.apply_failed_title'),
@@ -109,7 +119,9 @@ export const DdlPasteEditor: React.FC<DdlPasteEditorProps> = ({
                 });
             } finally {
                 applyingRef.current = false;
-                setApplying(false);
+                if (isMountedRef.current) {
+                    setApplying(false);
+                }
             }
         },
         [onApply, onSqlChange, toast, t]

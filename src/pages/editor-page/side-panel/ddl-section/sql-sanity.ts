@@ -159,6 +159,7 @@ const scan = (sql: string, o: ScanOptions): SqlSanityProblem | null => {
         // Oracle SQL*Plus: PROMPT / REM / REMARK
         if (
             o.sqlPlusLines &&
+            open.length === 0 &&
             (c === 'p' || c === 'P' || c === 'r' || c === 'R') &&
             atLineStart(i) &&
             /^(prompt|remark|rem)(?=[ \t\r\n]|$)/i.test(sql.slice(i, i + 8))
@@ -168,7 +169,7 @@ const scan = (sql: string, o: ScanOptions): SqlSanityProblem | null => {
         }
 
         // PostgreSQL: мета-команды psql и данные COPY ... FROM stdin
-        if (o.psqlMeta && atLineStart(i)) {
+        if (o.psqlMeta && open.length === 0 && atLineStart(i)) {
             if (c === '\\') {
                 moveTo(lineEnd(i));
                 pendingComma = null;
@@ -317,17 +318,34 @@ export const findSqlSanityProblem = (
         dashCommentNeedsSpace: isMy,
         eStrings: isPg,
         commaBeforeClose: !isMs,
-        sqlPlusLines: databaseType === DatabaseType.ORACLE,
-        psqlMeta: isPg,
+        sqlPlusLines: false,
+        psqlMeta: false,
     };
 
     try {
         if (isMy || isCh) {
             // Режим NO_BACKSLASH_ESCAPES заранее неизвестен: ошибку
-            // заявляем, только если оба разбора с ней согласны
+            // заявляем, только если оба разбора с ней согласны (код и строка)
             const a = scan(sql, { ...base, backslashEscapes: true });
             const b = scan(sql, { ...base, backslashEscapes: false });
             return a && b && a.code === b.code && a.line === b.line ? a : null;
+        }
+        if (isPg || databaseType === DatabaseType.ORACLE) {
+            // Построчные эвристики (SQL*Plus PROMPT/REM, psql COPY ... stdin и
+            // мета-команды) могут принять колонку `prompt`/`copy` за команду.
+            // Поэтому сканируем дважды: с пропуском таких строк и без него.
+            // Ошибку заявляем, только если ОБА прохода нашли ошибку с одним
+            // кодом; строку берём из прохода с пропуском (он не видит данные
+            // COPY и текст команд, поэтому строка точнее). Иначе null.
+            const heuristics = isPg
+                ? { psqlMeta: true }
+                : { sqlPlusLines: true };
+            const withSkip = scan(sql, { ...base, ...heuristics });
+            if (!withSkip) {
+                return null;
+            }
+            const without = scan(sql, base);
+            return without && without.code === withSkip.code ? withSkip : null;
         }
         return scan(sql, base);
     } catch {

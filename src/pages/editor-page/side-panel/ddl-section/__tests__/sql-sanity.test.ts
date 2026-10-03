@@ -534,7 +534,10 @@ describe('findSqlSanityProblem: диалектные особенности', ()
         ).toBeNull();
         // ошибка после PROMPT всё ещё находится, с верной строкой
         expect(
-            findSqlSanityProblem('PROMPT x)\nCREATE TABLE t (a NUMBER,,);', ORA)
+            findSqlSanityProblem(
+                'PROMPT creating tables\nCREATE TABLE t (a NUMBER,,);',
+                ORA
+            )
         ).toEqual({ code: 'double-comma', line: 2 });
     });
 
@@ -559,10 +562,10 @@ describe('findSqlSanityProblem: диалектные особенности', ()
         ).toBeNull();
         expect(
             findSqlSanityProblem(
-                'CREATE TABLE t (a INT);\nCOPY public.t (a) FROM stdin;\n1)\n(\n\\.\nCREATE TABLE u (\n a INT,,\n b INT);',
+                'CREATE TABLE t (a INT);\nCOPY public.t (a) FROM stdin;\n1\tx\n\\.\nCREATE TABLE u (\n a INT,,\n b INT);',
                 PG
             )
-        ).toEqual({ code: 'double-comma', line: 7 });
+        ).toEqual({ code: 'double-comma', line: 6 });
         // COPY без завершающего «\.» — не уверены, молчим
         expect(
             findSqlSanityProblem('COPY t (a) FROM stdin;\n1)\n', PG)
@@ -613,5 +616,66 @@ describe('findSqlSanityProblem: диалектные особенности', ()
             findSqlSanityProblem(big, db);
             expect(performance.now() - t0).toBeLessThan(1000);
         }
+    });
+
+    it('Oracle: колонки и переменные prompt/rem/remark — валидный SQL', () => {
+        const cases = [
+            'CREATE TABLE notes (\n  id NUMBER,\n  remark VARCHAR2(200)\n);',
+            'CREATE TABLE ai_req (\n  id NUMBER PRIMARY KEY,\n  prompt CLOB\n);',
+            'CREATE TABLE notes (id NUMBER,\n  remark VARCHAR2(200));',
+            'CREATE TABLE t (\n  id NUMBER,\n  rem NUMBER(10,\n2),\n  x INT\n);',
+            'CREATE OR REPLACE PROCEDURE p IS\n  rem NUMBER;\nBEGIN\n  rem := MOD(10,\n 3);\nEND;\n/',
+        ];
+        for (const sql of cases) {
+            expect(findSqlSanityProblem(sql, ORA)).toBeNull();
+        }
+    });
+
+    it('Oracle: настоящие PROMPT/REM со скобками и апострофами дают null', () => {
+        expect(
+            findSqlSanityProblem(
+                "PROMPT it's (\nCREATE TABLE t (a NUMBER);",
+                ORA
+            )
+        ).toBeNull();
+        expect(
+            findSqlSanityProblem('REM step 1)\nCREATE TABLE t (a NUMBER);', ORA)
+        ).toBeNull();
+    });
+
+    it('PostgreSQL: колонка copy не принимается за COPY ... FROM stdin', () => {
+        const later = '\nCOPY public.t (a) FROM stdin;\n1\n\\.\n';
+        expect(
+            findSqlSanityProblem(
+                'CREATE TABLE t (\n  copy TEXT -- from stdin\n  , a INT\n);' +
+                    later,
+                PG
+            )
+        ).toBeNull();
+        expect(
+            findSqlSanityProblem(
+                "CREATE TABLE t (\n  copy TEXT DEFAULT 'from stdin',\n  a INT\n);" +
+                    later,
+                PG
+            )
+        ).toBeNull();
+        expect(
+            findSqlSanityProblem(
+                'CREATE TABLE t (\ncopy TEXT, -- from stdin\n a INT\n);',
+                PG
+            )
+        ).toBeNull();
+    });
+
+    it('настоящая ошибка после PROMPT и после COPY находится (оба прохода согласны)', () => {
+        expect(
+            findSqlSanityProblem('PROMPT go\nCREATE TABLE t (a NUMBER,,);', ORA)
+        ).toEqual({ code: 'double-comma', line: 2 });
+        expect(
+            findSqlSanityProblem(
+                'COPY t (a) FROM stdin;\n1\n\\.\nCREATE TABLE u (a INT,,);',
+                PG
+            )
+        ).toEqual({ code: 'double-comma', line: 4 });
     });
 });

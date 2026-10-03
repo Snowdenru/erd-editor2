@@ -55,7 +55,7 @@ const FEATURE_CARD_MAIN = {
     to: appUrl('/new?open=import'),
     title: 'Импорт из вашей базы',
     description:
-        'Вставьте DDL, DBML или результат нашего SQL-запроса — схема строится сразу, а живой предпросмотр обновляется по мере ввода.',
+        'Вставьте SQL, DBML или результат нашего SQL-запроса — схема строится сразу, а живой предпросмотр обновляется по мере ввода.',
     className: 'bg-lime-200 dark:bg-lime-900/40',
 };
 
@@ -129,6 +129,7 @@ const WORKFLOW_ITEMS: Array<{
     description: string;
     tag: string;
     tagClassName: string;
+    tagTo?: string;
 }> = [
     {
         icon: Zap,
@@ -160,6 +161,7 @@ const WORKFLOW_ITEMS: Array<{
         description:
             'Стартуйте с готовых схем — они дают быструю основу и вдохновение для собственного дизайна.',
         tag: 'Шаблоны',
+        tagTo: '/templates',
         tagClassName: 'bg-orange-100 dark:bg-orange-900',
     },
     {
@@ -318,7 +320,7 @@ const AboutPageComponent: React.FC = () => {
                                     Всё без доступа к базе данных
                                 </p>
                                 <p className="text-xl">
-                                    Получите диаграмму из DDL за считанные
+                                    Получите диаграмму из SQL за считанные
                                     секунды
                                 </p>
                             </div>
@@ -444,6 +446,7 @@ const AboutPageComponent: React.FC = () => {
                                 description,
                                 tag,
                                 tagClassName,
+                                tagTo,
                             }) => (
                                 <div key={title} className="flex gap-5">
                                     <IconTile icon={icon} />
@@ -454,11 +457,20 @@ const AboutPageComponent: React.FC = () => {
                                         <p className="text-lg text-muted-foreground">
                                             {description}
                                         </p>
-                                        <span
-                                            className={`rounded-full px-4 py-1 text-sm font-semibold ${tagClassName}`}
-                                        >
-                                            {tag}
-                                        </span>
+                                        {tagTo ? (
+                                            <Link
+                                                to={tagTo}
+                                                className={`rounded-full px-4 py-1 text-sm font-semibold transition hover:shadow-md hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 ${tagClassName}`}
+                                            >
+                                                {tag}
+                                            </Link>
+                                        ) : (
+                                            <span
+                                                className={`rounded-full px-4 py-1 text-sm font-semibold ${tagClassName}`}
+                                            >
+                                                {tag}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             )

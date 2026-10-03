@@ -133,7 +133,7 @@ export const DdlTryBlock: React.FC = () => {
         <div className="mx-auto w-full max-w-6xl px-6 pb-20">
             <div className="mb-8 flex flex-col items-center gap-3 text-center">
                 <h2 className="text-4xl font-bold sm:text-5xl">
-                    Вставьте DDL — получите диаграмму
+                    Вставьте SQL — получите диаграмму
                 </h2>
                 <p className="text-lg text-muted-foreground">
                     Попробуйте прямо здесь: схема строится по мере ввода.

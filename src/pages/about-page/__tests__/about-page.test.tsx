@@ -118,7 +118,7 @@ describe('AboutPage', () => {
             </HelmetProvider>
         );
 
-        // Диалекты также встречаются в кнопках блока «Вставьте DDL», поэтому ищем в секции «Поддержка»
+        // Диалекты также встречаются в кнопках блока «Вставьте SQL», поэтому ищем в секции «Поддержка»
         const databasesSection = document.getElementById('databases')!;
 
         [

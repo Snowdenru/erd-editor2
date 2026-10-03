@@ -120,6 +120,18 @@ export const ru: LanguageTranslation = {
 
         side_panel: {
             view_all_options: 'Просмотреть все варианты...',
+            ddl_section: {
+                mode_diagram: 'Из диаграммы',
+                mode_custom: 'Свой SQL',
+                placeholder: 'Вставьте сюда CREATE TABLE …',
+                apply: 'Применить',
+                no_tables: 'В SQL не найдено ни одной таблицы',
+                confirm_title: 'Заменить текущую диаграмму?',
+                confirm_description:
+                    'Таблицы и связи на холсте будут заменены схемой из вашего SQL. Отменить это действие будет нельзя.',
+                confirm_action: 'Заменить',
+                confirm_cancel: 'Отмена',
+            },
             tables_section: {
                 tables: 'Таблицы',
                 add_table: 'Добавить таблицу',

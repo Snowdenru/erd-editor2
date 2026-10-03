@@ -122,6 +122,18 @@ export const es: LanguageTranslation = {
 
         side_panel: {
             view_all_options: 'Ver todas las opciones...',
+            ddl_section: {
+                mode_diagram: 'From diagram',
+                mode_custom: 'Your SQL',
+                placeholder: 'Paste your CREATE TABLE statements here…',
+                apply: 'Apply',
+                no_tables: 'No tables found in the SQL',
+                confirm_title: 'Replace the current diagram?',
+                confirm_description:
+                    'Tables and relationships on the canvas will be replaced with the schema from your SQL. This cannot be undone.',
+                confirm_action: 'Replace',
+                confirm_cancel: 'Cancel',
+            },
             tables_section: {
                 tables: 'Tablas',
                 add_table: 'Agregar Tabla',

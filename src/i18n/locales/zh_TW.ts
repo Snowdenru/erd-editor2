@@ -119,6 +119,18 @@ export const zh_TW: LanguageTranslation = {
 
         side_panel: {
             view_all_options: '顯示所有選項...',
+            ddl_section: {
+                mode_diagram: 'From diagram',
+                mode_custom: 'Your SQL',
+                placeholder: 'Paste your CREATE TABLE statements here…',
+                apply: 'Apply',
+                no_tables: 'No tables found in the SQL',
+                confirm_title: 'Replace the current diagram?',
+                confirm_description:
+                    'Tables and relationships on the canvas will be replaced with the schema from your SQL. This cannot be undone.',
+                confirm_action: 'Replace',
+                confirm_cancel: 'Cancel',
+            },
             tables_section: {
                 tables: '表格',
                 add_table: '新增表格',

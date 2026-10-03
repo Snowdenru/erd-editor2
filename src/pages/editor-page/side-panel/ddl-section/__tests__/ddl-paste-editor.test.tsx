@@ -6,6 +6,7 @@ import '@/i18n/i18n';
 import { DdlPasteEditor } from '../ddl-paste-editor';
 import { DatabaseType } from '@/lib/domain/database-type';
 import type { Diagram } from '@/lib/domain/diagram';
+import type * as ApplyDdlModule from '../apply-ddl';
 
 // Monaco в happy-dom не работает — подменяем управляемым textarea
 vi.mock('@/components/code-snippet/code-snippet', () => ({
@@ -23,6 +24,20 @@ vi.mock('@/components/code-snippet/code-snippet', () => ({
         />
     ),
 }));
+
+const parseDdlOverride = vi.hoisted(() => ({
+    fn: undefined as undefined | (() => Promise<unknown>),
+}));
+vi.mock('../apply-ddl', async (importOriginal) => {
+    const actual = await importOriginal<typeof ApplyDdlModule>();
+    return {
+        ...actual,
+        parseDdl: (...args: Parameters<typeof actual.parseDdl>) =>
+            parseDdlOverride.fn
+                ? (parseDdlOverride.fn() as ReturnType<typeof actual.parseDdl>)
+                : actual.parseDdl(...args),
+    };
+});
 
 const showAlert = vi.fn();
 vi.mock('@/context/alert-context/alert-context', () => ({
@@ -52,6 +67,7 @@ const applyButton = () => screen.getByRole('button', { name: 'Применить
 describe('DdlPasteEditor', () => {
     beforeEach(() => {
         showAlert.mockClear();
+        parseDdlOverride.fn = undefined;
     });
 
     it('«Применить» отключена, пока SQL пустой', () => {
@@ -132,5 +148,63 @@ describe('DdlPasteEditor', () => {
         // подтверждаем
         showAlert.mock.calls[0][0].onAction();
         await waitFor(() => expect(onApply).toHaveBeenCalledTimes(1));
+    });
+
+    it('быстрый двойной клик вызывает onApply один раз', async () => {
+        const onApply = vi.fn(
+            () => new Promise<void>((resolve) => setTimeout(resolve, 10))
+        );
+        render(
+            <DdlPasteEditor currentDiagram={emptyDiagram} onApply={onApply} />
+        );
+
+        typeSql(VALID_SQL);
+        await waitFor(() => expect(applyButton()).toBeEnabled(), {
+            timeout: 3000,
+        });
+        fireEvent.click(applyButton());
+        fireEvent.click(applyButton());
+
+        await waitFor(() =>
+            expect(screen.getByTestId('mock-editor')).toHaveValue('')
+        );
+        expect(onApply).toHaveBeenCalledTimes(1);
+    });
+
+    it('отклонённый onApply не ломает компонент и сохраняет SQL', async () => {
+        const onApply = vi.fn().mockRejectedValue(new Error('boom'));
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+        render(
+            <DdlPasteEditor currentDiagram={emptyDiagram} onApply={onApply} />
+        );
+
+        typeSql(VALID_SQL);
+        await waitFor(() => expect(applyButton()).toBeEnabled(), {
+            timeout: 3000,
+        });
+        fireEvent.click(applyButton());
+
+        await waitFor(() => expect(errorSpy).toHaveBeenCalled());
+        expect(onApply).toHaveBeenCalledTimes(1);
+        expect(screen.getByTestId('mock-editor')).toHaveValue(VALID_SQL);
+        errorSpy.mockRestore();
+    });
+
+    it('ошибка парсера показывает сообщение и оставляет «Применить» отключённой', async () => {
+        parseDdlOverride.fn = () =>
+            Promise.reject(new Error('parser exploded'));
+        render(
+            <DdlPasteEditor currentDiagram={emptyDiagram} onApply={vi.fn()} />
+        );
+
+        typeSql(VALID_SQL);
+        await waitFor(
+            () =>
+                expect(screen.getByText(/parser exploded/)).toBeInTheDocument(),
+            { timeout: 3000 }
+        );
+        expect(applyButton()).toBeDisabled();
     });
 });

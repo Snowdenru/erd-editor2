@@ -3,6 +3,7 @@ import React, {
     useCallback,
     useEffect,
     useMemo,
+    useRef,
     useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -39,6 +40,8 @@ export const DdlPasteEditor: React.FC<DdlPasteEditorProps> = ({
     const [result, setResult] = useState<DdlParseResult | null>({
         status: 'empty',
     });
+    const [applying, setApplying] = useState(false);
+    const applyingRef = useRef(false);
     const { databaseType } = currentDiagram;
 
     useEffect(() => {
@@ -50,7 +53,17 @@ export const DdlPasteEditor: React.FC<DdlPasteEditorProps> = ({
         let cancelled = false;
         setResult(null);
         const timer = setTimeout(async () => {
-            const parsed = await parseDdl(sql, databaseType);
+            let parsed: DdlParseResult;
+            try {
+                parsed = await parseDdl(sql, databaseType);
+            } catch (error) {
+                parsed = {
+                    status: 'error',
+                    message:
+                        error instanceof Error ? error.message : String(error),
+                    validation: { isValid: false, errors: [], warnings: [] },
+                };
+            }
             if (!cancelled) {
                 setResult(parsed);
             }
@@ -64,8 +77,21 @@ export const DdlPasteEditor: React.FC<DdlPasteEditorProps> = ({
 
     const applyParsed = useCallback(
         async (parsed: Diagram) => {
-            await onApply(replaceDiagramContent(currentDiagram, parsed));
-            setSql('');
+            if (applyingRef.current) {
+                return;
+            }
+            applyingRef.current = true;
+            setApplying(true);
+            try {
+                await onApply(replaceDiagramContent(currentDiagram, parsed));
+                setSql('');
+            } catch (error) {
+                // SQL остаётся в редакторе, чтобы можно было повторить
+                console.error('Failed to apply DDL', error);
+            } finally {
+                applyingRef.current = false;
+                setApplying(false);
+            }
         },
         [currentDiagram, onApply]
     );
@@ -141,7 +167,7 @@ export const DdlPasteEditor: React.FC<DdlPasteEditorProps> = ({
 
             <Button
                 className="shrink-0"
-                disabled={result?.status !== 'ok'}
+                disabled={result?.status !== 'ok' || applying}
                 onClick={handleApply}
             >
                 {t('side_panel.ddl_section.apply')}

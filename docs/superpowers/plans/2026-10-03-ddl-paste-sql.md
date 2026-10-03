@@ -211,7 +211,7 @@ export const parseDdl = async (
     }
 };
 
-// Id, имя, тип БД и даты создания остаются от текущей диаграммы;
+// Id, имя, тип БД, даты создания, области и заметки остаются от текущей диаграммы;
 // содержимое (таблицы, связи, зависимости, типы) берётся из SQL
 export const replaceDiagramContent = (
     current: Diagram,
@@ -222,8 +222,6 @@ export const replaceDiagramContent = (
     relationships: parsed.relationships ?? [],
     dependencies: parsed.dependencies ?? [],
     customTypes: parsed.customTypes ?? [],
-    areas: [],
-    notes: [],
     updatedAt: new Date(),
 });
 ```

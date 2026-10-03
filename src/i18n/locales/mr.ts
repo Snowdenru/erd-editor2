@@ -128,7 +128,6 @@ export const mr: LanguageTranslation = {
             ddl_section: {
                 mode_diagram: 'From diagram',
                 mode_custom: 'Your SQL',
-                placeholder: 'Paste your CREATE TABLE statements here…',
                 apply: 'Apply',
                 no_tables: 'No tables found in the SQL',
                 confirm_title: 'Replace the current diagram?',
@@ -141,6 +140,13 @@ export const mr: LanguageTranslation = {
                     'The diagram was not changed. Try again or reduce the amount of SQL.',
                 too_many_tables:
                     'The SQL has too many tables ({{count}}), the maximum is {{limit}}',
+                syntax_unbalanced_close: 'Extra closing parenthesis',
+                syntax_unclosed_paren: 'Unclosed parenthesis',
+                syntax_double_comma: 'Two commas in a row',
+                syntax_comma_before_close: 'Comma before closing parenthesis',
+                syntax_at_line: 'line {{line}}',
+                too_large:
+                    'The SQL is too large ({{count}} characters), the maximum is {{limit}}',
             },
             tables_section: {
                 tables: 'टेबल्स',

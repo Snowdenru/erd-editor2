@@ -123,7 +123,6 @@ export const ru: LanguageTranslation = {
             ddl_section: {
                 mode_diagram: 'Из диаграммы',
                 mode_custom: 'Свой SQL',
-                placeholder: 'Вставьте сюда CREATE TABLE …',
                 apply: 'Применить',
                 no_tables: 'В SQL не найдено ни одной таблицы',
                 confirm_title: 'Заменить текущую диаграмму?',
@@ -136,6 +135,13 @@ export const ru: LanguageTranslation = {
                     'Диаграмма не изменена. Попробуйте ещё раз или уменьшите объём SQL.',
                 too_many_tables:
                     'В SQL слишком много таблиц ({{count}}), максимум — {{limit}}',
+                syntax_unbalanced_close: 'Лишняя закрывающая скобка',
+                syntax_unclosed_paren: 'Не закрыта скобка',
+                syntax_double_comma: 'Две запятые подряд',
+                syntax_comma_before_close: 'Запятая перед закрывающей скобкой',
+                syntax_at_line: 'строка {{line}}',
+                too_large:
+                    'SQL слишком большой ({{count}} символов), максимум — {{limit}}',
             },
             tables_section: {
                 tables: 'Таблицы',

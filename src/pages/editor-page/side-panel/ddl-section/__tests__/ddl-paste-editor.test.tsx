@@ -13,16 +13,30 @@ vi.mock('@/components/code-snippet/code-snippet', () => ({
     Editor: ({
         value,
         onChange,
+        onMount,
     }: {
         value: string;
         onChange: (value: string | undefined) => void;
-    }) => (
-        <textarea
-            data-testid="mock-editor"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-        />
-    ),
+        onMount?: (editor: unknown) => void;
+    }) => {
+        React.useEffect(() => {
+            onMount?.(fakeMonaco);
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, []);
+        return (
+            <textarea
+                data-testid="mock-editor"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+            />
+        );
+    },
+}));
+
+const fakeMonaco = vi.hoisted(() => ({
+    revealLineInCenter: vi.fn(),
+    setPosition: vi.fn(),
+    focus: vi.fn(),
 }));
 
 const parseDdlOverride = vi.hoisted(() => ({
@@ -257,5 +271,88 @@ describe('DdlPasteEditor', () => {
         fireEvent.click(screen.getByText('toggle'));
         fireEvent.click(screen.getByText('toggle'));
         expect(screen.getByTestId('mock-editor')).toHaveValue(VALID_SQL);
+    });
+
+    it('синтаксическая ошибка: локализованное сообщение, «Применить» отключена, клик ведёт на строку', async () => {
+        render(<Harness currentDiagram={emptyDiagram} onApply={vi.fn()} />);
+
+        typeSql('CREATE TABLE t (\n a INT,\n b INT,\n);');
+        const msg = await screen.findByText(
+            /Запятая перед закрывающей скобкой \(строка 3\)/,
+            undefined,
+            { timeout: 3000 }
+        );
+        expect(msg).toBeInTheDocument();
+        expect(applyButton()).toBeDisabled();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Line 3' }));
+        expect(fakeMonaco.revealLineInCenter).toHaveBeenCalledWith(3);
+        expect(fakeMonaco.setPosition).toHaveBeenCalledWith({
+            lineNumber: 3,
+            column: 1,
+        });
+        expect(fakeMonaco.focus).toHaveBeenCalled();
+    });
+
+    it('слишком большой SQL: сообщение и отключённая «Применить»', async () => {
+        parseDdlOverride.fn = () =>
+            Promise.resolve({
+                status: 'too-large',
+                length: 1000001,
+                limit: 1000000,
+            });
+        render(<Harness currentDiagram={emptyDiagram} onApply={vi.fn()} />);
+
+        typeSql(VALID_SQL);
+        await screen.findByText(
+            /слишком большой \(1000001 символов\)/,
+            undefined,
+            {
+                timeout: 3000,
+            }
+        );
+        expect(applyButton()).toBeDisabled();
+    });
+
+    it('подтверждение использует свежую диаграмму, а не снимок на момент клика', async () => {
+        const onApply = vi.fn();
+        const filled: Diagram = {
+            ...emptyDiagram,
+            tables: [
+                {
+                    id: 't1',
+                    name: 'old',
+                    fields: [],
+                    indexes: [],
+                    x: 0,
+                    y: 0,
+                    color: '#000000',
+                    isView: false,
+                    createdAt: 0,
+                },
+            ],
+        };
+        const { rerender } = render(
+            <Harness currentDiagram={filled} onApply={onApply} />
+        );
+
+        typeSql(VALID_SQL);
+        await waitFor(() => expect(applyButton()).toBeEnabled(), {
+            timeout: 3000,
+        });
+        fireEvent.click(applyButton());
+        expect(showAlert).toHaveBeenCalledTimes(1);
+
+        // пока открыт диалог, имя диаграммы поменяли
+        rerender(
+            <Harness
+                currentDiagram={{ ...filled, name: 'Переименована' }}
+                onApply={onApply}
+            />
+        );
+        showAlert.mock.calls[0][0].onAction();
+
+        await waitFor(() => expect(onApply).toHaveBeenCalledTimes(1));
+        expect(onApply.mock.calls[0][0].name).toBe('Переименована');
     });
 });

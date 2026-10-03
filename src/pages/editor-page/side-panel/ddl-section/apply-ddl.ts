@@ -2,10 +2,13 @@ import type { DatabaseType } from '@/lib/domain/database-type';
 import type { Diagram } from '@/lib/domain/diagram';
 import { MAX_TABLES_IN_DIAGRAM } from '@/dialogs/common/select-tables/constants';
 import { parseSQLError, sqlImportToDiagram } from '@/lib/data/sql-import';
+import { findSqlSanityProblem, type SqlSanityProblem } from './sql-sanity';
 import {
     validateSQL,
     type ValidationResult,
 } from '@/lib/data/sql-import/sql-validator';
+
+export const MAX_DDL_CHARS = 1_000_000;
 
 export type DdlParseResult =
     | { status: 'empty' }
@@ -14,6 +17,13 @@ export type DdlParseResult =
           status: 'too-many-tables';
           count: number;
           limit: number;
+          validation: ValidationResult;
+      }
+    | { status: 'too-large'; length: number; limit: number }
+    | {
+          status: 'syntax';
+          code: SqlSanityProblem['code'];
+          line: number;
           validation: ValidationResult;
       }
     | { status: 'error'; message: string; validation: ValidationResult }
@@ -27,6 +37,15 @@ export const parseDdl = async (
         return { status: 'empty' };
     }
 
+    // Не запускаем валидатор и парсер на огромном тексте: вкладка зависнет
+    if (sql.length > MAX_DDL_CHARS) {
+        return {
+            status: 'too-large',
+            length: sql.length,
+            limit: MAX_DDL_CHARS,
+        };
+    }
+
     const validation = validateSQL(sql, databaseType);
 
     // Те же правила, что в диалоге импорта: ошибки с автоисправлением
@@ -36,6 +55,26 @@ export const parseDdl = async (
             status: 'error',
             message: validation.errors[0].message,
             validation,
+        };
+    }
+
+    const problem = findSqlSanityProblem(sql, databaseType);
+    if (problem) {
+        return {
+            status: 'syntax',
+            code: problem.code,
+            line: problem.line,
+            validation: {
+                isValid: false,
+                errors: [
+                    {
+                        line: problem.line,
+                        message: problem.code,
+                        type: 'syntax',
+                    },
+                ],
+                warnings: [],
+            },
         };
     }
 

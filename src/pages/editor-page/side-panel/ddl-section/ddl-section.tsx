@@ -1,4 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
+import { useReactFlow } from '@xyflow/react';
 import { useTranslation } from 'react-i18next';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { CodeSnippet } from '@/components/code-snippet/code-snippet';
@@ -9,6 +16,7 @@ import type { Diagram } from '@/lib/domain/diagram';
 import { DdlPasteEditor } from './ddl-paste-editor';
 
 const DDL_DEBOUNCE_MS = 300;
+const FIT_VIEW_DELAY_MS = 250;
 
 type DdlMode = 'diagram' | 'custom';
 
@@ -16,6 +24,10 @@ export const DDLSection: React.FC = () => {
     const { t } = useTranslation();
     const { currentDiagram, updateDiagramData } = useChartDB();
     const [mode, setMode] = useState<DdlMode>('diagram');
+    const { fitView } = useReactFlow();
+    const currentDiagramRef = useRef(currentDiagram);
+    currentDiagramRef.current = currentDiagram;
+    const fitTimerRef = useRef<ReturnType<typeof setTimeout>>();
     const [sql, setSql] = useState('');
     const [diagram, setDiagram] = useState(currentDiagram);
 
@@ -42,12 +54,31 @@ export const DDLSection: React.FC = () => {
         }
     }, [diagram]);
 
+    useEffect(() => () => clearTimeout(fitTimerRef.current), []);
+
     const handleApply = useCallback(
         async (next: Diagram) => {
-            await updateDiagramData(next);
+            const snapshot = currentDiagramRef.current;
+            try {
+                await updateDiagramData(next);
+            } catch (error) {
+                // Запись могла пройти частично: пробуем вернуть прежнее состояние
+                try {
+                    await updateDiagramData(snapshot);
+                } catch (rollbackError) {
+                    console.error('Failed to roll back diagram', rollbackError);
+                }
+                throw error;
+            }
             setMode('diagram');
+            // Даём узлам отрисоваться и возвращаем холст в кадр
+            clearTimeout(fitTimerRef.current);
+            fitTimerRef.current = setTimeout(
+                () => fitView({ padding: 0.15, duration: 200, maxZoom: 1 }),
+                FIT_VIEW_DELAY_MS
+            );
         },
-        [updateDiagramData]
+        [updateDiagramData, fitView]
     );
 
     return (

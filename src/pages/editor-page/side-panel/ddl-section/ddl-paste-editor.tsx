@@ -15,6 +15,7 @@ import { useToast } from '@/components/toast/use-toast';
 import { useAlert } from '@/context/alert-context/alert-context';
 import { SQLValidationStatus } from '@/dialogs/common/import-database/sql-validation-status';
 import { setupDBMLLanguage } from '@/components/code-snippet/languages/dbml-language';
+import type { editor } from 'monaco-editor';
 import type { Diagram } from '@/lib/domain/diagram';
 import {
     parseDdl,
@@ -47,6 +48,10 @@ export const DdlPasteEditor: React.FC<DdlPasteEditorProps> = ({
     });
     const [applying, setApplying] = useState(false);
     const applyingRef = useRef(false);
+    const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+    // Подтверждение может прийти позже клика: берём самую свежую диаграмму
+    const currentDiagramRef = useRef(currentDiagram);
+    currentDiagramRef.current = currentDiagram;
     const { databaseType } = currentDiagram;
 
     useEffect(() => {
@@ -88,7 +93,9 @@ export const DdlPasteEditor: React.FC<DdlPasteEditorProps> = ({
             applyingRef.current = true;
             setApplying(true);
             try {
-                await onApply(replaceDiagramContent(currentDiagram, parsed));
+                await onApply(
+                    replaceDiagramContent(currentDiagramRef.current, parsed)
+                );
                 onSqlChange('');
             } catch (error) {
                 // SQL остаётся в редакторе, чтобы можно было повторить
@@ -105,7 +112,7 @@ export const DdlPasteEditor: React.FC<DdlPasteEditorProps> = ({
                 setApplying(false);
             }
         },
-        [currentDiagram, onApply, onSqlChange, toast, t]
+        [onApply, onSqlChange, toast, t]
     );
 
     const handleApply = useCallback(() => {
@@ -114,7 +121,7 @@ export const DdlPasteEditor: React.FC<DdlPasteEditorProps> = ({
         }
         const parsed = result.diagram;
 
-        if ((currentDiagram.tables?.length ?? 0) === 0) {
+        if ((currentDiagramRef.current.tables?.length ?? 0) === 0) {
             void applyParsed(parsed);
             return;
         }
@@ -126,11 +133,17 @@ export const DdlPasteEditor: React.FC<DdlPasteEditorProps> = ({
             closeLabel: t('side_panel.ddl_section.confirm_cancel'),
             onAction: () => void applyParsed(parsed),
         });
-    }, [result, currentDiagram.tables, applyParsed, showAlert, t]);
+    }, [result, applyParsed, showAlert, t]);
 
     const statusMessage = useMemo(() => {
         if (result?.status === 'error') {
             return result.message;
+        }
+        if (result?.status === 'too-large') {
+            return t('side_panel.ddl_section.too_large', {
+                count: result.length,
+                limit: result.limit,
+            });
         }
         if (result?.status === 'too-many-tables') {
             return t('side_panel.ddl_section.too_many_tables', {
@@ -144,8 +157,44 @@ export const DdlPasteEditor: React.FC<DdlPasteEditorProps> = ({
         return '';
     }, [result, t]);
 
-    const validation =
-        result && result.status !== 'empty' ? result.validation : null;
+    const validation = useMemo(() => {
+        if (
+            !result ||
+            result.status === 'empty' ||
+            result.status === 'too-large'
+        ) {
+            return null;
+        }
+        if (result.status === 'syntax') {
+            const keys = {
+                'unbalanced-close': 'syntax_unbalanced_close',
+                'unclosed-paren': 'syntax_unclosed_paren',
+                'double-comma': 'syntax_double_comma',
+                'comma-before-close': 'syntax_comma_before_close',
+            } as const;
+            return {
+                ...result.validation,
+                errors: [
+                    {
+                        line: result.line,
+                        type: 'syntax' as const,
+                        message: `${t(`side_panel.ddl_section.${keys[result.code]}`)} (${t('side_panel.ddl_section.syntax_at_line', { line: result.line })})`,
+                    },
+                ],
+            };
+        }
+        return result.validation;
+    }, [result, t]);
+
+    const handleErrorClick = useCallback((line: number) => {
+        const ed = editorRef.current;
+        if (!ed) {
+            return;
+        }
+        ed.revealLineInCenter(line);
+        ed.setPosition({ lineNumber: line, column: 1 });
+        ed.focus();
+    }, []);
 
     return (
         <div className="flex flex-1 flex-col gap-2 overflow-hidden">
@@ -155,6 +204,9 @@ export const DdlPasteEditor: React.FC<DdlPasteEditorProps> = ({
                         value={sql}
                         onChange={(value) => onSqlChange(value ?? '')}
                         language="sql"
+                        onMount={(ed) => {
+                            editorRef.current = ed;
+                        }}
                         loading={<Spinner />}
                         beforeMount={setupDBMLLanguage}
                         theme={
@@ -181,6 +233,7 @@ export const DdlPasteEditor: React.FC<DdlPasteEditorProps> = ({
             <SQLValidationStatus
                 validation={validation}
                 errorMessage={statusMessage}
+                onErrorClick={handleErrorClick}
             />
 
             <Button

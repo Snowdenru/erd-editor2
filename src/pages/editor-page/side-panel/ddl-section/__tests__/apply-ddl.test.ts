@@ -1,10 +1,29 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DatabaseType } from '@/lib/domain/database-type';
 import type { Diagram } from '@/lib/domain/diagram';
 import type { Area } from '@/lib/domain/area';
 import type { Note } from '@/lib/domain/note';
 import { MAX_TABLES_IN_DIAGRAM } from '@/dialogs/common/select-tables/constants';
-import { parseDdl, replaceDiagramContent } from '../apply-ddl';
+import { DatabaseEdition } from '@/lib/domain/database-edition';
+import { DBCustomTypeKind } from '@/lib/domain/db-custom-type';
+import { MAX_DDL_CHARS, parseDdl, replaceDiagramContent } from '../apply-ddl';
+
+const parseSqlErrorOverride = vi.hoisted(() => ({
+    value: undefined as undefined | { success: boolean; error?: string },
+}));
+vi.mock('@/lib/data/sql-import', async (importOriginal) => {
+    const actual = await importOriginal<Record<string, unknown>>();
+    const original = actual.parseSQLError as (
+        ...args: unknown[]
+    ) => Promise<unknown>;
+    return {
+        ...actual,
+        parseSQLError: (...args: unknown[]) =>
+            parseSqlErrorOverride.value
+                ? Promise.resolve(parseSqlErrorOverride.value)
+                : original(...args),
+    };
+});
 
 const VALID_SQL = `
 CREATE TABLE users (id SERIAL PRIMARY KEY, email VARCHAR(255) NOT NULL);
@@ -15,6 +34,10 @@ CREATE TABLE orders (
 `;
 
 describe('parseDdl', () => {
+    beforeEach(() => {
+        parseSqlErrorOverride.value = undefined;
+    });
+
     it('возвращает too-many-tables, если таблиц больше лимита', async () => {
         const sql = Array.from(
             { length: MAX_TABLES_IN_DIAGRAM + 1 },
@@ -45,25 +68,45 @@ describe('parseDdl', () => {
         expect(result.validation.relationshipCount).toBe(1);
     });
 
-    it('возвращает error для синтаксически неверного SQL', async () => {
-        const result = await parseDdl('!@#$%^&*()', DatabaseType.POSTGRESQL);
-        expect(['error', 'no-tables']).toContain(result.status);
-        expect(result.status).not.toBe('ok');
-    });
-
     it('возвращает no-tables, если в SQL нет таблиц', async () => {
         const result = await parseDdl(
-            'CREATE INDEX idx_test ON users(id);',
+            'CREATE TABL users (id INT);',
             DatabaseType.POSTGRESQL
         );
-        // Парсер может вернуть no-tables или error в зависимости от логики обработки индексов
-        if (result.status === 'no-tables') {
-            expect(result.status).toBe('no-tables');
-        } else {
-            // Если парсер не может обработать индекс без таблицы, это ошибка
-            expect(['no-tables', 'error']).toContain(result.status);
-        }
-        expect(result.status).not.toBe('ok');
+        expect(result.status).toBe('no-tables');
+    });
+
+    it('возвращает error, если парсер отверг SQL', async () => {
+        parseSqlErrorOverride.value = {
+            success: false,
+            error: 'boom at line 1',
+        };
+        const result = await parseDdl(VALID_SQL, DatabaseType.POSTGRESQL);
+        expect(result.status).toBe('error');
+        if (result.status !== 'error') return;
+        expect(result.message).toBe('boom at line 1');
+    });
+
+    it('возвращает syntax для двойных запятых (раньше было ok)', async () => {
+        const result = await parseDdl(
+            'CREATE TABLE users (id SERIAL PRIMARY KEY,,, );',
+            DatabaseType.POSTGRESQL
+        );
+        expect(result.status).toBe('syntax');
+        if (result.status !== 'syntax') return;
+        expect(result.code).toBe('double-comma');
+        expect(result.line).toBe(1);
+        expect(result.validation.errors[0].line).toBe(1);
+    });
+
+    it('возвращает too-large сразу, не запуская парсер', async () => {
+        const sql = 'x'.repeat(MAX_DDL_CHARS + 1);
+        const result = await parseDdl(sql, DatabaseType.POSTGRESQL);
+        expect(result).toEqual({
+            status: 'too-large',
+            length: MAX_DDL_CHARS + 1,
+            limit: MAX_DDL_CHARS,
+        });
     });
 
     it('парсит валидный SQL со строками, содержащими запятые', async () => {
@@ -148,5 +191,51 @@ describe('replaceDiagramContent', () => {
         expect(next.notes).toEqual([note]);
         expect(next.tables).toHaveLength(2);
         expect(next.relationships).toHaveLength(1);
+    });
+
+    it('заменяет dependencies и customTypes, сохраняет databaseEdition', () => {
+        const current: Diagram = {
+            id: 'd',
+            name: 'n',
+            databaseType: DatabaseType.POSTGRESQL,
+            databaseEdition: DatabaseEdition.POSTGRESQL_SUPABASE,
+            tables: [],
+            relationships: [],
+            dependencies: [
+                {
+                    id: 'old-dep',
+                    tableId: 'a',
+                    dependentTableId: 'b',
+                    createdAt: 0,
+                },
+            ],
+            customTypes: [],
+            createdAt: new Date('2026-01-01'),
+            updatedAt: new Date('2026-01-01'),
+        };
+        const parsed: Diagram = {
+            ...current,
+            databaseEdition: undefined,
+            dependencies: [
+                {
+                    id: 'new-dep',
+                    tableId: 'c',
+                    dependentTableId: 'd',
+                    createdAt: 1,
+                },
+            ],
+            customTypes: [
+                {
+                    id: 'ct',
+                    name: 'mood',
+                    kind: DBCustomTypeKind.enum,
+                    values: ['a'],
+                },
+            ],
+        };
+        const next = replaceDiagramContent(current, parsed);
+        expect(next.dependencies?.map((x) => x.id)).toEqual(['new-dep']);
+        expect(next.customTypes?.map((x) => x.name)).toEqual(['mood']);
+        expect(next.databaseEdition).toBe(DatabaseEdition.POSTGRESQL_SUPABASE);
     });
 });

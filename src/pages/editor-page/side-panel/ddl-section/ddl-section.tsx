@@ -60,6 +60,9 @@ export const DDLSection: React.FC = () => {
                         <Button
                             size="sm"
                             variant={mode === 'diagram' ? 'secondary' : 'ghost'}
+                            className={
+                                mode === 'diagram' ? '' : 'text-foreground'
+                            }
                             onClick={() => setMode('diagram')}
                         >
                             {t('side_panel.ddl_section.mode_diagram')}
@@ -67,6 +70,9 @@ export const DDLSection: React.FC = () => {
                         <Button
                             size="sm"
                             variant={mode === 'custom' ? 'secondary' : 'ghost'}
+                            className={
+                                mode === 'custom' ? '' : 'text-foreground'
+                            }
                             onClick={() => setMode('custom')}
                         >
                             {t('side_panel.ddl_section.mode_custom')}

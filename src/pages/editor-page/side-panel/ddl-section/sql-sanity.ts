@@ -334,9 +334,9 @@ export const findSqlSanityProblem = (
             // Построчные эвристики (SQL*Plus PROMPT/REM, psql COPY ... stdin и
             // мета-команды) могут принять колонку `prompt`/`copy` за команду.
             // Поэтому сканируем дважды: с пропуском таких строк и без него.
-            // Ошибку заявляем, только если ОБА прохода нашли ошибку с одним
-            // кодом; строку берём из прохода с пропуском (он не видит данные
-            // COPY и текст команд, поэтому строка точнее). Иначе null.
+            // Ошибку заявляем, только если ОБА прохода нашли одну и ту же ошибку
+            // (код и строка): каждый проход может споткнуться о свой артефакт
+            // на валидном SQL. Иначе null.
             const heuristics = isPg
                 ? { psqlMeta: true }
                 : { sqlPlusLines: true };
@@ -345,7 +345,11 @@ export const findSqlSanityProblem = (
                 return null;
             }
             const without = scan(sql, base);
-            return without && without.code === withSkip.code ? withSkip : null;
+            return without &&
+                without.code === withSkip.code &&
+                without.line === withSkip.line
+                ? withSkip
+                : null;
         }
         return scan(sql, base);
     } catch {

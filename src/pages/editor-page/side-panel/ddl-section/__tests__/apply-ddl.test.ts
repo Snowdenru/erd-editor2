@@ -111,6 +111,16 @@ describe('parseDdl', () => {
         expect(result.status).not.toBe('syntax');
     });
 
+    it('Oracle: расхождение проходов сканера не даёт syntax', async () => {
+        for (const sql of [
+            'PROMPT step 1)\nCREATE TABLE t (a NUMBER);\nALTER TABLE t ADD\nremark NUMBER(10,\n2);',
+            "PROMPT loading a,,b\nCREATE TABLE t (id NUMBER, remark VARCHAR2(10));\nINSERT INTO t (id, remark) SELECT id,\nremark\n, 'x' FROM s;",
+        ]) {
+            const result = await parseDdl(sql, DatabaseType.ORACLE);
+            expect(result.status).not.toBe('syntax');
+        }
+    });
+
     it('возвращает too-large сразу, не запуская парсер', async () => {
         const sql = 'x'.repeat(MAX_DDL_CHARS + 1);
         const result = await parseDdl(sql, DatabaseType.POSTGRESQL);

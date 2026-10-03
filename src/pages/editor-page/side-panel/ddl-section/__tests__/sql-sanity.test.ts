@@ -678,4 +678,14 @@ describe('findSqlSanityProblem: диалектные особенности', ()
             )
         ).toEqual({ code: 'double-comma', line: 4 });
     });
+
+    it('Oracle: одинаковые коды на разных строках в проходах дают null', () => {
+        const cases = [
+            'PROMPT step 1)\nCREATE TABLE t (a NUMBER);\nALTER TABLE t ADD\nremark NUMBER(10,\n2);',
+            "PROMPT loading a,,b\nCREATE TABLE t (id NUMBER, remark VARCHAR2(10));\nINSERT INTO t (id, remark) SELECT id,\nremark\n, 'x' FROM s;",
+        ];
+        for (const sql of cases) {
+            expect(findSqlSanityProblem(sql, ORA)).toBeNull();
+        }
+    });
 });

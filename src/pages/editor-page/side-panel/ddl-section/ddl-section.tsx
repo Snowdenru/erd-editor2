@@ -16,6 +16,7 @@ export const DDLSection: React.FC = () => {
     const { t } = useTranslation();
     const { currentDiagram, updateDiagramData } = useChartDB();
     const [mode, setMode] = useState<DdlMode>('diagram');
+    const [sql, setSql] = useState('');
     const [diagram, setDiagram] = useState(currentDiagram);
 
     // Пересобираем скрипт не на каждое нажатие клавиши, а после паузы
@@ -92,6 +93,8 @@ export const DDLSection: React.FC = () => {
                     ) : (
                         <DdlPasteEditor
                             currentDiagram={currentDiagram}
+                            sql={sql}
+                            onSqlChange={setSql}
                             onApply={handleApply}
                         />
                     )}

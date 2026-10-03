@@ -1,5 +1,6 @@
 import type { DatabaseType } from '@/lib/domain/database-type';
 import type { Diagram } from '@/lib/domain/diagram';
+import { MAX_TABLES_IN_DIAGRAM } from '@/dialogs/common/select-tables/constants';
 import { parseSQLError, sqlImportToDiagram } from '@/lib/data/sql-import';
 import {
     validateSQL,
@@ -9,6 +10,12 @@ import {
 export type DdlParseResult =
     | { status: 'empty' }
     | { status: 'no-tables'; validation: ValidationResult }
+    | {
+          status: 'too-many-tables';
+          count: number;
+          limit: number;
+          validation: ValidationResult;
+      }
     | { status: 'error'; message: string; validation: ValidationResult }
     | { status: 'ok'; diagram: Diagram; validation: ValidationResult };
 
@@ -56,6 +63,14 @@ export const parseDdl = async (
 
         if (tableCount === 0) {
             return { status: 'no-tables', validation: counted };
+        }
+        if (tableCount > MAX_TABLES_IN_DIAGRAM) {
+            return {
+                status: 'too-many-tables',
+                count: tableCount,
+                limit: MAX_TABLES_IN_DIAGRAM,
+                validation: counted,
+            };
         }
         return { status: 'ok', diagram, validation: counted };
     } catch (error) {

@@ -133,6 +133,11 @@ export const ko_KR: LanguageTranslation = {
                     'Tables and relationships on the canvas will be replaced with the schema from your SQL. This cannot be undone.',
                 confirm_action: 'Replace',
                 confirm_cancel: 'Cancel',
+                apply_failed_title: 'Failed to apply SQL',
+                apply_failed_description:
+                    'The diagram was not changed. Try again or reduce the amount of SQL.',
+                too_many_tables:
+                    'The SQL has too many tables ({{count}}), the maximum is {{limit}}',
             },
             tables_section: {
                 tables: '테이블',

@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@/i18n/i18n';
 
-import { DdlPasteEditor } from '../ddl-paste-editor';
+import { DdlPasteEditor, type DdlPasteEditorProps } from '../ddl-paste-editor';
 import { DatabaseType } from '@/lib/domain/database-type';
 import type { Diagram } from '@/lib/domain/diagram';
 import type * as ApplyDdlModule from '../apply-ddl';
@@ -39,10 +39,23 @@ vi.mock('../apply-ddl', async (importOriginal) => {
     };
 });
 
+const toast = vi.fn();
+vi.mock('@/components/toast/use-toast', () => ({
+    useToast: () => ({ toast }),
+}));
+
 const showAlert = vi.fn();
 vi.mock('@/context/alert-context/alert-context', () => ({
     useAlert: () => ({ showAlert, closeAlert: vi.fn() }),
 }));
+
+// Состояние SQL живёт в родителе (как в DDLSection)
+const Harness: React.FC<Omit<DdlPasteEditorProps, 'sql' | 'onSqlChange'>> = (
+    props
+) => {
+    const [sql, setSql] = React.useState('');
+    return <DdlPasteEditor {...props} sql={sql} onSqlChange={setSql} />;
+};
 
 const VALID_SQL =
     'CREATE TABLE users (id SERIAL PRIMARY KEY, email VARCHAR(255) NOT NULL);';
@@ -67,21 +80,18 @@ const applyButton = () => screen.getByRole('button', { name: 'Применить
 describe('DdlPasteEditor', () => {
     beforeEach(() => {
         showAlert.mockClear();
+        toast.mockClear();
         parseDdlOverride.fn = undefined;
     });
 
     it('«Применить» отключена, пока SQL пустой', () => {
-        render(
-            <DdlPasteEditor currentDiagram={emptyDiagram} onApply={vi.fn()} />
-        );
+        render(<Harness currentDiagram={emptyDiagram} onApply={vi.fn()} />);
         expect(applyButton()).toBeDisabled();
     });
 
     it('валидный SQL на пустой диаграмме применяется без подтверждения', async () => {
         const onApply = vi.fn();
-        render(
-            <DdlPasteEditor currentDiagram={emptyDiagram} onApply={onApply} />
-        );
+        render(<Harness currentDiagram={emptyDiagram} onApply={onApply} />);
 
         typeSql(VALID_SQL);
         await waitFor(() => expect(applyButton()).toBeEnabled(), {
@@ -98,9 +108,7 @@ describe('DdlPasteEditor', () => {
 
     it('SQL без таблиц оставляет «Применить» отключённой', async () => {
         const onApply = vi.fn();
-        render(
-            <DdlPasteEditor currentDiagram={emptyDiagram} onApply={onApply} />
-        );
+        render(<Harness currentDiagram={emptyDiagram} onApply={onApply} />);
 
         typeSql('CREATE TABL users (id INT);');
         // ждём, пока пройдёт debounce и парсинг: появится сообщение «таблиц не найдено»
@@ -134,7 +142,7 @@ describe('DdlPasteEditor', () => {
                 },
             ],
         };
-        render(<DdlPasteEditor currentDiagram={filled} onApply={onApply} />);
+        render(<Harness currentDiagram={filled} onApply={onApply} />);
 
         typeSql(VALID_SQL);
         await waitFor(() => expect(applyButton()).toBeEnabled(), {
@@ -154,9 +162,7 @@ describe('DdlPasteEditor', () => {
         const onApply = vi.fn(
             () => new Promise<void>((resolve) => setTimeout(resolve, 10))
         );
-        render(
-            <DdlPasteEditor currentDiagram={emptyDiagram} onApply={onApply} />
-        );
+        render(<Harness currentDiagram={emptyDiagram} onApply={onApply} />);
 
         typeSql(VALID_SQL);
         await waitFor(() => expect(applyButton()).toBeEnabled(), {
@@ -176,9 +182,7 @@ describe('DdlPasteEditor', () => {
         const errorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => undefined);
-        render(
-            <DdlPasteEditor currentDiagram={emptyDiagram} onApply={onApply} />
-        );
+        render(<Harness currentDiagram={emptyDiagram} onApply={onApply} />);
 
         typeSql(VALID_SQL);
         await waitFor(() => expect(applyButton()).toBeEnabled(), {
@@ -189,15 +193,16 @@ describe('DdlPasteEditor', () => {
         await waitFor(() => expect(errorSpy).toHaveBeenCalled());
         expect(onApply).toHaveBeenCalledTimes(1);
         expect(screen.getByTestId('mock-editor')).toHaveValue(VALID_SQL);
+        expect(toast).toHaveBeenCalledWith(
+            expect.objectContaining({ variant: 'destructive' })
+        );
         errorSpy.mockRestore();
     });
 
     it('ошибка парсера показывает сообщение и оставляет «Применить» отключённой', async () => {
         parseDdlOverride.fn = () =>
             Promise.reject(new Error('parser exploded'));
-        render(
-            <DdlPasteEditor currentDiagram={emptyDiagram} onApply={vi.fn()} />
-        );
+        render(<Harness currentDiagram={emptyDiagram} onApply={vi.fn()} />);
 
         typeSql(VALID_SQL);
         await waitFor(
@@ -206,5 +211,51 @@ describe('DdlPasteEditor', () => {
             { timeout: 3000 }
         );
         expect(applyButton()).toBeDisabled();
+    });
+
+    it('слишком много таблиц: сообщение и отключённая «Применить»', async () => {
+        parseDdlOverride.fn = () =>
+            Promise.resolve({
+                status: 'too-many-tables',
+                count: 501,
+                limit: 500,
+                validation: { isValid: true, errors: [], warnings: [] },
+            });
+        render(<Harness currentDiagram={emptyDiagram} onApply={vi.fn()} />);
+
+        typeSql(VALID_SQL);
+        await waitFor(
+            () =>
+                expect(
+                    screen.getByText(/слишком много таблиц \(501\).*500/)
+                ).toBeInTheDocument(),
+            { timeout: 3000 }
+        );
+        expect(applyButton()).toBeDisabled();
+    });
+
+    it('SQL переживает перемонтирование редактора (состояние в родителе)', () => {
+        const Parent: React.FC = () => {
+            const [sql, setSql] = React.useState('');
+            const [shown, setShown] = React.useState(true);
+            return (
+                <>
+                    <button onClick={() => setShown((v) => !v)}>toggle</button>
+                    {shown && (
+                        <DdlPasteEditor
+                            currentDiagram={emptyDiagram}
+                            sql={sql}
+                            onSqlChange={setSql}
+                            onApply={vi.fn()}
+                        />
+                    )}
+                </>
+            );
+        };
+        render(<Parent />);
+        typeSql(VALID_SQL);
+        fireEvent.click(screen.getByText('toggle'));
+        fireEvent.click(screen.getByText('toggle'));
+        expect(screen.getByTestId('mock-editor')).toHaveValue(VALID_SQL);
     });
 });

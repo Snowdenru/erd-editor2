@@ -131,6 +131,11 @@ export const ru: LanguageTranslation = {
                     'Таблицы и связи на холсте будут заменены схемой из вашего SQL. Отменить это действие будет нельзя.',
                 confirm_action: 'Заменить',
                 confirm_cancel: 'Отмена',
+                apply_failed_title: 'Не удалось применить SQL',
+                apply_failed_description:
+                    'Диаграмма не изменена. Попробуйте ещё раз или уменьшите объём SQL.',
+                too_many_tables:
+                    'В SQL слишком много таблиц ({{count}}), максимум — {{limit}}',
             },
             tables_section: {
                 tables: 'Таблицы',

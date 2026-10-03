@@ -3,6 +3,7 @@ import { DatabaseType } from '@/lib/domain/database-type';
 import type { Diagram } from '@/lib/domain/diagram';
 import type { Area } from '@/lib/domain/area';
 import type { Note } from '@/lib/domain/note';
+import { MAX_TABLES_IN_DIAGRAM } from '@/dialogs/common/select-tables/constants';
 import { parseDdl, replaceDiagramContent } from '../apply-ddl';
 
 const VALID_SQL = `
@@ -14,6 +15,18 @@ CREATE TABLE orders (
 `;
 
 describe('parseDdl', () => {
+    it('возвращает too-many-tables, если таблиц больше лимита', async () => {
+        const sql = Array.from(
+            { length: MAX_TABLES_IN_DIAGRAM + 1 },
+            (_, i) => `CREATE TABLE t${i} (id INT PRIMARY KEY);`
+        ).join('\n');
+        const result = await parseDdl(sql, DatabaseType.POSTGRESQL);
+        expect(result.status).toBe('too-many-tables');
+        if (result.status !== 'too-many-tables') return;
+        expect(result.count).toBe(MAX_TABLES_IN_DIAGRAM + 1);
+        expect(result.limit).toBe(MAX_TABLES_IN_DIAGRAM);
+    });
+
     it('возвращает empty для пустой строки', async () => {
         const result = await parseDdl('   \n ', DatabaseType.POSTGRESQL);
         expect(result.status).toBe('empty');

@@ -11,6 +11,7 @@ import { Editor } from '@/components/code-snippet/code-snippet';
 import { Button } from '@/components/button/button';
 import { Spinner } from '@/components/spinner/spinner';
 import { useTheme } from '@/hooks/use-theme';
+import { useToast } from '@/components/toast/use-toast';
 import { useAlert } from '@/context/alert-context/alert-context';
 import { SQLValidationStatus } from '@/dialogs/common/import-database/sql-validation-status';
 import { setupDBMLLanguage } from '@/components/code-snippet/languages/dbml-language';
@@ -25,17 +26,21 @@ const PARSE_DEBOUNCE_MS = 500;
 
 export interface DdlPasteEditorProps {
     currentDiagram: Diagram;
+    sql: string;
+    onSqlChange: (sql: string) => void;
     onApply: (diagram: Diagram) => Promise<void> | void;
 }
 
 export const DdlPasteEditor: React.FC<DdlPasteEditorProps> = ({
     currentDiagram,
+    sql,
+    onSqlChange,
     onApply,
 }) => {
     const { t } = useTranslation();
     const { effectiveTheme } = useTheme();
     const { showAlert } = useAlert();
-    const [sql, setSql] = useState('');
+    const { toast } = useToast();
     // null — идёт разбор (после последнего ввода ещё не завершился)
     const [result, setResult] = useState<DdlParseResult | null>({
         status: 'empty',
@@ -84,16 +89,23 @@ export const DdlPasteEditor: React.FC<DdlPasteEditorProps> = ({
             setApplying(true);
             try {
                 await onApply(replaceDiagramContent(currentDiagram, parsed));
-                setSql('');
+                onSqlChange('');
             } catch (error) {
                 // SQL остаётся в редакторе, чтобы можно было повторить
                 console.error('Failed to apply DDL', error);
+                toast({
+                    variant: 'destructive',
+                    title: t('side_panel.ddl_section.apply_failed_title'),
+                    description: t(
+                        'side_panel.ddl_section.apply_failed_description'
+                    ),
+                });
             } finally {
                 applyingRef.current = false;
                 setApplying(false);
             }
         },
-        [currentDiagram, onApply]
+        [currentDiagram, onApply, onSqlChange, toast, t]
     );
 
     const handleApply = useCallback(() => {
@@ -120,6 +132,12 @@ export const DdlPasteEditor: React.FC<DdlPasteEditorProps> = ({
         if (result?.status === 'error') {
             return result.message;
         }
+        if (result?.status === 'too-many-tables') {
+            return t('side_panel.ddl_section.too_many_tables', {
+                count: result.count,
+                limit: result.limit,
+            });
+        }
         if (result?.status === 'no-tables') {
             return t('side_panel.ddl_section.no_tables');
         }
@@ -135,7 +153,7 @@ export const DdlPasteEditor: React.FC<DdlPasteEditorProps> = ({
                 <Suspense fallback={<Spinner />}>
                     <Editor
                         value={sql}
-                        onChange={(value) => setSql(value ?? '')}
+                        onChange={(value) => onSqlChange(value ?? '')}
                         language="sql"
                         loading={<Spinner />}
                         beforeMount={setupDBMLLanguage}

@@ -1,0 +1,136 @@
+import React from 'react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import '@/i18n/i18n';
+
+import { DdlPasteEditor } from '../ddl-paste-editor';
+import { DatabaseType } from '@/lib/domain/database-type';
+import type { Diagram } from '@/lib/domain/diagram';
+
+// Monaco в happy-dom не работает — подменяем управляемым textarea
+vi.mock('@/components/code-snippet/code-snippet', () => ({
+    Editor: ({
+        value,
+        onChange,
+    }: {
+        value: string;
+        onChange: (value: string | undefined) => void;
+    }) => (
+        <textarea
+            data-testid="mock-editor"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+        />
+    ),
+}));
+
+const showAlert = vi.fn();
+vi.mock('@/context/alert-context/alert-context', () => ({
+    useAlert: () => ({ showAlert, closeAlert: vi.fn() }),
+}));
+
+const VALID_SQL =
+    'CREATE TABLE users (id SERIAL PRIMARY KEY, email VARCHAR(255) NOT NULL);';
+
+const emptyDiagram: Diagram = {
+    id: 'd1',
+    name: 'Test',
+    databaseType: DatabaseType.POSTGRESQL,
+    tables: [],
+    relationships: [],
+    createdAt: new Date('2026-01-01'),
+    updatedAt: new Date('2026-01-01'),
+};
+
+const typeSql = (sql: string) =>
+    fireEvent.change(screen.getByTestId('mock-editor'), {
+        target: { value: sql },
+    });
+
+const applyButton = () => screen.getByRole('button', { name: 'Применить' });
+
+describe('DdlPasteEditor', () => {
+    beforeEach(() => {
+        showAlert.mockClear();
+    });
+
+    it('«Применить» отключена, пока SQL пустой', () => {
+        render(
+            <DdlPasteEditor currentDiagram={emptyDiagram} onApply={vi.fn()} />
+        );
+        expect(applyButton()).toBeDisabled();
+    });
+
+    it('валидный SQL на пустой диаграмме применяется без подтверждения', async () => {
+        const onApply = vi.fn();
+        render(
+            <DdlPasteEditor currentDiagram={emptyDiagram} onApply={onApply} />
+        );
+
+        typeSql(VALID_SQL);
+        await waitFor(() => expect(applyButton()).toBeEnabled(), {
+            timeout: 3000,
+        });
+        fireEvent.click(applyButton());
+
+        await waitFor(() => expect(onApply).toHaveBeenCalledTimes(1));
+        expect(showAlert).not.toHaveBeenCalled();
+        const applied: Diagram = onApply.mock.calls[0][0];
+        expect(applied.id).toBe('d1');
+        expect(applied.tables?.map((t) => t.name)).toEqual(['users']);
+    });
+
+    it('SQL без таблиц оставляет «Применить» отключённой', async () => {
+        const onApply = vi.fn();
+        render(
+            <DdlPasteEditor currentDiagram={emptyDiagram} onApply={onApply} />
+        );
+
+        typeSql('CREATE TABL users (id INT);');
+        // ждём, пока пройдёт debounce и парсинг: появится сообщение «таблиц не найдено»
+        await waitFor(
+            () =>
+                expect(
+                    screen.getByText('В SQL не найдено ни одной таблицы')
+                ).toBeInTheDocument(),
+            { timeout: 3000 }
+        );
+
+        expect(applyButton()).toBeDisabled();
+        expect(onApply).not.toHaveBeenCalled();
+    });
+
+    it('на непустой диаграмме сначала просит подтверждение', async () => {
+        const onApply = vi.fn();
+        const filled: Diagram = {
+            ...emptyDiagram,
+            tables: [
+                {
+                    id: 't1',
+                    name: 'old',
+                    fields: [],
+                    indexes: [],
+                    x: 0,
+                    y: 0,
+                    color: '#000000',
+                    isView: false,
+                    createdAt: 0,
+                },
+            ],
+        };
+        render(<DdlPasteEditor currentDiagram={filled} onApply={onApply} />);
+
+        typeSql(VALID_SQL);
+        await waitFor(() => expect(applyButton()).toBeEnabled(), {
+            timeout: 3000,
+        });
+        fireEvent.click(applyButton());
+
+        expect(onApply).not.toHaveBeenCalled();
+        expect(showAlert).toHaveBeenCalledTimes(1);
+
+        // подтверждаем
+        showAlert.mock.calls[0][0].onAction();
+        await waitFor(() => expect(onApply).toHaveBeenCalledTimes(1));
+    });
+});

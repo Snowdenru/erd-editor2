@@ -14,6 +14,7 @@ import {
     MenubarTrigger,
 } from '@/components/menubar/menubar';
 import { useChartDB } from '@/hooks/use-chartdb';
+import { deleteCloudDiagram } from '@/lib/cloud-delete';
 import { useDialog } from '@/hooks/use-dialog';
 import { emitOpenExport } from '@/lib/export-dialog-events';
 import {
@@ -35,6 +36,7 @@ export const Menu: React.FC<MenuProps> = () => {
     const {
         clearDiagramData,
         deleteDiagram,
+        diagramId,
         updateDiagramUpdatedAt,
         databaseType,
     } = useChartDB();
@@ -65,9 +67,11 @@ export const Menu: React.FC<MenuProps> = () => {
     const navigate = useNavigate();
 
     const handleDeleteDiagramAction = useCallback(async () => {
+        // Облако первым: иначе фоновая синхронизация успела бы пересоздать удаляемую схему.
+        await deleteCloudDiagram(diagramId);
         await deleteDiagram();
         navigate(NEW_DIAGRAM_PATH);
-    }, [deleteDiagram, navigate]);
+    }, [deleteDiagram, diagramId, navigate]);
 
     const createNewDiagram = () => {
         openCreateDiagramDialog();

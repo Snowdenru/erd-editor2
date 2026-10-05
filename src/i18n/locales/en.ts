@@ -65,7 +65,7 @@ export const en = {
         delete_diagram_alert: {
             title: 'Delete Diagram',
             description:
-                'This action cannot be undone. This will permanently delete the diagram.',
+                'This action cannot be undone. The diagram will be deleted from the cloud as well.',
             cancel: 'Cancel',
             delete: 'Delete',
         },

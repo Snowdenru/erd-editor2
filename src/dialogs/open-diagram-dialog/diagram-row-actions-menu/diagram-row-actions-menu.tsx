@@ -17,6 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDialog } from '@/hooks/use-dialog';
 import { shouldLeaveAfterDelete } from './after-delete';
 import { NEW_DIAGRAM_PATH } from '@/lib/erd-paths';
+import { deleteCloudDiagram } from '@/lib/cloud-delete';
 
 interface DiagramRowActionsMenuProps {
     diagram: Diagram;
@@ -39,6 +40,7 @@ export const DiagramRowActionsMenu: React.FC<DiagramRowActionsMenuProps> = ({
 
     const onDelete = useCallback(async () => {
         // Ждём удаление: переход ниже иначе может обогнать запись в IndexedDB
+        await deleteCloudDiagram(diagram.id);
         await deleteDiagram(diagram.id);
         refetch();
 

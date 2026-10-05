@@ -5,6 +5,7 @@ import { storageContext } from '@/context/storage-context/storage-context';
 import * as auth from '@/lib/sqllab-auth';
 import { DatabaseType } from '@/lib/domain/database-type';
 import type { Diagram } from '@/lib/domain/diagram';
+import { getLockedCards, setLockedCards } from '@/lib/locked-diagrams';
 import { CloudPullProvider } from '../cloud-pull-provider';
 
 const local = (id: string, updatedAt: string, name: string): Diagram => ({
@@ -111,6 +112,49 @@ describe('CloudPullProvider', () => {
             </storageContext.Provider>
         );
         await Promise.resolve();
+        expect(storage.addDiagram).not.toHaveBeenCalled();
+    });
+
+    it('does not load locked rows and exposes them as cards', async () => {
+        setLockedCards([]);
+        const lockedRow = {
+            id: 'locked-1',
+            title: 'Большая',
+            updated_at: '2026-02-01T00:00:00Z',
+            locked: true,
+            tables: 15,
+            db_type: 'postgresql',
+        };
+        const { storage } = setup(
+            [cloudRow('open-1', '2026-02-01T00:00:00Z', 'Открытая'), lockedRow],
+            []
+        );
+        await waitFor(() =>
+            expect(storage.addDiagram).toHaveBeenCalledTimes(1)
+        );
+        expect(storage.addDiagram).toHaveBeenCalledWith({
+            diagram: expect.objectContaining({ id: 'open-1' }),
+        });
+        expect(getLockedCards().map((c) => c.id)).toEqual(['locked-1']);
+        expect(getLockedCards()[0].tables).toBe(15);
+    });
+
+    it('skips the card when the locked diagram already exists locally', async () => {
+        setLockedCards([]);
+        const lockedRow = {
+            id: 'have-it',
+            title: 'Есть локально',
+            updated_at: '2026-02-01T00:00:00Z',
+            locked: true,
+            tables: 15,
+        };
+        const { storage } = setup(
+            [lockedRow],
+            [local('have-it', '2026-02-01T00:00:00Z', 'Есть локально')]
+        );
+        await waitFor(() => expect(storage.listDiagrams).toHaveBeenCalled());
+        await Promise.resolve();
+        expect(getLockedCards()).toEqual([]);
         expect(storage.addDiagram).not.toHaveBeenCalled();
     });
 });

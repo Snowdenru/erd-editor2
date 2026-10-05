@@ -7,8 +7,10 @@ import { generateId } from '@/lib/utils/utils';
 import {
     planPull,
     reviveDiagram,
+    splitRows,
     type CloudDiagramRow,
 } from '@/lib/cloud-diagrams';
+import { setLockedCards } from '@/lib/locked-diagrams';
 import type { Diagram } from '@/lib/domain/diagram';
 
 const LOCAL_INCLUDE = {
@@ -34,12 +36,20 @@ export const CloudPullProvider: React.FC = () => {
             const res = await authFetch('/api/erd2/diagrams/');
             if (!res.ok) return;
             const rows = (await res.json()) as CloudDiagramRow[];
-            const cloud = rows
+            const { open, locked } = splitRows(rows);
+            const localDiagrams = await listDiagrams(LOCAL_INCLUDE);
+
+            // Карточка нужна только для строк, которых нет в IndexedDB: если локальная копия
+            // есть, схема открывается как обычно, при любом тарифе.
+            const localIds = new Set(localDiagrams.map((d) => d.id));
+            setLockedCards(locked.filter((card) => !localIds.has(card.id)));
+
+            const cloud = open
                 .map(reviveDiagram)
                 .filter((d): d is Diagram => d !== null);
             if (cloud.length === 0) return;
 
-            const actions = planPull(cloud, await listDiagrams(LOCAL_INCLUDE));
+            const actions = planPull(cloud, localDiagrams);
             let replaced = 0;
             for (const action of actions) {
                 if (action.kind === 'replace') {

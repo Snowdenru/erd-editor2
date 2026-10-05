@@ -103,7 +103,11 @@ export type FunnelEvent =
     | 'erd2_schema_snapshot'
     | 'erd2_export'
     | 'erd2_review_prompt'
-    | 'erd2_review_submit';
+    | 'erd2_review_submit'
+    | 'erd2_sync_result'
+    | 'erd2_locked_card_view'
+    | 'erd2_locked_card_click'
+    | 'erd2_over_limit_notice';
 
 // Аналитика выключена при предрендере, при редиректе быстрого входа и при ручном флаге erd2_no_track=1
 // (для smoke-проверок и ручных прогонов, чтобы не портить статистику).

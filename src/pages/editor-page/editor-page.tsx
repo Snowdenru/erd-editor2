@@ -33,6 +33,7 @@ import { DiffProvider } from '@/context/diff-context/diff-provider';
 import { TopNavbarMock } from './top-navbar/top-navbar-mock';
 import { DiagramFilterProvider } from '@/context/diagram-filter-context/diagram-filter-provider';
 import { SqllabSyncProvider } from '@/components/sqllab-sync/sqllab-sync-provider';
+import { LockedDiagramScreen } from '@/components/locked-diagram/locked-diagram-screen';
 import { CloudPullProvider } from '@/components/cloud-pull/cloud-pull-provider';
 import { Erd2Tracker } from '@/components/erd2-tracker/erd2-tracker';
 
@@ -184,6 +185,7 @@ export const EditorPage: React.FC = () => (
                                     <ChartDBProvider>
                                         <CloudPullProvider />
                                         <SqllabSyncProvider />
+                                        <LockedDiagramScreen />
                                         <Erd2Tracker />
                                         <DiagramFilterProvider>
                                             <HistoryProvider>

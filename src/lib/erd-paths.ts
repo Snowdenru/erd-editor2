@@ -5,3 +5,4 @@ export const DIAGRAMS_PATH = '/diagrams';
 export const diagramPath = (id: string): string => `/d/${id}`;
 export const templateUsePath = (slug: string): string =>
     `/templates/${slug}/use`;
+export const PRICING_PATH = '/pricing';

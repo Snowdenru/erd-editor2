@@ -1,7 +1,11 @@
 const SYNC_NOW_EVENT = 'erd2:sync-now';
 const SYNC_STATUS_EVENT = 'erd2:sync-status';
 
-export type SyncStatus = 'idle' | 'syncing';
+export type SyncStatus = 'idle' | 'syncing' | 'error';
+
+export type SyncNotice = { kind: 'over_limit'; reason: 'tables' | 'diagrams' };
+
+const SYNC_NOTICE_EVENT = 'erd2:sync-notice';
 
 export const emitSyncNow = (): void => {
     window.dispatchEvent(new CustomEvent(SYNC_NOW_EVENT));
@@ -25,4 +29,19 @@ export const onSyncStatus = (
         handler((event as CustomEvent<SyncStatus>).detail);
     window.addEventListener(SYNC_STATUS_EVENT, listener);
     return () => window.removeEventListener(SYNC_STATUS_EVENT, listener);
+};
+
+export const emitSyncNotice = (notice: SyncNotice): void => {
+    window.dispatchEvent(
+        new CustomEvent(SYNC_NOTICE_EVENT, { detail: notice })
+    );
+};
+
+export const onSyncNotice = (
+    handler: (notice: SyncNotice) => void
+): (() => void) => {
+    const listener = (event: Event) =>
+        handler((event as CustomEvent<SyncNotice>).detail);
+    window.addEventListener(SYNC_NOTICE_EVENT, listener);
+    return () => window.removeEventListener(SYNC_NOTICE_EVENT, listener);
 };

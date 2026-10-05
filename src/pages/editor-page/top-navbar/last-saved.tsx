@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import TimeAgo from 'timeago-react';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { Badge } from '@/components/badge/badge';
@@ -12,7 +13,13 @@ import type { LocaleFunc } from 'timeago.js';
 import { register as registerLocale } from 'timeago.js';
 import { Save, Loader2 } from 'lucide-react';
 import { isLoggedIn } from '@/lib/sqllab-account';
-import { emitSyncNow, onSyncStatus } from '@/lib/sync-status-events';
+import {
+    emitSyncNow,
+    onSyncNotice,
+    onSyncStatus,
+    type SyncNotice,
+} from '@/lib/sync-status-events';
+import { PRICING_PATH } from '@/lib/erd-paths';
 import { LoginPromptDialog } from '@/components/login-prompt/login-prompt-dialog';
 
 export interface LastSavedProps {}
@@ -80,6 +87,8 @@ export const LastSaved: React.FC<LastSavedProps> = () => {
     const { i18n } = useTranslation();
     const [language, setLanguage] = useState<string>('en_US');
     const [syncing, setSyncing] = useState(false);
+    const [failed, setFailed] = useState(false);
+    const [notice, setNotice] = useState<SyncNotice | null>(null);
     const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
     useEffect(() => {
@@ -96,9 +105,17 @@ export const LastSaved: React.FC<LastSavedProps> = () => {
     }, [i18n.language]);
 
     useEffect(
-        () => onSyncStatus((status) => setSyncing(status === 'syncing')),
+        () =>
+            onSyncStatus((status) => {
+                setSyncing(status === 'syncing');
+                setFailed(status === 'error');
+            }),
         []
     );
+
+    useEffect(() => onSyncNotice((n) => setNotice(n)), []);
+    // Подсказка относится к конкретной схеме — при переходе на другую убираем.
+    useEffect(() => setNotice(null), [currentDiagram.id]);
 
     const handleClick = () => {
         if (!isLoggedIn()) {
@@ -121,16 +138,34 @@ export const LastSaved: React.FC<LastSavedProps> = () => {
                         ) : (
                             <Save size={16} />
                         )}
-                        <TimeAgo
-                            datetime={currentDiagram.updatedAt}
-                            locale={language}
-                        />
+                        {failed ? (
+                            <span className="text-destructive">
+                                Не сохранено в облаке
+                            </span>
+                        ) : (
+                            <TimeAgo
+                                datetime={currentDiagram.updatedAt}
+                                locale={language}
+                            />
+                        )}
                     </Badge>
                 </TooltipTrigger>
                 <TooltipContent>
                     {currentDiagram.updatedAt.toLocaleString()}
                 </TooltipContent>
             </Tooltip>
+            {notice ? (
+                <Badge
+                    variant="outline"
+                    className="hidden items-center gap-1.5 whitespace-nowrap md:flex"
+                >
+                    Сохранено в облаке. На другом устройстве эта схема откроется
+                    только с Pro.
+                    <Link to={PRICING_PATH} className="underline">
+                        Подробнее
+                    </Link>
+                </Badge>
+            ) : null}
             <LoginPromptDialog
                 open={showLoginPrompt}
                 onOpenChange={setShowLoginPrompt}

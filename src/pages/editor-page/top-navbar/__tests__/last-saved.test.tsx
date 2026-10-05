@@ -1,5 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { chartDBContext } from '@/context/chartdb-context/chartdb-context';
 import * as account from '@/lib/sqllab-account';
@@ -22,13 +23,15 @@ const diagram: Diagram = {
 
 const renderLastSaved = () =>
     render(
-        <TooltipProvider>
-            <chartDBContext.Provider
-                value={{ currentDiagram: diagram } as never}
-            >
-                <LastSaved />
-            </chartDBContext.Provider>
-        </TooltipProvider>
+        <MemoryRouter>
+            <TooltipProvider>
+                <chartDBContext.Provider
+                    value={{ currentDiagram: diagram } as never}
+                >
+                    <LastSaved />
+                </chartDBContext.Provider>
+            </TooltipProvider>
+        </MemoryRouter>
     );
 
 describe('LastSaved', () => {

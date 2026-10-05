@@ -4,8 +4,12 @@ import { act, render } from '@testing-library/react';
 import { chartDBContext } from '@/context/chartdb-context/chartdb-context';
 import { SqllabSyncProvider } from '../sqllab-sync-provider';
 import * as auth from '@/lib/sqllab-auth';
-import * as wall from '@/lib/upgrade-wall-events';
-import { emitSyncNow, onSyncStatus } from '@/lib/sync-status-events';
+import * as account from '@/lib/sqllab-account';
+import {
+    emitSyncNow,
+    onSyncNotice,
+    onSyncStatus,
+} from '@/lib/sync-status-events';
 import { DatabaseType } from '@/lib/domain/database-type';
 import type { Diagram } from '@/lib/domain/diagram';
 import type { DBTable } from '@/lib/domain/db-table';
@@ -183,68 +187,126 @@ describe('SqllabSyncProvider', () => {
         expect(authFetchSpy).not.toHaveBeenCalled();
     });
 
-    it('emits the upgrade wall when the backend answers 403 with a limit code', async () => {
-        vi.spyOn(auth, 'getAccessToken').mockReturnValue('fake-access-token');
+    const mount = (diagram: Diagram = diagramWithTable) =>
+        render(
+            <chartDBContext.Provider
+                value={
+                    { diagramId: 'diagram-1', currentDiagram: diagram } as never
+                }
+            >
+                <SqllabSyncProvider />
+            </chartDBContext.Provider>
+        );
+
+    it('no longer shows the upgrade wall on legacy limit codes', async () => {
+        vi.spyOn(auth, 'getAccessToken').mockReturnValue('t');
+        vi.spyOn(auth, 'authFetch').mockResolvedValue(
+            new Response(JSON.stringify({ code: 'table_limit', limit: 10 }), {
+                status: 403,
+            })
+        );
+        const wall = await import('@/lib/upgrade-wall-events');
+        const wallSpy = vi.spyOn(wall, 'emitUpgradeWall');
+        mount();
+        await vi.advanceTimersByTimeAsync(2000);
+        expect(wallSpy).not.toHaveBeenCalled();
+    });
+
+    it('reports status "error" and tracks the result when the cloud write fails', async () => {
+        vi.spyOn(auth, 'getAccessToken').mockReturnValue('t');
         vi.spyOn(auth, 'authFetch').mockResolvedValue(
             new Response(
-                JSON.stringify({ code: 'table_limit', detail: 'x', limit: 10 }),
+                JSON.stringify({ code: 'abuse_size', limit: 5242880 }),
                 { status: 403 }
             )
         );
-        const wallSpy = vi.spyOn(wall, 'emitUpgradeWall');
-
-        render(
-            <chartDBContext.Provider
-                value={
-                    {
-                        diagramId: 'diagram-1',
-                        currentDiagram: diagramWithTable,
-                    } as never
-                }
-            >
-                <SqllabSyncProvider />
-            </chartDBContext.Provider>
-        );
-
+        const track = vi
+            .spyOn(account, 'trackEvent')
+            .mockImplementation(() => {});
+        const statuses: string[] = [];
+        onSyncStatus((s) => statuses.push(s));
+        mount();
         await vi.advanceTimersByTimeAsync(2000);
-
-        expect(wallSpy).toHaveBeenCalledWith({
-            reason: 'table_limit',
-            limit: 10,
-        });
+        expect(statuses).toEqual(['syncing', 'error']);
+        expect(track).toHaveBeenCalledWith(
+            'erd2_sync_result',
+            expect.any(String),
+            { ok: false, tables: 1, status: 403, code: 'abuse_size' }
+        );
     });
 
-    it('emits the upgrade wall when creating a new diagram (404 then POST 403 diagram_limit)', async () => {
-        vi.spyOn(auth, 'getAccessToken').mockReturnValue('fake-access-token');
+    it('emits an over-limit notice when a diagram is created already locked', async () => {
+        vi.spyOn(auth, 'getAccessToken').mockReturnValue('t');
         vi.spyOn(auth, 'authFetch')
             .mockResolvedValueOnce(new Response(null, { status: 404 }))
             .mockResolvedValueOnce(
-                new Response(
-                    JSON.stringify({ code: 'diagram_limit', limit: 3 }),
-                    { status: 403 }
-                )
+                new Response(JSON.stringify({ locked: true }), { status: 201 })
             );
-        const wallSpy = vi.spyOn(wall, 'emitUpgradeWall');
+        const track = vi
+            .spyOn(account, 'trackEvent')
+            .mockImplementation(() => {});
+        const notices: unknown[] = [];
+        onSyncNotice((n) => notices.push(n));
+        mount();
+        await vi.advanceTimersByTimeAsync(2000);
+        expect(notices).toEqual([{ kind: 'over_limit', reason: 'diagrams' }]);
+        expect(track).toHaveBeenCalledWith(
+            'erd2_over_limit_notice',
+            expect.any(String),
+            { tables: 1, reason: 'diagrams' }
+        );
+    });
 
-        render(
+    it('emits a "tables" notice when an open diagram flips to locked on PATCH', async () => {
+        vi.spyOn(auth, 'getAccessToken').mockReturnValue('t');
+        const authFetch = vi
+            .spyOn(auth, 'authFetch')
+            .mockResolvedValueOnce(
+                new Response(JSON.stringify({ locked: false }), { status: 200 })
+            )
+            .mockResolvedValueOnce(
+                new Response(JSON.stringify({ locked: true }), { status: 200 })
+            );
+        vi.spyOn(account, 'trackEvent').mockImplementation(() => {});
+        const notices: unknown[] = [];
+        onSyncNotice((n) => notices.push(n));
+        const elevenTables = {
+            ...baseDiagram,
+            tables: Array.from({ length: 11 }, (_, i) => ({
+                ...fakeTable,
+                id: `t${i}`,
+            })),
+        };
+        const { rerender } = mount();
+        await vi.advanceTimersByTimeAsync(2000); // первый PATCH: locked=false
+        rerender(
             <chartDBContext.Provider
                 value={
                     {
                         diagramId: 'diagram-1',
-                        currentDiagram: diagramWithTable,
+                        currentDiagram: elevenTables,
                     } as never
                 }
             >
                 <SqllabSyncProvider />
             </chartDBContext.Provider>
         );
+        await vi.advanceTimersByTimeAsync(2000); // второй PATCH: locked=true
+        expect(authFetch).toHaveBeenCalledTimes(2);
+        expect(notices).toEqual([{ kind: 'over_limit', reason: 'tables' }]);
+    });
 
+    it('does not nag on PATCH of an already locked diagram it has not seen open', async () => {
+        vi.spyOn(auth, 'getAccessToken').mockReturnValue('t');
+        vi.spyOn(auth, 'authFetch').mockResolvedValue(
+            new Response(JSON.stringify({ locked: true }), { status: 200 })
+        );
+        vi.spyOn(account, 'trackEvent').mockImplementation(() => {});
+        const notices: unknown[] = [];
+        onSyncNotice((n) => notices.push(n));
+        mount();
         await vi.advanceTimersByTimeAsync(2000);
-
-        expect(wallSpy).toHaveBeenCalledWith({
-            reason: 'diagram_limit',
-            limit: 3,
-        });
+        expect(notices).toEqual([]);
     });
 
     it('syncs immediately (without waiting 2s) when a sync-now event arrives', async () => {
@@ -329,6 +391,8 @@ describe('SqllabSyncProvider', () => {
 
     it('guards against concurrent force-syncs by queuing a trailing retry instead of dropping the second emit', async () => {
         vi.spyOn(auth, 'getAccessToken').mockReturnValue('fake-access-token');
+        // trackEvent тоже ходит через authFetch — глушим, чтобы считать только вызовы синка.
+        vi.spyOn(account, 'trackEvent').mockImplementation(() => {});
 
         // Create a promise we can control the resolution of
         let resolvePush: (() => void) | null = null;
@@ -383,6 +447,8 @@ describe('SqllabSyncProvider', () => {
 
     it('retries with the freshest diagram data after a blocking sync finishes (trailing-edge retry)', async () => {
         vi.spyOn(auth, 'getAccessToken').mockReturnValue('fake-access-token');
+        // trackEvent тоже ходит через authFetch — глушим, чтобы считать только вызовы синка.
+        vi.spyOn(account, 'trackEvent').mockImplementation(() => {});
 
         // The first authFetch call hangs until we release it manually, simulating
         // a slow push that outlives the debounce window while the user keeps editing.

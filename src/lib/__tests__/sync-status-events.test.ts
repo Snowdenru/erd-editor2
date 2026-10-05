@@ -4,6 +4,8 @@ import {
     onSyncNow,
     emitSyncStatus,
     onSyncStatus,
+    emitSyncNotice,
+    onSyncNotice,
 } from '../sync-status-events';
 
 describe('sync-status-events', () => {
@@ -31,5 +33,18 @@ describe('sync-status-events', () => {
         emitSyncStatus('idle');
         expect(handler).toHaveBeenCalledWith('idle');
         off();
+    });
+
+    it('delivers sync notices to subscribers until unsubscribed', () => {
+        const handler = vi.fn();
+        const off = onSyncNotice(handler);
+        emitSyncNotice({ kind: 'over_limit', reason: 'tables' });
+        expect(handler).toHaveBeenCalledWith({
+            kind: 'over_limit',
+            reason: 'tables',
+        });
+        off();
+        emitSyncNotice({ kind: 'over_limit', reason: 'diagrams' });
+        expect(handler).toHaveBeenCalledTimes(1);
     });
 });

@@ -3,70 +3,62 @@ import type React from 'react';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { authFetch, getAccessToken } from '@/lib/sqllab-auth';
 import { toast } from '@/components/toast/use-toast';
-import { emitUpgradeWall } from '@/lib/upgrade-wall-events';
-import { emitSyncStatus, onSyncNow } from '@/lib/sync-status-events';
+import { trackEvent } from '@/lib/sqllab-account';
+import {
+    emitSyncNotice,
+    emitSyncStatus,
+    onSyncNow,
+} from '@/lib/sync-status-events';
 
 const SYNC_DEBOUNCE_MS = 2000;
 const API_BASE = '/api/erd2/diagrams';
 
-// 403 с кодом лимита тарифа — показываем стену апгрейда; иначе обычный тост «доступ запрещён».
-async function handleSaveFailure(res: Response): Promise<void> {
-    const body = (await res
-        .clone()
-        .json()
-        .catch(() => null)) as {
-        code?: string;
-        limit?: number;
-    } | null;
+const FREE_TABLES = 10;
 
-    if (body?.code === 'diagram_limit' || body?.code === 'table_limit') {
-        console.error(
-            `sqllab-sync: не удалось сохранить диаграмму — лимит тарифа (${body.code})`
-        );
-        emitUpgradeWall({ reason: body.code, limit: body.limit });
-        return;
-    }
-
-    console.error(
-        'sqllab-sync: не удалось сохранить диаграмму — доступ запрещён (403)'
-    );
-    toast({
-        title: 'Diagram not saved',
-        variant: 'destructive',
-        description: 'You have reached the diagram limit for your plan.',
-    });
+interface PushResult {
+    ok: boolean;
+    status: number;
+    code?: string;
+    // Состояние схемы на сервере после записи (спека: поле locked в ответе POST/PATCH).
+    locked: boolean;
+    created: boolean;
 }
 
-async function pushDiagram(diagramId: string, title: string, content: unknown) {
-    // Аноним не залогинен — сохранять на бэкенде нечего и некуда, не шлём запрос.
-    if (!getAccessToken()) return;
+async function readBody(
+    res: Response
+): Promise<{ code?: string; locked?: boolean } | null> {
+    return (await res
+        .clone()
+        .json()
+        .catch(() => null)) as { code?: string; locked?: boolean } | null;
+}
 
-    const res = await authFetch(`${API_BASE}/${diagramId}/`, {
+// null — запись не нужна (аноним).
+async function pushDiagram(
+    diagramId: string,
+    title: string,
+    content: unknown
+): Promise<PushResult | null> {
+    // Аноним не залогинен — сохранять на бэкенде нечего и некуда, не шлём запрос.
+    if (!getAccessToken()) return null;
+
+    const payload = JSON.stringify({ id: diagramId, title, content });
+    const headers = { 'Content-Type': 'application/json' };
+    let created = false;
+    let res = await authFetch(`${API_BASE}/${diagramId}/`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: diagramId, title, content }),
+        headers,
+        body: payload,
     });
 
     // Диаграммы ещё нет на бэкенде (первое сохранение) — создаём.
     if (res.status === 404) {
-        const createRes = await authFetch(`${API_BASE}/`, {
+        created = true;
+        res = await authFetch(`${API_BASE}/`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: diagramId, title, content }),
+            headers,
+            body: payload,
         });
-
-        // Бэкенд шлёт diagram_limit только на создании (POST) — здесь, а не на PATCH.
-        if (createRes.status === 403) {
-            await handleSaveFailure(createRes);
-            return;
-        }
-
-        if (!createRes.ok) {
-            console.error(
-                `sqllab-sync: не удалось создать диаграмму — бэкенд ответил статусом ${createRes.status}`
-            );
-        }
-        return;
     }
 
     if (res.status === 401) {
@@ -79,19 +71,52 @@ async function pushDiagram(diagramId: string, title: string, content: unknown) {
             description:
                 'Your session has expired. Please sign in again to keep syncing changes.',
         });
-        return;
+        return { ok: false, status: 401, locked: false, created };
     }
 
-    if (res.status === 403) {
-        await handleSaveFailure(res);
-        return;
-    }
-
+    const body = await readBody(res);
     if (!res.ok) {
         console.error(
-            `sqllab-sync: не удалось сохранить диаграмму — бэкенд ответил статусом ${res.status}`
+            `sqllab-sync: не удалось сохранить диаграмму — статус ${res.status}${body?.code ? ` (${body.code})` : ''}`
         );
     }
+    return {
+        ok: res.ok,
+        status: res.status,
+        code: body?.code,
+        locked: body?.locked === true,
+        created,
+    };
+}
+
+// Результат записи → событие воронки и, в момент пересечения порога, подсказка в индикаторе.
+// Пересечение: открытая схема стала закрытой (false → true) или новая создана сразу закрытой.
+// Схему, которую мы ни разу не видели открытой (PATCH старой закрытой), не комментируем.
+function reportResult(
+    result: PushResult,
+    diagramId: string,
+    tables: number,
+    lockedState: Map<string, boolean>
+): void {
+    trackEvent('erd2_sync_result', window.location.pathname, {
+        ok: result.ok,
+        tables,
+        status: result.status,
+        code: result.code,
+    });
+    if (!result.ok) return;
+
+    const previous = lockedState.get(diagramId);
+    lockedState.set(diagramId, result.locked);
+    if (!result.locked) return;
+    if (previous !== false && !result.created) return;
+
+    const reason = tables > FREE_TABLES ? 'tables' : 'diagrams';
+    trackEvent('erd2_over_limit_notice', window.location.pathname, {
+        tables,
+        reason,
+    });
+    emitSyncNotice({ kind: 'over_limit', reason });
 }
 
 export const SqllabSyncProvider: React.FC = () => {
@@ -101,6 +126,8 @@ export const SqllabSyncProvider: React.FC = () => {
     // Устанавливается, когда triggerSync заблокирован уже идущим синком — сигнал
     // «после завершения текущего синка нужно немедленно повторить с самыми свежими данными».
     const pendingRef = useRef(false);
+    // Последнее известное серверное locked-состояние по схемам (для подсказки при пересечении порога).
+    const lockedStateRef = useRef(new Map<string, boolean>());
     // Обновляется на каждый рендер, чтобы triggerSync (в т.ч. при трейлинг-ретрае
     // из .finally()) всегда читал актуальные diagramId/currentDiagram, а не то,
     // что было замкнуто в момент планирования дебаунса.
@@ -127,17 +154,37 @@ export const SqllabSyncProvider: React.FC = () => {
 
             syncingRef.current = true;
             emitSyncStatus('syncing');
+
             const { diagramId, currentDiagram } = latestRef.current;
+            const tables = currentDiagram.tables?.length ?? 0;
+            let ok = true;
             pushDiagram(diagramId, currentDiagram.name, currentDiagram)
+                .then((result) => {
+                    if (!result) return;
+                    ok = result.ok;
+                    reportResult(
+                        result,
+                        diagramId,
+                        tables,
+                        lockedStateRef.current
+                    );
+                })
                 .catch((err: unknown) => {
+                    ok = false;
                     console.error(
                         'sqllab-sync: сетевая ошибка при сохранении диаграммы',
                         err
                     );
+                    trackEvent('erd2_sync_result', window.location.pathname, {
+                        ok: false,
+                        tables,
+                        status: 0,
+                        code: 'network',
+                    });
                 })
                 .finally(() => {
                     syncingRef.current = false;
-                    emitSyncStatus('idle');
+                    emitSyncStatus(ok ? 'idle' : 'error');
                     // Пока синк был в процессе, пришёл ещё один запрос на синк —
                     // повторяем немедленно на самых свежих данных, чтобы не
                     // потерять правки, сделанные во время сохранения.

@@ -4,6 +4,7 @@ import { useChartDB } from '@/hooks/use-chartdb';
 import { authFetch, getAccessToken } from '@/lib/sqllab-auth';
 import { toast } from '@/components/toast/use-toast';
 import { trackEvent } from '@/lib/sqllab-account';
+import { getCloudVersion, setCloudVersion } from '@/lib/cloud-versions';
 import {
     emitSyncNotice,
     emitSyncStatus,
@@ -24,13 +25,17 @@ interface PushResult {
     created: boolean;
 }
 
-async function readBody(
-    res: Response
-): Promise<{ code?: string; locked?: boolean } | null> {
+interface ResponseBody {
+    code?: string;
+    locked?: boolean;
+    updated_at?: string;
+}
+
+async function readBody(res: Response): Promise<ResponseBody | null> {
     return (await res
         .clone()
         .json()
-        .catch(() => null)) as { code?: string; locked?: boolean } | null;
+        .catch(() => null)) as ResponseBody | null;
 }
 
 // null — запись не нужна (аноним).
@@ -43,12 +48,18 @@ async function pushDiagram(
     if (!getAccessToken()) return null;
 
     const payload = JSON.stringify({ id: diagramId, title, content });
+    const patchPayload = JSON.stringify({
+        id: diagramId,
+        title,
+        content,
+        base_updated_at: getCloudVersion(diagramId),
+    });
     const headers = { 'Content-Type': 'application/json' };
     let created = false;
     let res = await authFetch(`${API_BASE}/${diagramId}/`, {
         method: 'PATCH',
         headers,
-        body: payload,
+        body: patchPayload,
     });
 
     // Диаграммы ещё нет на бэкенде (первое сохранение) — создаём.
@@ -75,6 +86,7 @@ async function pushDiagram(
     }
 
     const body = await readBody(res);
+    if (res.ok && body?.updated_at) setCloudVersion(diagramId, body.updated_at);
     if (!res.ok) {
         console.error(
             `sqllab-sync: не удалось сохранить диаграмму — статус ${res.status}${body?.code ? ` (${body.code})` : ''}`
@@ -110,7 +122,10 @@ function reportResult(
             code: result.code,
         });
     }
-    if (!result.ok) return;
+    if (!result.ok) {
+        if (result.code === 'conflict') emitSyncNotice({ kind: 'conflict' });
+        return;
+    }
 
     const previous = lockedState.get(diagramId);
     lockedState.set(diagramId, result.locked);

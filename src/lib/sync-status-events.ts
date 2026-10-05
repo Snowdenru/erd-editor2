@@ -3,7 +3,10 @@ const SYNC_STATUS_EVENT = 'erd2:sync-status';
 
 export type SyncStatus = 'idle' | 'syncing' | 'error';
 
-export type SyncNotice = { kind: 'over_limit'; reason: 'tables' | 'diagrams' };
+export type SyncNotice =
+    | { kind: 'over_limit'; reason: 'tables' | 'diagrams' }
+    // Сервер отверг запись: на нём версия новее (правка с другого устройства).
+    | { kind: 'conflict' };
 
 const SYNC_NOTICE_EVENT = 'erd2:sync-notice';
 

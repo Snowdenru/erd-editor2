@@ -5,6 +5,7 @@ import { chartDBContext } from '@/context/chartdb-context/chartdb-context';
 import { SqllabSyncProvider } from '../sqllab-sync-provider';
 import * as auth from '@/lib/sqllab-auth';
 import * as account from '@/lib/sqllab-account';
+import { clearCloudVersions } from '@/lib/cloud-versions';
 import {
     emitSyncNow,
     onSyncNotice,
@@ -44,6 +45,7 @@ const diagramWithTable: Diagram = {
 describe('SqllabSyncProvider', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
+        clearCloudVersions();
         vi.useFakeTimers();
     });
 
@@ -272,6 +274,58 @@ describe('SqllabSyncProvider', () => {
             (c) => c[0] === 'erd2_sync_result'
         );
         expect(results).toHaveLength(1);
+    });
+
+    it('sends the last known server version as base_updated_at and signals a conflict on 409', async () => {
+        vi.spyOn(auth, 'getAccessToken').mockReturnValue('t');
+        const authFetch = vi
+            .spyOn(auth, 'authFetch')
+            .mockResolvedValueOnce(
+                new Response(
+                    JSON.stringify({
+                        locked: false,
+                        updated_at: '2026-10-05T10:00:00.000000Z',
+                    }),
+                    { status: 200 }
+                )
+            )
+            .mockResolvedValueOnce(
+                new Response(JSON.stringify({ code: 'conflict' }), {
+                    status: 409,
+                })
+            );
+        vi.spyOn(account, 'trackEvent').mockImplementation(() => {});
+        const notices: unknown[] = [];
+        onSyncNotice((n) => notices.push(n));
+        const statuses: string[] = [];
+        onSyncStatus((s) => statuses.push(s));
+        const { rerender } = mount();
+        await vi.advanceTimersByTimeAsync(2000);
+        rerender(
+            <chartDBContext.Provider
+                value={
+                    {
+                        diagramId: 'diagram-1',
+                        currentDiagram: {
+                            ...baseDiagram,
+                            tables: [
+                                ...baseDiagram.tables!,
+                                { ...fakeTable, id: 't-extra' },
+                            ],
+                        },
+                    } as never
+                }
+            >
+                <SqllabSyncProvider />
+            </chartDBContext.Provider>
+        );
+        await vi.advanceTimersByTimeAsync(2000);
+        const second = JSON.parse(
+            (authFetch.mock.calls[1][1] as RequestInit).body as string
+        );
+        expect(second.base_updated_at).toBe('2026-10-05T10:00:00.000000Z');
+        expect(notices).toEqual([{ kind: 'conflict' }]);
+        expect(statuses.at(-1)).toBe('error');
     });
 
     it('emits an over-limit notice when a diagram is created already locked', async () => {

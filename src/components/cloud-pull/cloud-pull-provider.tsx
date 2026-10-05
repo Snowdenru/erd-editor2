@@ -11,6 +11,7 @@ import {
     type CloudDiagramRow,
 } from '@/lib/cloud-diagrams';
 import { setLockedCards } from '@/lib/locked-diagrams';
+import { setCloudVersion } from '@/lib/cloud-versions';
 import type { Diagram } from '@/lib/domain/diagram';
 
 const LOCAL_INCLUDE = {
@@ -37,6 +38,7 @@ export const CloudPullProvider: React.FC = () => {
             if (!res.ok) return;
             const rows = (await res.json()) as CloudDiagramRow[];
             const { open, locked } = splitRows(rows);
+            for (const row of open) setCloudVersion(row.id, row.updated_at);
             const localDiagrams = await listDiagrams(LOCAL_INCLUDE);
 
             // Карточка нужна только для строк, которых нет в IndexedDB: если локальная копия

@@ -140,7 +140,9 @@ export const LastSaved: React.FC<LastSavedProps> = () => {
                         )}
                         {failed ? (
                             <span className="text-destructive">
-                                Не сохранено в облаке
+                                {notice?.kind === 'conflict'
+                                    ? 'Схема изменена на другом устройстве'
+                                    : 'Не сохранено в облаке'}
                             </span>
                         ) : (
                             <TimeAgo
@@ -154,7 +156,15 @@ export const LastSaved: React.FC<LastSavedProps> = () => {
                     {currentDiagram.updatedAt.toLocaleString()}
                 </TooltipContent>
             </Tooltip>
-            {notice ? (
+            {notice?.kind === 'conflict' ? (
+                <Badge
+                    variant="outline"
+                    className="hidden items-center gap-1.5 whitespace-nowrap md:flex"
+                >
+                    Эта версия устарела — перезагрузите страницу, чтобы
+                    подтянуть свежую.
+                </Badge>
+            ) : notice ? (
                 <Badge
                     variant="outline"
                     className="hidden items-center gap-1.5 whitespace-nowrap md:flex"

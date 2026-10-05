@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
     planPull,
     reviveDiagram,
+    splitRows,
     type CloudDiagramRow,
 } from '../cloud-diagrams';
 import { DatabaseType } from '../domain/database-type';
@@ -81,5 +82,49 @@ describe('planPull', () => {
         expect(planPull([cloud], [local])).toEqual([
             { kind: 'replace', diagram: cloud, backupOf: local },
         ]);
+    });
+});
+
+describe('splitRows', () => {
+    it('separates locked rows from open ones and builds cards', () => {
+        const { open, locked } = splitRows([
+            {
+                id: 'a',
+                title: 'A',
+                updated_at: '2026-01-02T00:00:00Z',
+                content: {},
+            },
+            {
+                id: 'b',
+                title: 'B',
+                updated_at: '2026-01-03T00:00:00Z',
+                locked: true,
+                tables: 15,
+                db_type: 'mysql',
+            },
+        ]);
+        expect(open.map((r) => r.id)).toEqual(['a']);
+        expect(locked).toEqual([
+            {
+                id: 'b',
+                title: 'B',
+                tables: 15,
+                dbType: 'mysql',
+                savedAt: new Date('2026-01-03T00:00:00Z'),
+            },
+        ]);
+    });
+
+    it('defaults missing tables to 0 and db_type to null', () => {
+        const { locked } = splitRows([
+            {
+                id: 'x',
+                title: 'X',
+                updated_at: '2026-01-01T00:00:00Z',
+                locked: true,
+            },
+        ]);
+        expect(locked[0].tables).toBe(0);
+        expect(locked[0].dbType).toBeNull();
     });
 });

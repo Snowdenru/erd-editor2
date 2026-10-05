@@ -3,8 +3,43 @@ import { diagramSchema, type Diagram } from '@/lib/domain/diagram';
 export interface CloudDiagramRow {
     id: string;
     title: string;
-    content: unknown;
     updated_at: string;
+    created_at?: string;
+    // У закрытой строки (locked) content нет — сервер его не отдаёт.
+    content?: unknown;
+    locked?: boolean;
+    tables?: number;
+    db_type?: string | null;
+}
+
+export interface LockedCard {
+    id: string;
+    title: string;
+    tables: number;
+    dbType: string | null;
+    savedAt: Date;
+}
+
+export function splitRows(rows: CloudDiagramRow[]): {
+    open: CloudDiagramRow[];
+    locked: LockedCard[];
+} {
+    const open: CloudDiagramRow[] = [];
+    const locked: LockedCard[] = [];
+    for (const row of rows) {
+        if (!row.locked) {
+            open.push(row);
+            continue;
+        }
+        locked.push({
+            id: row.id,
+            title: row.title,
+            tables: row.tables ?? 0,
+            dbType: row.db_type ?? null,
+            savedAt: new Date(row.updated_at),
+        });
+    }
+    return { open, locked };
 }
 
 const parseDate = (value: unknown): Date | null =>

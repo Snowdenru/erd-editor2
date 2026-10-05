@@ -33,7 +33,7 @@ export const LockedDiagramScreen: React.FC = () => {
         <div
             data-testid="locked-diagram-overlay"
             style={{ pointerEvents: 'auto' }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 p-6"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-background p-6"
         >
             <div className="flex max-w-md flex-col items-center gap-4 text-center">
                 <Lock size={40} className="text-muted-foreground" />

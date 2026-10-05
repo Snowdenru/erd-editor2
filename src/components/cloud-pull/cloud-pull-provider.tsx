@@ -12,6 +12,7 @@ import {
 } from '@/lib/cloud-diagrams';
 import { setLockedCards } from '@/lib/locked-diagrams';
 import { setCloudVersion } from '@/lib/cloud-versions';
+import { markPullDone, markPullStarted } from '@/lib/cloud-pull-state';
 import type { Diagram } from '@/lib/domain/diagram';
 
 const LOCAL_INCLUDE = {
@@ -32,6 +33,7 @@ export const CloudPullProvider: React.FC = () => {
     useEffect(() => {
         if (startedRef.current || !getAccessToken()) return;
         startedRef.current = true;
+        markPullStarted();
 
         const run = async () => {
             const res = await authFetch('/api/erd2/diagrams/');
@@ -79,12 +81,14 @@ export const CloudPullProvider: React.FC = () => {
             }
         };
 
-        run().catch((err: unknown) => {
-            console.error(
-                'cloud-pull: не удалось загрузить схемы из облака',
-                err
-            );
-        });
+        run()
+            .catch((err: unknown) => {
+                console.error(
+                    'cloud-pull: не удалось загрузить схемы из облака',
+                    err
+                );
+            })
+            .finally(markPullDone);
     }, [listDiagrams, addDiagram, deleteDiagram]);
 
     return null;

@@ -1,5 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { isPullPending } from '@/lib/cloud-pull-state';
 import { render, waitFor } from '@testing-library/react';
 import { storageContext } from '@/context/storage-context/storage-context';
 import * as auth from '@/lib/sqllab-auth';
@@ -82,6 +83,16 @@ describe('CloudPullProvider', () => {
         expect(storage.deleteDiagram).toHaveBeenCalledWith('a1');
         expect(second.id).toBe('a1');
         expect(second.name).toBe('Облачная');
+    });
+
+    it('reports pending while pulling and done afterwards', async () => {
+        const { storage } = setup(
+            [cloudRow('a1', '2026-09-01T00:00:00Z', 'Магазин')],
+            []
+        );
+        expect(isPullPending()).toBe(true);
+        await waitFor(() => expect(isPullPending()).toBe(false));
+        expect(storage.addDiagram).toHaveBeenCalledTimes(1);
     });
 
     it('does nothing for anonymous users', async () => {

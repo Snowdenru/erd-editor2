@@ -16,6 +16,7 @@ import {
 import { NEW_DIAGRAM_PATH, diagramPath } from '@/lib/erd-paths';
 import { setLastDiagramId } from '@/lib/last-diagram';
 import { getLockedCards } from '@/lib/locked-diagrams';
+import { isPullPending, whenPullSettled } from '@/lib/cloud-pull-state';
 
 export const useDiagramLoader = () => {
     const [initialDiagram, setInitialDiagram] = useState<Diagram | undefined>();
@@ -48,7 +49,12 @@ export const useDiagramLoader = () => {
                 showLoader();
                 resetRedoStack();
                 resetUndoStack();
-                const diagram = await loadDiagram(diagramId);
+                let diagram = await loadDiagram(diagramId);
+                if (!diagram && isPullPending()) {
+                    // Схема может прийти из облака прямо сейчас (новое устройство, чистый профиль).
+                    await whenPullSettled();
+                    diagram = await loadDiagram(diagramId);
+                }
                 if (!diagram) {
                     // Закрытая схема: поверх показывается LockedDiagramScreen, диалог
                     // открытия схемы ему не нужен.

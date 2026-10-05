@@ -2,6 +2,7 @@ import { diagramPath, PRICING_PATH } from '@/lib/erd-paths';
 import { Lock } from 'lucide-react';
 import { useLockedCards } from '@/hooks/use-locked-cards';
 import { trackEvent } from '@/lib/sqllab-account';
+import { onPullDone } from '@/lib/cloud-pull-state';
 import { Button } from '@/components/button/button';
 import { DiagramIcon } from '@/components/diagram-icon/diagram-icon';
 import {
@@ -70,6 +71,14 @@ export const OpenDiagramDialog: React.FC<OpenDiagramDialogProps> = ({
         }
         setSelectedDiagramId(undefined);
         fetchDiagrams();
+    }, [dialog.open, fetchDiagrams]);
+
+    // Pull облачных схем мог закончиться уже после открытия диалога — обновляем список.
+    useEffect(() => {
+        if (!dialog.open) return;
+        return onPullDone(() => {
+            fetchDiagrams();
+        });
     }, [dialog.open, fetchDiagrams]);
 
     useEffect(() => {

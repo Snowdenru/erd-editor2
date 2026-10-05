@@ -72,6 +72,8 @@ vi.mock('@/hooks/use-storage', () => ({
 
 import { useDiagramLoader } from '../use-diagram-loader';
 import { getLastDiagramId } from '@/lib/last-diagram';
+import { markPullDone, markPullStarted } from '@/lib/cloud-pull-state';
+import { setLockedCards } from '@/lib/locked-diagrams';
 
 describe('useDiagramLoader', () => {
     beforeEach(() => {
@@ -225,5 +227,66 @@ describe('useDiagramLoader', () => {
         });
 
         await waitFor(() => expect(getLastDiagramId()).toBe('default-1'));
+    });
+    describe('облачный pull ещё идёт', () => {
+        const renderDiagramRoute = (id: string) =>
+            renderHook(() => useDiagramLoader(), {
+                wrapper: ({ children }) => (
+                    <MemoryRouter
+                        basename="/tools/erd2"
+                        initialEntries={[`/tools/erd2/d/${id}`]}
+                    >
+                        <Routes>
+                            <Route
+                                path="d/:diagramId"
+                                element={<>{children}</>}
+                            />
+                        </Routes>
+                    </MemoryRouter>
+                ),
+            });
+
+        beforeEach(() => setLockedCards([]));
+
+        it('ждёт конец pull и перечитывает схему вместо диалога открытия', async () => {
+            mockLoadDiagram
+                .mockResolvedValueOnce(undefined)
+                .mockResolvedValueOnce({ id: 'cloud-1' });
+            markPullStarted();
+            renderDiagramRoute('cloud-1');
+
+            await waitFor(() =>
+                expect(mockLoadDiagram).toHaveBeenCalledTimes(1)
+            );
+            expect(mockOpenOpenDiagramDialog).not.toHaveBeenCalled();
+
+            markPullDone();
+            await waitFor(() => expect(getLastDiagramId()).toBe('cloud-1'));
+            expect(mockLoadDiagram).toHaveBeenCalledTimes(2);
+            expect(mockOpenOpenDiagramDialog).not.toHaveBeenCalled();
+        });
+
+        it('закрытая схема, пришедшая вместе с pull, не открывает диалог', async () => {
+            mockLoadDiagram.mockResolvedValue(undefined);
+            markPullStarted();
+            renderDiagramRoute('fat');
+
+            await waitFor(() =>
+                expect(mockLoadDiagram).toHaveBeenCalledTimes(1)
+            );
+            setLockedCards([
+                {
+                    id: 'fat',
+                    title: 'fat',
+                    tables: 12,
+                    dbType: null,
+                    savedAt: new Date(),
+                },
+            ]);
+            markPullDone();
+
+            await waitFor(() => expect(mockHideLoader).toHaveBeenCalled());
+            expect(mockOpenOpenDiagramDialog).not.toHaveBeenCalled();
+        });
     });
 });

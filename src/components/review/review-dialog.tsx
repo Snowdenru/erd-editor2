@@ -135,6 +135,9 @@ export const ReviewDialog: React.FC<ReviewDialogProps> = ({
     };
 
     const availableTags = rating > 0 ? tagsForRating(rating) : [];
+    // При низкой оценке теги не объясняют, что сломалось, - просим описать словами
+    const textRequired = rating > 0 && rating <= 2;
+    const canSubmit = !textRequired || text.trim().length > 0;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -269,13 +272,25 @@ export const ReviewDialog: React.FC<ReviewDialogProps> = ({
 
                         {step === 3 && (
                             <div className="space-y-4">
+                                {textRequired && (
+                                    <p className="text-sm font-semibold">
+                                        Расскажите, что пошло не так
+                                        <span className="ml-1 font-normal text-muted-foreground">
+                                            (обязательно)
+                                        </span>
+                                    </p>
+                                )}
                                 <textarea
                                     value={text}
                                     onChange={(e) => {
                                         interactedRef.current = true;
                                         setText(e.target.value);
                                     }}
-                                    placeholder="Пожелания, предложения..."
+                                    placeholder={
+                                        textRequired
+                                            ? 'Что именно сломалось или не понравилось? Так мы быстрее исправим'
+                                            : 'Пожелания, предложения...'
+                                    }
                                     rows={4}
                                     maxLength={2000}
                                     className="w-full resize-none rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -298,7 +313,7 @@ export const ReviewDialog: React.FC<ReviewDialogProps> = ({
                                     <Button
                                         type="button"
                                         className="flex-1"
-                                        disabled={submitting}
+                                        disabled={submitting || !canSubmit}
                                         onClick={() => void handleSubmit()}
                                     >
                                         {submitting

@@ -49,13 +49,22 @@ const renderDialog = (initialTab: 'image' | 'sql' | 'formats' = 'image') =>
         <ExportDialog open onOpenChange={vi.fn()} initialTab={initialTab} />
     );
 
+// «Скачать» заблокирована, пока считается превью, поэтому ждём разблокировки
+const clickDownload = async () => {
+    const button = screen.getByRole('button', { name: 'Скачать' });
+    await waitFor(() => expect(button).toBeEnabled());
+    fireEvent.click(button);
+};
+
 describe('ExportDialog', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
         mockDiagram = shopDiagram();
         mockFilter = {};
-        mockExportImage.mockClear();
-        mockPreviewImage.mockClear();
+        mockExportImage.mockReset().mockResolvedValue(undefined);
+        mockPreviewImage
+            .mockReset()
+            .mockResolvedValue('data:image/png;base64,PREVIEW');
         vi.spyOn(account, 'trackEvent').mockImplementation(() => undefined);
         vi.spyOn(reviewEvents, 'emitReviewSignal').mockImplementation(
             () => undefined
@@ -77,7 +86,7 @@ describe('ExportDialog', () => {
     describe('image tab', () => {
         it('exports PNG with the default options', async () => {
             renderDialog('image');
-            fireEvent.click(screen.getByRole('button', { name: 'Скачать' }));
+            await clickDownload();
             await waitFor(() =>
                 expect(mockExportImage).toHaveBeenCalledWith('png', {
                     scale: 2,
@@ -100,7 +109,7 @@ describe('ExportDialog', () => {
         it('applies the chosen format, scale and background options', async () => {
             renderDialog('image');
             fireEvent.click(screen.getByRole('button', { name: 'SVG' }));
-            fireEvent.click(screen.getByRole('button', { name: 'Скачать' }));
+            await clickDownload();
             await waitFor(() =>
                 expect(mockExportImage).toHaveBeenCalledWith('svg', {
                     scale: 1,
@@ -113,7 +122,7 @@ describe('ExportDialog', () => {
             fireEvent.click(screen.getByRole('button', { name: '3×' }));
             fireEvent.click(screen.getByLabelText('Прозрачный фон'));
             fireEvent.click(screen.getByLabelText('Сетка на фоне'));
-            fireEvent.click(screen.getByRole('button', { name: 'Скачать' }));
+            await clickDownload();
             await waitFor(() =>
                 expect(mockExportImage).toHaveBeenLastCalledWith('png', {
                     scale: 3,
@@ -123,12 +132,62 @@ describe('ExportDialog', () => {
             );
         });
 
+        it('builds the preview once and does not re-snapshot on option changes', async () => {
+            renderDialog('image');
+            await waitFor(() => expect(mockPreviewImage).toHaveBeenCalled());
+            await waitFor(() =>
+                expect(
+                    screen.getByRole('button', { name: 'Скачать' })
+                ).toBeEnabled()
+            );
+            expect(mockPreviewImage).toHaveBeenCalledTimes(1);
+            expect(mockPreviewImage).toHaveBeenCalledWith('png', {
+                transparent: true,
+                includePatternBG: false,
+            });
+
+            fireEvent.click(screen.getByRole('button', { name: 'JPG' }));
+            fireEvent.click(screen.getByRole('button', { name: 'SVG' }));
+            fireEvent.click(screen.getByLabelText('Сетка на фоне'));
+            await new Promise((resolve) => setTimeout(resolve, 400));
+
+            expect(mockPreviewImage).toHaveBeenCalledTimes(1);
+        });
+
+        it('keeps download disabled while the preview is being built', async () => {
+            let finish: (url: string) => void = () => undefined;
+            mockPreviewImage.mockImplementationOnce(
+                () => new Promise<string>((resolve) => (finish = resolve))
+            );
+            renderDialog('image');
+            await waitFor(() => expect(mockPreviewImage).toHaveBeenCalled());
+            expect(
+                screen.getByRole('button', { name: 'Скачать' })
+            ).toBeDisabled();
+
+            finish('data:image/png;base64,PREVIEW');
+            await waitFor(() =>
+                expect(
+                    screen.getByRole('button', { name: 'Скачать' })
+                ).toBeEnabled()
+            );
+        });
+
+        it('shows an error when saving the image fails', async () => {
+            mockExportImage.mockRejectedValueOnce(new Error('boom'));
+            renderDialog('image');
+            await clickDownload();
+            expect(
+                await screen.findByText(/Не удалось сохранить изображение/)
+            ).toBeInTheDocument();
+        });
+
         it('has no transparency for JPG', async () => {
             renderDialog('image');
             fireEvent.click(screen.getByLabelText('Прозрачный фон'));
             fireEvent.click(screen.getByRole('button', { name: 'JPG' }));
             expect(screen.getByLabelText('Прозрачный фон')).toBeDisabled();
-            fireEvent.click(screen.getByRole('button', { name: 'Скачать' }));
+            await clickDownload();
             await waitFor(() =>
                 expect(mockExportImage).toHaveBeenCalledWith('jpeg', {
                     scale: 2,

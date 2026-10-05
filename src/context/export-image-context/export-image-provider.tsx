@@ -11,6 +11,28 @@ import logoLight from '@/assets/sqllab-logo-light.svg';
 import type { EffectiveTheme } from '../theme-context/theme-context';
 import { exportFileName } from '@/lib/export/file-name';
 
+// html-to-image иногда не возвращает управление (картинка/foreignObject не
+// загрузились) - без таймаута полноэкранный лоадер висел бы вечно.
+const SNAPSHOT_TIMEOUT_MS = 60_000;
+
+const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> =>
+    new Promise<T>((resolve, reject) => {
+        const timer = setTimeout(
+            () => reject(new Error('Image export timed out')),
+            ms
+        );
+        promise.then(
+            (value) => {
+                clearTimeout(timer);
+                resolve(value);
+            },
+            (error) => {
+                clearTimeout(timer);
+                reject(error);
+            }
+        );
+    });
+
 export const ExportImageProvider: React.FC<React.PropsWithChildren> = ({
     children,
 }) => {
@@ -281,9 +303,8 @@ export const ExportImageProvider: React.FC<React.PropsWithChildren> = ({
                         try {
                             // Handle SVG export differently
                             if (type === 'svg') {
-                                const dataUrl = await imageCreateFn(
-                                    viewportElement,
-                                    {
+                                const dataUrl = await withTimeout(
+                                    imageCreateFn(viewportElement, {
                                         width: reactFlowBounds.width,
                                         height: reactFlowBounds.height,
                                         style: {
@@ -294,16 +315,16 @@ export const ExportImageProvider: React.FC<React.PropsWithChildren> = ({
                                         quality: 1,
                                         pixelRatio: scale,
                                         skipFonts: true,
-                                    }
+                                    }),
+                                    SNAPSHOT_TIMEOUT_MS
                                 );
                                 downloadImage(dataUrl, type);
                                 return;
                             }
 
                             // For PNG and JPEG, continue with the watermark process
-                            const initialDataUrl = await imageCreateFn(
-                                viewportElement,
-                                {
+                            const initialDataUrl = await withTimeout(
+                                imageCreateFn(viewportElement, {
                                     backgroundColor: getBackgroundColor(
                                         effectiveTheme,
                                         transparent
@@ -318,7 +339,8 @@ export const ExportImageProvider: React.FC<React.PropsWithChildren> = ({
                                     quality: 1,
                                     pixelRatio: scale,
                                     skipFonts: true,
-                                }
+                                }),
+                                SNAPSHOT_TIMEOUT_MS
                             );
 
                             // Create a canvas to combine the diagram and watermark
@@ -564,17 +586,20 @@ export const ExportImageProvider: React.FC<React.PropsWithChildren> = ({
             };
 
             try {
-                return await imageCreateFn(
-                    viewportElement,
-                    type === 'svg'
-                        ? baseOptions
-                        : {
-                              ...baseOptions,
-                              backgroundColor: getBackgroundColor(
-                                  effectiveTheme,
-                                  transparent
-                              ),
-                          }
+                return await withTimeout(
+                    imageCreateFn(
+                        viewportElement,
+                        type === 'svg'
+                            ? baseOptions
+                            : {
+                                  ...baseOptions,
+                                  backgroundColor: getBackgroundColor(
+                                      effectiveTheme,
+                                      transparent
+                                  ),
+                              }
+                    ),
+                    SNAPSHOT_TIMEOUT_MS
                 );
             } finally {
                 if (patternOverlay) {

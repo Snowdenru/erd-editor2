@@ -70,6 +70,40 @@ describe('ReviewDialog', () => {
         expect(screen.queryByRole('button', { name: 'Быстро' })).toBeNull();
     });
 
+    it('requires a comment for 1-2 stars and accepts it once filled', async () => {
+        await renderDialog();
+        fireEvent.click(screen.getByRole('button', { name: 'Оценка 1 из 5' }));
+        fireEvent.click(screen.getByRole('button', { name: /далее/i }));
+
+        expect(screen.getByText(/обязательно/)).toBeInTheDocument();
+        const submit = screen.getByRole('button', { name: 'Отправить' });
+        expect(submit).toBeDisabled();
+
+        // пробелы не считаются описанием
+        const field = screen.getByPlaceholderText(/Что именно сломалось/);
+        fireEvent.change(field, { target: { value: '   ' } });
+        expect(submit).toBeDisabled();
+
+        fireEvent.change(field, { target: { value: 'Завис экспорт' } });
+        expect(submit).toBeEnabled();
+        fireEvent.click(submit);
+        await waitFor(() =>
+            expect(review.submitReview).toHaveBeenCalledWith({
+                rating: 1,
+                tags: [],
+                text: 'Завис экспорт',
+            })
+        );
+    });
+
+    it('keeps the comment optional for 3+ stars', async () => {
+        await renderDialog();
+        fireEvent.click(screen.getByRole('button', { name: 'Оценка 3 из 5' }));
+        fireEvent.click(screen.getByRole('button', { name: /далее/i }));
+        expect(screen.queryByText(/обязательно/)).toBeNull();
+        expect(screen.getByRole('button', { name: 'Отправить' })).toBeEnabled();
+    });
+
     it('toggles a tag off on the second click', async () => {
         await renderDialog();
         fireEvent.click(screen.getByRole('button', { name: 'Оценка 4 из 5' }));

@@ -8,6 +8,8 @@ export type ErdTier = 'free' | 'erd' | 'pro';
 
 export interface ErdLimits {
     tier: ErdTier;
+    // До какого срока оплачен текущий тариф (ISO); null/нет - платной подписки нет
+    paid_until?: string | null;
     max_tables: number;
     max_cloud_diagrams: number | null;
     cloud_diagrams_used: number;

@@ -22,7 +22,7 @@ import {
     isLoggedIn,
     trackEvent,
 } from '@/lib/sqllab-account';
-import type { BillingPeriod, ErdPlan } from '@/lib/sqllab-account';
+import type { BillingPeriod, ErdLimits, ErdPlan } from '@/lib/sqllab-account';
 import {
     TERMS,
     discountVsMonth,
@@ -37,6 +37,27 @@ const SUCCESS_RETURN = `${PRICING_PATH}?payment=success`;
 const AUTO_START_KEY = 'erd2_pricing_autostart';
 const POLL_INTERVAL_MS = 3000;
 const POLL_ATTEMPTS = 8;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const formatPaidUntil = (iso: string): string =>
+    new Date(iso).toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+    });
+
+const daysLeft = (iso: string): number =>
+    Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / DAY_MS));
+
+const pluralDays = (n: number): string => {
+    const mod10 = n % 10;
+    const mod100 = n % 100;
+    if (mod10 === 1 && mod100 !== 11) return `${n} день`;
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14))
+        return `${n} дня`;
+    return `${n} дней`;
+};
 
 const isPeriod = (value: string | null): value is BillingPeriod =>
     TERMS.some((term) => term.period === value);
@@ -54,6 +75,7 @@ const PricingPageComponent: React.FC = () => {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
     const [activated, setActivated] = useState(false);
+    const [limits, setLimits] = useState<ErdLimits | null>(null);
     const autoStarted = useRef(false);
 
     const loadPlan = useCallback(() => {
@@ -70,7 +92,42 @@ const PricingPageComponent: React.FC = () => {
         });
     }, [loadPlan, paymentSuccess]);
 
-    // После возврата из ЮKassa вебхук может прийти с задержкой — перепроверяем уровень несколько раз
+    // Текущий тариф и срок оплаты - чтобы платящий видел, что у него уже есть.
+    // baselineUntil - дата окончания при первом ответе: после оплаты ждём,
+    // пока она изменится (вебхук ЮKassa может прийти с задержкой).
+    const baselineUntil = useRef<{ value: string | null } | null>(null);
+
+    const applyLimits = useCallback((value: ErdLimits) => {
+        setLimits(value);
+        if (!baselineUntil.current) {
+            baselineUntil.current = { value: value.paid_until ?? null };
+        }
+        return (
+            baselineUntil.current.value !== (value.paid_until ?? null) &&
+            value.tier !== 'free'
+        );
+    }, []);
+
+    useEffect(() => {
+        if (!isLoggedIn()) {
+            return;
+        }
+        let cancelled = false;
+        fetchLimits()
+            .then((value) => {
+                if (!cancelled) {
+                    applyLimits(value);
+                }
+            })
+            .catch(() => undefined);
+        return () => {
+            cancelled = true;
+        };
+    }, [applyLimits]);
+
+    // После возврата из ЮKassa перепроверяем несколько раз. Тариф у продлевающего
+    // активен и до вебхука, поэтому "активен" ставим по тарифу, а опрос
+    // прекращаем, когда дата окончания сдвинулась.
     useEffect(() => {
         if (!paymentSuccess || !isLoggedIn()) {
             return;
@@ -79,9 +136,12 @@ const PricingPageComponent: React.FC = () => {
         const timer = setInterval(() => {
             attempts += 1;
             fetchLimits()
-                .then((limits) => {
-                    if (limits.tier !== 'free') {
+                .then((value) => {
+                    const changed = applyLimits(value);
+                    if (value.tier !== 'free') {
                         setActivated(true);
+                    }
+                    if (changed) {
                         clearInterval(timer);
                     }
                 })
@@ -91,7 +151,7 @@ const PricingPageComponent: React.FC = () => {
             }
         }, POLL_INTERVAL_MS);
         return () => clearInterval(timer);
-    }, [paymentSuccess]);
+    }, [paymentSuccess, applyLimits]);
 
     const startCheckout = useCallback(
         async (chosen: BillingPeriod) => {
@@ -142,6 +202,9 @@ const PricingPageComponent: React.FC = () => {
     const monthPrice = plan ? (priceForPeriod(plan, '1m') ?? 0) : 0;
     const chosenPrice = plan ? priceForPeriod(plan, period) : null;
     const loggedIn = isLoggedIn();
+    const paidTier = limits && limits.tier !== 'free' ? limits : null;
+    const paidUntil = paidTier?.paid_until ?? null;
+    const isErdTier = paidTier?.tier === 'erd';
 
     return (
         <>
@@ -183,6 +246,27 @@ const PricingPageComponent: React.FC = () => {
                         </div>
                     ) : null}
 
+                    {paidTier ? (
+                        <div className="flex items-start gap-3 rounded-2xl border border-pink-600/40 bg-pink-50 p-4 dark:bg-pink-950/30">
+                            <Check className="mt-0.5 size-5 shrink-0 text-pink-600" />
+                            <div>
+                                <p className="font-semibold">
+                                    {isErdTier
+                                        ? 'ERD Pro активен'
+                                        : 'Общий Pro активен'}
+                                    {paidUntil
+                                        ? ` до ${formatPaidUntil(paidUntil)}`
+                                        : ''}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                    {isErdTier
+                                        ? `${paidUntil ? `Осталось ${pluralDays(daysLeft(paidUntil))}. ` : ''}Если продлить сейчас, новый срок добавится к оставшемуся: дни не пропадут.`
+                                        : 'ERD Pro входит в общий Pro, отдельно покупать его не нужно.'}
+                                </p>
+                            </div>
+                        </div>
+                    ) : null}
+
                     {loadFailed ? (
                         <div className="flex flex-col items-center gap-3 rounded-2xl border p-8 text-center">
                             <p>Не удалось загрузить тарифы.</p>
@@ -192,7 +276,7 @@ const PricingPageComponent: React.FC = () => {
                         <div className="flex justify-center p-10">
                             <Loader2 className="size-8 animate-spin text-pink-600" />
                         </div>
-                    ) : (
+                    ) : paidTier && !isErdTier ? null : (
                         <div className="flex flex-col gap-6">
                             <div
                                 role="radiogroup"
@@ -276,7 +360,7 @@ const PricingPageComponent: React.FC = () => {
                                         <Loader2 className="mr-2 size-5 animate-spin" />
                                     ) : null}
                                     {loggedIn
-                                        ? `Оплатить ${chosenPrice !== null ? formatRub(chosenPrice) : ''}`
+                                        ? `${isErdTier ? 'Продлить за' : 'Оплатить'} ${chosenPrice !== null ? formatRub(chosenPrice) : ''}`
                                         : 'Войти и оплатить'}
                                 </Button>
                                 {error ? (

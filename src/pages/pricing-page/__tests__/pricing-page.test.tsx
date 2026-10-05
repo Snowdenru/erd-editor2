@@ -152,6 +152,86 @@ describe('PricingPage', () => {
         ).toHaveAttribute('href', '/tools/erd2/diagrams');
     });
 
+    describe('paid user', () => {
+        const paidLimits = (
+            tier: account.ErdTier,
+            daysAhead: number
+        ): account.ErdLimits => ({
+            tier,
+            paid_until: new Date(
+                Date.now() + daysAhead * 24 * 60 * 60 * 1000
+            ).toISOString(),
+            max_tables: 200,
+            max_cloud_diagrams: null,
+            cloud_diagrams_used: 0,
+        });
+
+        it('shows the paid period and keeps the renew button for ERD Pro', async () => {
+            vi.spyOn(account, 'isLoggedIn').mockReturnValue(true);
+            vi.spyOn(account, 'fetchLimits').mockResolvedValue(
+                paidLimits('erd', 6)
+            );
+            renderAt('/pricing');
+
+            expect(
+                await screen.findByText(/ERD Pro активен до/)
+            ).toBeInTheDocument();
+            expect(screen.getByText(/Осталось 6 дней/)).toBeInTheDocument();
+            expect(
+                screen.getByRole('button', { name: /^продлить за/i })
+            ).toBeInTheDocument();
+        });
+
+        it('starts a renewal payment for the chosen term', async () => {
+            vi.spyOn(account, 'isLoggedIn').mockReturnValue(true);
+            vi.spyOn(account, 'fetchLimits').mockResolvedValue(
+                paidLimits('erd', 2)
+            );
+            const pay = vi
+                .spyOn(account, 'initiatePayment')
+                .mockResolvedValue('https://yookassa.ru/pay/2');
+            renderAt('/pricing');
+            await screen.findByText(/ERD Pro активен до/);
+
+            fireEvent.click(screen.getByRole('radio', { name: /7 дней/i }));
+            fireEvent.click(
+                screen.getByRole('button', { name: /^продлить за/i })
+            );
+
+            await waitFor(() =>
+                expect(pay).toHaveBeenCalledWith(
+                    7,
+                    '7d',
+                    '/tools/erd2/pricing?payment=success'
+                )
+            );
+        });
+
+        it('says ERD is included and hides checkout for general Pro', async () => {
+            vi.spyOn(account, 'isLoggedIn').mockReturnValue(true);
+            vi.spyOn(account, 'fetchLimits').mockResolvedValue(
+                paidLimits('pro', 40)
+            );
+            renderAt('/pricing');
+
+            expect(
+                await screen.findByText(/Общий Pro активен до/)
+            ).toBeInTheDocument();
+            expect(
+                screen.queryByRole('button', {
+                    name: /^(оплатить|продлить за|войти и оплатить)/i,
+                })
+            ).toBeNull();
+        });
+
+        it('shows no paid status for a free user', async () => {
+            vi.spyOn(account, 'isLoggedIn').mockReturnValue(true);
+            renderAt('/pricing');
+            await screen.findByText('149 ₽');
+            expect(screen.queryByText(/активен/)).toBeNull();
+        });
+    });
+
     it('shows an error with a retry button when the plan cannot be loaded', async () => {
         vi.spyOn(account, 'isLoggedIn').mockReturnValue(false);
         vi.spyOn(account, 'fetchErdPlan').mockRejectedValue(

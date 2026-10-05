@@ -218,11 +218,7 @@ export const ImageTab: React.FC<ImageTabProps> = ({ onExported }) => {
                     </p>
                 ) : previewUrl ? (
                     <div className="relative max-h-full max-w-full">
-                        <img
-                            src={previewUrl}
-                            alt="Предпросмотр схемы"
-                            className="block max-h-full max-w-full object-contain"
-                        />
+                        {/* Сетка лежит ПОД прозрачной картинкой: как в файле, таблицы и связи её перекрывают */}
                         {grid && (
                             <div
                                 aria-hidden="true"
@@ -230,6 +226,11 @@ export const ImageTab: React.FC<ImageTabProps> = ({ onExported }) => {
                                 style={gridOverlayStyle(effectiveTheme)}
                             />
                         )}
+                        <img
+                            src={previewUrl}
+                            alt="Предпросмотр схемы"
+                            className="relative block max-h-full max-w-full object-contain"
+                        />
                     </div>
                 ) : null}
                 {previewLoading && (

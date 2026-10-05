@@ -33,6 +33,45 @@ const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> =>
         );
     });
 
+// skipFonts отключает обработку CSS в html-to-image, поэтому стили линий связей
+// и маркеров (стрелки, "1"/"N") вписываем прямо в элементы на время снимка -
+// иначе на картинке связей не видно. Возвращает функцию отката.
+const inlineRelationStyles = (viewportElement: HTMLElement): (() => void) => {
+    const restores: (() => void)[] = [];
+
+    document
+        .querySelectorAll<SVGElement>(
+            '.marker-definitions marker circle, .marker-definitions marker text'
+        )
+        .forEach((element) => {
+            const computed = window.getComputedStyle(element);
+            const { fill, stroke } = element.style;
+            element.style.fill = computed.fill;
+            if (element.tagName.toLowerCase() === 'circle') {
+                element.style.stroke = computed.stroke;
+            }
+            restores.push(() => {
+                element.style.fill = fill;
+                element.style.stroke = stroke;
+            });
+        });
+
+    viewportElement
+        .querySelectorAll<SVGPathElement>('.react-flow__edge-path')
+        .forEach((path) => {
+            const computed = window.getComputedStyle(path);
+            const { stroke, strokeWidth } = path.style;
+            path.style.stroke = computed.stroke;
+            path.style.strokeWidth = computed.strokeWidth;
+            restores.push(() => {
+                path.style.stroke = stroke;
+                path.style.strokeWidth = strokeWidth;
+            });
+        });
+
+    return () => restores.forEach((restore) => restore());
+};
+
 export const ExportImageProvider: React.FC<React.PropsWithChildren> = ({
     children,
 }) => {
@@ -489,6 +528,41 @@ export const ExportImageProvider: React.FC<React.PropsWithChildren> = ({
             const viewport = getViewport();
             const imageCreateFn = imageCreatorMap[type];
 
+            // Маркеры связей живут вне .react-flow__viewport, а снимаем мы только его:
+            // кладём их копию внутрь, как это делает exportImage
+            const markerDefs = document.querySelector(
+                '.marker-definitions defs'
+            );
+            const restoreRelationStyles = inlineRelationStyles(viewportElement);
+            let markerOverlay: SVGSVGElement | null = null;
+            if (markerDefs) {
+                markerOverlay = document.createElementNS(
+                    'http://www.w3.org/2000/svg',
+                    'svg'
+                );
+                markerOverlay.style.position = 'absolute';
+                markerOverlay.style.top = '0';
+                markerOverlay.style.left = '0';
+                markerOverlay.style.width = '100%';
+                markerOverlay.style.height = '100%';
+                markerOverlay.style.overflow = 'visible';
+                markerOverlay.style.zIndex = '-50';
+                markerOverlay.setAttribute(
+                    'viewBox',
+                    `0 0 ${reactFlowBounds.width} ${reactFlowBounds.height}`
+                );
+                const markerDefsCopy = document.createElementNS(
+                    'http://www.w3.org/2000/svg',
+                    'defs'
+                );
+                markerDefsCopy.innerHTML = markerDefs.innerHTML;
+                markerOverlay.appendChild(markerDefsCopy);
+                viewportElement.insertBefore(
+                    markerOverlay,
+                    viewportElement.firstChild
+                );
+            }
+
             let patternOverlay: SVGSVGElement | null = null;
             if (includePatternBG) {
                 patternOverlay = document.createElementNS(
@@ -602,6 +676,10 @@ export const ExportImageProvider: React.FC<React.PropsWithChildren> = ({
                     SNAPSHOT_TIMEOUT_MS
                 );
             } finally {
+                restoreRelationStyles();
+                if (markerOverlay) {
+                    viewportElement.removeChild(markerOverlay);
+                }
                 if (patternOverlay) {
                     viewportElement.removeChild(patternOverlay);
                 }

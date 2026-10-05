@@ -359,3 +359,70 @@ describe('ExportImageProvider exportImage', () => {
         expect(filename).not.toMatch(/[а-яё]/i);
     });
 });
+
+// Превью строится по тому же DOM, что и экспорт, и без вписанных стилей связей
+// на картинке пропадают линии и стрелки (skipFonts отключает обработку CSS).
+describe('ExportImageProvider previewImage', () => {
+    beforeEach(() => {
+        mockToPng.mockReset();
+        document.body.innerHTML = '';
+    });
+
+    const addRelationDom = () => {
+        const container = addReactFlowContainer();
+        const viewport = container.querySelector(
+            '.react-flow__viewport'
+        ) as HTMLElement;
+        const path = document.createElementNS(
+            'http://www.w3.org/2000/svg',
+            'path'
+        );
+        path.setAttribute('class', 'react-flow__edge-path');
+        viewport.appendChild(path);
+
+        const markers = document.createElement('div');
+        markers.className = 'marker-definitions';
+        markers.innerHTML =
+            '<svg><defs><marker id="m1"><circle r="3"></circle></marker></defs></svg>';
+        document.body.appendChild(markers);
+        return { viewport, path };
+    };
+
+    it('puts a copy of the relation markers into the snapshot and cleans up afterwards', async () => {
+        const { viewport } = addRelationDom();
+        let markersDuringSnapshot = false;
+        mockToPng.mockImplementation(() => {
+            markersDuringSnapshot =
+                viewport.querySelector('marker#m1') !== null;
+            return Promise.resolve('data:image/png;base64,P');
+        });
+
+        const result = renderExportImage();
+        const url = await result.current.previewImage('png', {
+            transparent: true,
+            includePatternBG: false,
+        });
+
+        expect(url).toBe('data:image/png;base64,P');
+        expect(markersDuringSnapshot).toBe(true);
+        // после снимка во viewport не остаётся служебных узлов
+        expect(viewport.querySelector('marker#m1')).toBeNull();
+        expect(viewport.querySelectorAll('svg').length).toBe(0);
+    });
+
+    it('restores the edge styles even when the snapshot fails', async () => {
+        const { path } = addRelationDom();
+        mockToPng.mockRejectedValue(new Error('boom'));
+
+        const result = renderExportImage();
+        await expect(
+            result.current.previewImage('png', {
+                transparent: true,
+                includePatternBG: false,
+            })
+        ).rejects.toThrow('boom');
+
+        expect(path.style.stroke).toBe('');
+        expect(path.style.strokeWidth).toBe('');
+    });
+});

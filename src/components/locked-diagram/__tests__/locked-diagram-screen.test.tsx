@@ -43,6 +43,9 @@ describe('LockedDiagramScreen', () => {
         expect(screen.getByText('Большая схема')).toBeTruthy();
         const link = screen.getByRole('link', { name: /Открыть с Pro/ });
         expect(link.getAttribute('href')).toBe('/pricing');
+        const overlay = screen.getByTestId('locked-diagram-overlay');
+        expect(overlay.parentElement).toBe(document.body);
+        expect(overlay.style.pointerEvents).toBe('auto');
         expect(track).toHaveBeenCalledWith(
             'erd2_locked_card_view',
             expect.any(String),

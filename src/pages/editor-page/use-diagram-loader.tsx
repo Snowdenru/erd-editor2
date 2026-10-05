@@ -15,6 +15,7 @@ import {
 } from 'react-router-dom';
 import { NEW_DIAGRAM_PATH, diagramPath } from '@/lib/erd-paths';
 import { setLastDiagramId } from '@/lib/last-diagram';
+import { getLockedCards } from '@/lib/locked-diagrams';
 
 export const useDiagramLoader = () => {
     const [initialDiagram, setInitialDiagram] = useState<Diagram | undefined>();
@@ -49,6 +50,12 @@ export const useDiagramLoader = () => {
                 resetUndoStack();
                 const diagram = await loadDiagram(diagramId);
                 if (!diagram) {
+                    // Закрытая схема: поверх показывается LockedDiagramScreen, диалог
+                    // открытия схемы ему не нужен.
+                    if (getLockedCards().some((c) => c.id === diagramId)) {
+                        hideLoader();
+                        return;
+                    }
                     openOpenDiagramDialog({ canClose: false });
                     hideLoader();
                     return;

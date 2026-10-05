@@ -235,6 +235,45 @@ describe('SqllabSyncProvider', () => {
         );
     });
 
+    it('tracks erd2_sync_result only when the outcome changes, not on every autosave', async () => {
+        vi.spyOn(auth, 'getAccessToken').mockReturnValue('t');
+        const authFetch = vi.spyOn(auth, 'authFetch').mockImplementation(
+            async () =>
+                new Response(JSON.stringify({ locked: false }), {
+                    status: 200,
+                })
+        );
+        const track = vi
+            .spyOn(account, 'trackEvent')
+            .mockImplementation(() => {});
+        const { rerender } = mount();
+        await vi.advanceTimersByTimeAsync(2000);
+        rerender(
+            <chartDBContext.Provider
+                value={
+                    {
+                        diagramId: 'diagram-1',
+                        currentDiagram: {
+                            ...baseDiagram,
+                            tables: [
+                                ...baseDiagram.tables!,
+                                { ...fakeTable, id: 't-extra' },
+                            ],
+                        },
+                    } as never
+                }
+            >
+                <SqllabSyncProvider />
+            </chartDBContext.Provider>
+        );
+        await vi.advanceTimersByTimeAsync(2000);
+        expect(authFetch).toHaveBeenCalledTimes(2);
+        const results = track.mock.calls.filter(
+            (c) => c[0] === 'erd2_sync_result'
+        );
+        expect(results).toHaveLength(1);
+    });
+
     it('emits an over-limit notice when a diagram is created already locked', async () => {
         vi.spyOn(auth, 'getAccessToken').mockReturnValue('t');
         vi.spyOn(auth, 'authFetch')

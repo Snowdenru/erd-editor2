@@ -96,14 +96,20 @@ function reportResult(
     result: PushResult,
     diagramId: string,
     tables: number,
-    lockedState: Map<string, boolean>
+    lockedState: Map<string, boolean>,
+    lastOutcome: { key: string | null }
 ): void {
-    trackEvent('erd2_sync_result', window.location.pathname, {
-        ok: result.ok,
-        tables,
-        status: result.status,
-        code: result.code,
-    });
+    // Событие — про смену исхода, а не про каждое автосохранение: успех повторяется сотни раз.
+    const outcome = `${result.ok}:${result.status}:${result.code ?? ''}`;
+    if (outcome !== lastOutcome.key) {
+        lastOutcome.key = outcome;
+        trackEvent('erd2_sync_result', window.location.pathname, {
+            ok: result.ok,
+            tables,
+            status: result.status,
+            code: result.code,
+        });
+    }
     if (!result.ok) return;
 
     const previous = lockedState.get(diagramId);
@@ -128,6 +134,7 @@ export const SqllabSyncProvider: React.FC = () => {
     const pendingRef = useRef(false);
     // Последнее известное серверное locked-состояние по схемам (для подсказки при пересечении порога).
     const lockedStateRef = useRef(new Map<string, boolean>());
+    const lastOutcomeRef = useRef<{ key: string | null }>({ key: null });
     // Обновляется на каждый рендер, чтобы triggerSync (в т.ч. при трейлинг-ретрае
     // из .finally()) всегда читал актуальные diagramId/currentDiagram, а не то,
     // что было замкнуто в момент планирования дебаунса.
@@ -166,7 +173,8 @@ export const SqllabSyncProvider: React.FC = () => {
                         result,
                         diagramId,
                         tables,
-                        lockedStateRef.current
+                        lockedStateRef.current,
+                        lastOutcomeRef.current
                     );
                 })
                 .catch((err: unknown) => {
@@ -175,12 +183,14 @@ export const SqllabSyncProvider: React.FC = () => {
                         'sqllab-sync: сетевая ошибка при сохранении диаграммы',
                         err
                     );
-                    trackEvent('erd2_sync_result', window.location.pathname, {
-                        ok: false,
-                        tables,
-                        status: 0,
-                        code: 'network',
-                    });
+                    if (lastOutcomeRef.current.key !== 'false:0:network') {
+                        lastOutcomeRef.current.key = 'false:0:network';
+                        trackEvent(
+                            'erd2_sync_result',
+                            window.location.pathname,
+                            { ok: false, tables, status: 0, code: 'network' }
+                        );
+                    }
                 })
                 .finally(() => {
                     syncingRef.current = false;

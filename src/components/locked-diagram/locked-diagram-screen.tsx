@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useParams } from 'react-router-dom';
 import { Lock } from 'lucide-react';
 import { Button } from '@/components/button/button';
@@ -26,8 +27,14 @@ export const LockedDiagramScreen: React.FC = () => {
 
     if (!card) return null;
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 p-6">
+    // Портал в body + z-[100] + pointer-events: Radix-модалка (диалог открытия схемы) вешает
+    // pointer-events:none на body и лежит на z-50: без этого карточка оказалась бы под ней.
+    return createPortal(
+        <div
+            data-testid="locked-diagram-overlay"
+            style={{ pointerEvents: 'auto' }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 p-6"
+        >
             <div className="flex max-w-md flex-col items-center gap-4 text-center">
                 <Lock size={40} className="text-muted-foreground" />
                 <h1 className="text-xl font-semibold">{card.title}</h1>
@@ -55,6 +62,7 @@ export const LockedDiagramScreen: React.FC = () => {
                     </Button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };

@@ -33,7 +33,7 @@ describe('UpgradeWallHost', () => {
         expect(screen.getByText(/лимит схем в облаке/i)).toBeInTheDocument();
         expect(screen.getByText(/3/)).toBeInTheDocument();
         expect(
-            screen.getByRole('link', { name: /снять лимит.*149/i })
+            screen.getByRole('link', { name: /смотреть тарифы/i })
         ).toHaveAttribute('href', '/tools/erd2/pricing');
         expect(account.trackEvent).toHaveBeenCalledWith(
             'erd2_wall_view',

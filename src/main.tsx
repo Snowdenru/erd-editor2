@@ -10,12 +10,16 @@ import { router } from './router';
 import './i18n/i18n';
 import { reloadOnceForStaleChunk } from './lib/reload-on-stale-chunk';
 import { waitForPrerenderedPage } from './lib/wait-for-prerendered-page';
+import { loadMetrika } from './lib/cookie-consent';
 
 // Vite шлёт это событие, когда не удалось подгрузить чанк (например, после деплоя новой версии)
 window.addEventListener('vite:preloadError', (event) => {
     event.preventDefault();
     reloadOnceForStaleChunk();
 });
+
+// Метрика грузится только при согласии; «Принять» в баннере запускает её без перезагрузки
+loadMetrika();
 
 const rootElement = document.getElementById('root')!;
 

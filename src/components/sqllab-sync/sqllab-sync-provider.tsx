@@ -29,6 +29,8 @@ interface PushResult {
 
 interface ResponseBody {
     code?: string;
+    // Ошибка валидации DRF по полю id: «диаграмма с таким id уже существует».
+    id?: unknown;
     locked?: boolean;
     updated_at?: string;
 }
@@ -69,6 +71,21 @@ async function pushDiagram(
         created = true;
         res = await authFetch(`${API_BASE}/`, {
             method: 'POST',
+            headers,
+            body: payload,
+        });
+    }
+
+    // Вторая вкладка с той же новой схемой успела создать её на миг раньше: POST вернул
+    // «id уже существует». Схема уже в облаке — дописываем свою версию обычным PATCH.
+    // Базовой версии у нас нет, но окно между создателями — миллисекунды.
+    if (
+        created &&
+        res.status === 400 &&
+        Array.isArray((await readBody(res))?.id)
+    ) {
+        res = await authFetch(`${API_BASE}/${diagramId}/`, {
+            method: 'PATCH',
             headers,
             body: payload,
         });

@@ -364,6 +364,40 @@ describe('SqllabSyncProvider', () => {
         expect(authFetch).toHaveBeenCalledTimes(1);
     });
 
+    it('falls back to PATCH when another tab created the same new diagram first (POST 400 id exists)', async () => {
+        vi.spyOn(auth, 'getAccessToken').mockReturnValue('t');
+        const authFetch = vi
+            .spyOn(auth, 'authFetch')
+            .mockResolvedValueOnce(new Response(null, { status: 404 }))
+            .mockResolvedValueOnce(
+                new Response(JSON.stringify({ id: ['already exists'] }), {
+                    status: 400,
+                })
+            )
+            .mockResolvedValueOnce(
+                new Response(
+                    JSON.stringify({
+                        locked: false,
+                        updated_at: '2026-10-05T10:00:00.000000Z',
+                    }),
+                    { status: 200 }
+                )
+            );
+        const track = vi
+            .spyOn(account, 'trackEvent')
+            .mockImplementation(() => {});
+        mount();
+        await vi.advanceTimersByTimeAsync(2000);
+        expect(
+            authFetch.mock.calls.map((c) => (c[1] as RequestInit).method)
+        ).toEqual(['PATCH', 'POST', 'PATCH']);
+        const results = track.mock.calls.filter(
+            (c) => c[0] === 'erd2_sync_result'
+        );
+        expect(results).toHaveLength(1);
+        expect(results[0][2]).toMatchObject({ ok: true, status: 200 });
+    });
+
     it('reports the response body of a 400 in the funnel event', async () => {
         vi.spyOn(auth, 'getAccessToken').mockReturnValue('t');
         vi.spyOn(auth, 'authFetch').mockResolvedValue(

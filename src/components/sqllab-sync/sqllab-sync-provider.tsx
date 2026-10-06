@@ -20,6 +20,8 @@ interface PushResult {
     ok: boolean;
     status: number;
     code?: string;
+    // Тело ответа при 400 (ошибки валидации DRF), обрезанное — для события воронки.
+    detail?: string;
     // Состояние схемы на сервере после записи (спека: поле locked в ответе POST/PATCH).
     locked: boolean;
     created: boolean;
@@ -96,6 +98,10 @@ async function pushDiagram(
         ok: res.ok,
         status: res.status,
         code: body?.code,
+        detail:
+            res.status === 400 && body
+                ? JSON.stringify(body).slice(0, 300)
+                : undefined,
         locked: body?.locked === true,
         created,
     };
@@ -120,6 +126,7 @@ function reportResult(
             tables,
             status: result.status,
             code: result.code,
+            detail: result.detail,
         });
     }
     if (!result.ok) {
@@ -150,6 +157,10 @@ export const SqllabSyncProvider: React.FC = () => {
     // Последнее известное серверное locked-состояние по схемам (для подсказки при пересечении порога).
     const lockedStateRef = useRef(new Map<string, boolean>());
     const lastOutcomeRef = useRef<{ key: string | null }>({ key: null });
+    // Схемы, на которые сервер ответил 409: версия в памяти устарела и сама не обновится,
+    // поэтому каждое новое автосохранение снова получило бы 409. Пишем в такую схему
+    // только после перезагрузки страницы (pull подтягивает свежую версию).
+    const conflictedRef = useRef(new Set<string>());
     // Обновляется на каждый рендер, чтобы triggerSync (в т.ч. при трейлинг-ретрае
     // из .finally()) всегда читал актуальные diagramId/currentDiagram, а не то,
     // что было замкнуто в момент планирования дебаунса.
@@ -173,6 +184,7 @@ export const SqllabSyncProvider: React.FC = () => {
                 return;
             }
             if (!canSync()) return;
+            if (conflictedRef.current.has(latestRef.current.diagramId)) return;
 
             syncingRef.current = true;
             emitSyncStatus('syncing');
@@ -184,6 +196,9 @@ export const SqllabSyncProvider: React.FC = () => {
                 .then((result) => {
                     if (!result) return;
                     ok = result.ok;
+                    if (result.code === 'conflict') {
+                        conflictedRef.current.add(diagramId);
+                    }
                     reportResult(
                         result,
                         diagramId,

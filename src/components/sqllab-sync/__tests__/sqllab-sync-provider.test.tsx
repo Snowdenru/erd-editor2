@@ -328,6 +328,59 @@ describe('SqllabSyncProvider', () => {
         expect(statuses.at(-1)).toBe('error');
     });
 
+    it('stops pushing a conflicted diagram instead of retrying 409 on every autosave', async () => {
+        vi.spyOn(auth, 'getAccessToken').mockReturnValue('t');
+        const authFetch = vi.spyOn(auth, 'authFetch').mockImplementation(
+            async () =>
+                new Response(JSON.stringify({ code: 'conflict' }), {
+                    status: 409,
+                })
+        );
+        vi.spyOn(account, 'trackEvent').mockImplementation(() => {});
+        const { rerender } = mount();
+        await vi.advanceTimersByTimeAsync(2000);
+        expect(authFetch).toHaveBeenCalledTimes(1);
+        for (const id of ['t-a', 't-b']) {
+            rerender(
+                <chartDBContext.Provider
+                    value={
+                        {
+                            diagramId: 'diagram-1',
+                            currentDiagram: {
+                                ...baseDiagram,
+                                tables: [
+                                    ...baseDiagram.tables!,
+                                    { ...fakeTable, id },
+                                ],
+                            },
+                        } as never
+                    }
+                >
+                    <SqllabSyncProvider />
+                </chartDBContext.Provider>
+            );
+            await vi.advanceTimersByTimeAsync(2000);
+        }
+        expect(authFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('reports the response body of a 400 in the funnel event', async () => {
+        vi.spyOn(auth, 'getAccessToken').mockReturnValue('t');
+        vi.spyOn(auth, 'authFetch').mockResolvedValue(
+            new Response(JSON.stringify({ title: ['bad'] }), { status: 400 })
+        );
+        const track = vi
+            .spyOn(account, 'trackEvent')
+            .mockImplementation(() => {});
+        mount();
+        await vi.advanceTimersByTimeAsync(2000);
+        const call = track.mock.calls.find((c) => c[0] === 'erd2_sync_result');
+        expect(call?.[2]).toMatchObject({
+            status: 400,
+            detail: '{"title":["bad"]}',
+        });
+    });
+
     it('emits an over-limit notice when a diagram is created already locked', async () => {
         vi.spyOn(auth, 'getAccessToken').mockReturnValue('t');
         vi.spyOn(auth, 'authFetch')

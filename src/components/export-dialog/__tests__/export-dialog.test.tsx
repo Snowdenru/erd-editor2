@@ -103,7 +103,9 @@ describe('ExportDialog', () => {
                     action: 'download',
                 }
             );
-            expect(reviewEvents.emitReviewSignal).toHaveBeenCalledWith('nudge');
+            expect(reviewEvents.emitReviewSignal).toHaveBeenCalledWith(
+                'prompt'
+            );
         });
 
         it('applies the chosen format, scale and background options', async () => {
@@ -257,7 +259,7 @@ describe('ExportDialog', () => {
             );
         });
 
-        it('copies the script and tracks the copy without nudging for a review', async () => {
+        it('copies the script and tracks the copy and asks for a review', async () => {
             renderDialog('sql');
             fireEvent.click(screen.getByRole('button', { name: 'Копировать' }));
             await waitFor(() => expect(download.copyText).toHaveBeenCalled());
@@ -270,7 +272,9 @@ describe('ExportDialog', () => {
                     action: 'copy',
                 }
             );
-            expect(reviewEvents.emitReviewSignal).not.toHaveBeenCalled();
+            expect(reviewEvents.emitReviewSignal).toHaveBeenCalledWith(
+                'prompt'
+            );
         });
 
         it('shows a hint instead of code for an empty diagram', () => {

@@ -33,6 +33,41 @@ describe('ReviewHost', () => {
         expect(screen.queryByText('Оцените ERD-редактор')).toBeNull();
     });
 
+    it('opens the rating dialog right after an export for a logged-in user', () => {
+        vi.spyOn(account, 'isLoggedIn').mockReturnValue(true);
+        render(<ReviewHost />);
+        act(() => emitReviewSignal('prompt'));
+        expect(screen.queryByText('Оцените ERD-редактор')).toBeNull();
+        act(() => {
+            vi.advanceTimersByTime(1200);
+        });
+        expect(screen.getByText('Оцените ERD-редактор')).toBeInTheDocument();
+        expect(account.trackEvent).toHaveBeenCalledWith(
+            'erd2_review_prompt',
+            expect.any(String),
+            { action: 'shown', via: 'export' }
+        );
+    });
+
+    it('does not open after an export for anonymous users or after a recent dismissal', () => {
+        vi.spyOn(account, 'isLoggedIn').mockReturnValue(false);
+        const { unmount } = render(<ReviewHost />);
+        act(() => emitReviewSignal('prompt'));
+        act(() => {
+            vi.advanceTimersByTime(1200);
+        });
+        expect(screen.queryByText('Оцените ERD-редактор')).toBeNull();
+        unmount();
+        vi.spyOn(account, 'isLoggedIn').mockReturnValue(true);
+        review.markPromptDismissed();
+        render(<ReviewHost />);
+        act(() => emitReviewSignal('prompt'));
+        act(() => {
+            vi.advanceTimersByTime(1200);
+        });
+        expect(screen.queryByText('Оцените ERD-редактор')).toBeNull();
+    });
+
     it('nudges a logged-in user after five minutes and tracks the prompt', () => {
         vi.spyOn(account, 'isLoggedIn').mockReturnValue(true);
         render(<ReviewHost />);

@@ -8,6 +8,8 @@ import { onReviewSignal } from '@/lib/review-events';
 import { isLoggedIn, trackEvent } from '@/lib/sqllab-account';
 
 const AUTO_PROMPT_AFTER_MS = 5 * 60_000;
+// Даём скачиванию завершиться, чтобы окно не перебило сохранение файла
+const PROMPT_AFTER_EXPORT_MS = 1200;
 
 export const ReviewHost: React.FC = () => {
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -41,6 +43,26 @@ export const ReviewHost: React.FC = () => {
         });
     }, []);
 
+    // После скачивания открываем форму сразу. Показ засчитываем как отказ на 30 дней:
+    // закрыл, не оценив, — следующее скачивание его не беспокоит
+    const showPrompt = useCallback(() => {
+        if (
+            nudgeVisibleRef.current ||
+            dialogOpenRef.current ||
+            loginOpenRef.current ||
+            !isLoggedIn() ||
+            !canAutoPrompt()
+        ) {
+            return;
+        }
+        markPromptDismissed();
+        setDialogOpen(true);
+        trackEvent('erd2_review_prompt', window.location.pathname, {
+            action: 'shown',
+            via: 'export',
+        });
+    }, []);
+
     const openReview = useCallback(() => {
         setNudgeVisible(false);
         if (isLoggedIn()) {
@@ -50,16 +72,35 @@ export const ReviewHost: React.FC = () => {
         }
     }, []);
 
+    const promptTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     useEffect(
         () =>
             onReviewSignal((signal) => {
                 if (signal === 'open') {
                     openReview();
+                } else if (signal === 'prompt') {
+                    if (promptTimerRef.current !== null) {
+                        clearTimeout(promptTimerRef.current);
+                    }
+                    promptTimerRef.current = setTimeout(() => {
+                        promptTimerRef.current = null;
+                        showPrompt();
+                    }, PROMPT_AFTER_EXPORT_MS);
                 } else {
                     showNudge();
                 }
             }),
-        [openReview, showNudge]
+        [openReview, showNudge, showPrompt]
+    );
+
+    useEffect(
+        () => () => {
+            if (promptTimerRef.current !== null) {
+                clearTimeout(promptTimerRef.current);
+            }
+        },
+        []
     );
 
     useEffect(() => {

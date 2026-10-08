@@ -1,5 +1,6 @@
-// 'open' — открыть окно оценки, 'nudge' — показать ненавязчивое приглашение оценить.
-export type ReviewSignal = 'open' | 'nudge';
+// 'open' — открыть окно оценки, 'nudge' — показать ненавязчивое приглашение оценить,
+// 'prompt' — сразу открыть окно оценки после удачного действия (с теми же ограничениями, что у nudge).
+export type ReviewSignal = 'open' | 'nudge' | 'prompt';
 
 const EVENT_NAME = 'erd2:review';
 

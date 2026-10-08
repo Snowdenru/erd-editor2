@@ -68,10 +68,9 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
             db_type: info.dbType ?? currentDiagram.databaseType,
             action: info.action,
         });
-        // Скачал — самый удачный момент попросить оценку (само приглашение сдерживает canAutoPrompt)
-        if (info.action === 'download') {
-            emitReviewSignal('nudge');
-        }
+        // Любой экспорт (скачал или скопировал) — удачный момент попросить оценку;
+        // частоту сдерживает canAutoPrompt
+        emitReviewSignal('prompt');
     };
 
     return (

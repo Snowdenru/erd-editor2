@@ -101,4 +101,21 @@ describe('PublicViewPage', () => {
         renderAt('/v/a');
         expect(await screen.findByText(/Доступ скоро закроется/)).toBeTruthy();
     });
+
+    it('класс dark на странице применяется и восстанавливается при уходе', async () => {
+        document.documentElement.classList.remove('dark');
+        vi.mocked(fetchPublicDiagram).mockResolvedValue({
+            ok: true,
+            diagram,
+        } as never);
+        const view = renderAt('/v/a');
+        await screen.findByText('Магазин');
+        await waitFor(() =>
+            expect(document.documentElement.classList.contains('dark')).toBe(
+                true
+            )
+        );
+        view.unmount();
+        expect(document.documentElement.classList.contains('dark')).toBe(false);
+    });
 });

@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import { Helmet } from 'react-helmet-async';
 import { ReactFlowProvider } from '@xyflow/react';
 import { useParams, useSearchParams } from 'react-router-dom';
@@ -40,19 +46,34 @@ const MESSAGES: Record<'not_found' | 'closed' | 'error', string> = {
 const ViewerTheme: React.FC<
     React.PropsWithChildren<{
         mode: 'light' | 'dark';
-        onToggle: () => void;
+        onSetMode: (mode: 'light' | 'dark') => void;
     }>
-> = ({ mode, onToggle, children }) => {
+> = ({ mode, onSetMode, children }) => {
+    // Исходное состояние класса страницы запоминаем один раз, при монтировании.
+    const [hadDark] = useState(() =>
+        document.documentElement.classList.contains('dark')
+    );
     useEffect(() => {
         document.documentElement.classList.toggle('dark', mode === 'dark');
     }, [mode]);
+    useEffect(
+        () => () => {
+            document.documentElement.classList.toggle('dark', hadDark);
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        []
+    );
+    const setTheme = useCallback(
+        (t: Theme) => onSetMode(t === 'dark' ? 'dark' : 'light'),
+        [onSetMode]
+    );
     const value = useMemo(
         () => ({
             theme: mode as Theme,
             effectiveTheme: mode,
-            setTheme: onToggle as unknown as (theme: Theme) => void,
+            setTheme,
         }),
-        [mode, onToggle]
+        [mode, setTheme]
     );
     return (
         <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
@@ -119,7 +140,7 @@ const PublicViewInner: React.FC<{ embed: boolean }> = ({ embed }) => {
             <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-background px-4 text-center">
                 <Helmet>
                     <meta name="robots" content="noindex,nofollow" />
-                    <title>Схема не найдена | SQL Lab</title>
+                    <title>{`${MESSAGES[code]} | SQL Lab`}</title>
                 </Helmet>
                 <p className="text-lg font-semibold">{MESSAGES[code]}</p>
                 <Button asChild variant="outline">
@@ -134,14 +155,7 @@ const PublicViewInner: React.FC<{ embed: boolean }> = ({ embed }) => {
         : null;
 
     return (
-        <ViewerTheme
-            mode={mode}
-            onToggle={() =>
-                setVisitorMode((current) =>
-                    (current ?? themeMode(theme)) === 'dark' ? 'light' : 'dark'
-                )
-            }
-        >
+        <ViewerTheme mode={mode} onSetMode={setVisitorMode}>
             <Helmet>
                 <meta name="robots" content="noindex,nofollow" />
                 <title>{`${diagram.title} — схема базы данных | SQL Lab`}</title>

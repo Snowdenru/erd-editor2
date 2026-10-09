@@ -6,3 +6,5 @@ export const diagramPath = (id: string): string => `/d/${id}`;
 export const templateUsePath = (slug: string): string =>
     `/templates/${slug}/use`;
 export const PRICING_PATH = '/pricing';
+export const publicViewPath = (id: string): string => `/v/${id}`;
+export const publicEmbedPath = (id: string): string => `/v/${id}/embed`;

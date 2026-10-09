@@ -69,7 +69,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
             action: info.action,
         });
         // Любой экспорт (скачал или скопировал) — удачный момент попросить оценку;
-        // частоту сдерживает canAutoPrompt
+        // частоту сдерживает canExportPrompt (раз в 7 дней)
         emitReviewSignal('prompt');
     };
 

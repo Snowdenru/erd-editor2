@@ -3,7 +3,12 @@ import { X } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { LoginPromptDialog } from '@/components/login-prompt/login-prompt-dialog';
 import { ReviewDialog } from '@/components/review/review-dialog';
-import { canAutoPrompt, markPromptDismissed } from '@/lib/erd2-review';
+import {
+    canAutoPrompt,
+    canExportPrompt,
+    markExportPrompted,
+    markPromptDismissed,
+} from '@/lib/erd2-review';
 import { onReviewSignal } from '@/lib/review-events';
 import { isLoggedIn, trackEvent } from '@/lib/sqllab-account';
 
@@ -43,18 +48,19 @@ export const ReviewHost: React.FC = () => {
         });
     }, []);
 
-    // После скачивания открываем форму сразу. Показ засчитываем как отказ на 30 дней:
-    // закрыл, не оценив, — следующее скачивание его не беспокоит
+    // После скачивания открываем форму сразу, не чаще раза в 7 дней (свой счётчик).
+    // Обычное приглашение после показа окна не нужно: откладываем его на 30 дней
     const showPrompt = useCallback(() => {
         if (
             nudgeVisibleRef.current ||
             dialogOpenRef.current ||
             loginOpenRef.current ||
             !isLoggedIn() ||
-            !canAutoPrompt()
+            !canExportPrompt()
         ) {
             return;
         }
+        markExportPrompted();
         markPromptDismissed();
         setDialogOpen(true);
         trackEvent('erd2_review_prompt', window.location.pathname, {

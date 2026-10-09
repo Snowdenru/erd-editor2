@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as auth from '@/lib/sqllab-auth';
 import {
     canAutoPrompt,
+    canExportPrompt,
+    markExportPrompted,
     fetchMyReview,
     markPromptDismissed,
     markReviewed,
@@ -35,6 +37,23 @@ describe('auto prompt schedule', () => {
     it('is suppressed forever after a review', () => {
         markReviewed();
         expect(canAutoPrompt(1000 * DAY)).toBe(false);
+    });
+});
+
+describe('export prompt schedule', () => {
+    beforeEach(() => localStorage.clear());
+    const DAY = 24 * 60 * 60 * 1000;
+
+    it('allows the first prompt and is suppressed for 7 days', () => {
+        expect(canExportPrompt(1_000)).toBe(true);
+        markExportPrompted(0);
+        expect(canExportPrompt(6 * DAY)).toBe(false);
+        expect(canExportPrompt(8 * DAY)).toBe(true);
+    });
+    it('ignores the nudge dismissal and a past review', () => {
+        markPromptDismissed(0);
+        markReviewed();
+        expect(canExportPrompt(1_000)).toBe(true);
     });
 });
 

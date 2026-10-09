@@ -35,6 +35,22 @@ const routes: RouteObject[] = [
     editorRoute('diagrams'),
     editorRoute('new'),
     editorRoute('d/:diagramId'),
+    {
+        path: 'v/:id/embed',
+        async lazy() {
+            const { PublicViewPage } =
+                await import('./pages/public-view-page/public-view-page');
+            return { element: <PublicViewPage embed /> };
+        },
+    },
+    {
+        path: 'v/:id',
+        async lazy() {
+            const { PublicViewPage } =
+                await import('./pages/public-view-page/public-view-page');
+            return { element: <PublicViewPage /> };
+        },
+    },
     { path: 'diagrams/:diagramId', element: <LegacyDiagramRedirect /> },
     {
         path: 'examples',

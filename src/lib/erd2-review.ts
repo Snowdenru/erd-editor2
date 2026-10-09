@@ -41,6 +41,10 @@ const ENDPOINT = '/api/reviews/tool/erd2/';
 const DISMISSED_KEY = 'erd2_review_dismissed_at';
 const DONE_KEY = 'erd2_review_done';
 const DISMISS_DAYS = 30;
+// Окно после экспорта: свой счётчик, не зависит от закрытого приглашения и от «уже оценил» —
+// через неделю мнение могло измениться, форма подставит прежнюю оценку для правки
+const EXPORT_PROMPTED_KEY = 'erd2_review_export_prompted_at';
+const EXPORT_PROMPT_DAYS = 7;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export async function fetchMyReview(): Promise<Erd2Review | null> {
@@ -98,6 +102,30 @@ export function markPromptDismissed(now: number = Date.now()): void {
 export function markReviewed(): void {
     try {
         localStorage.setItem(DONE_KEY, '1');
+    } catch {
+        // ignore
+    }
+}
+
+export function canExportPrompt(now: number = Date.now()): boolean {
+    try {
+        const raw = localStorage.getItem(EXPORT_PROMPTED_KEY);
+        if (raw === null) {
+            return true;
+        }
+        const prompted = Number(raw);
+        return (
+            Number.isNaN(prompted) ||
+            now - prompted >= EXPORT_PROMPT_DAYS * DAY_MS
+        );
+    } catch {
+        return true;
+    }
+}
+
+export function markExportPrompted(now: number = Date.now()): void {
+    try {
+        localStorage.setItem(EXPORT_PROMPTED_KEY, String(now));
     } catch {
         // ignore
     }

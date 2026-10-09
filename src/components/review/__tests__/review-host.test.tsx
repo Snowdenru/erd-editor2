@@ -49,7 +49,7 @@ describe('ReviewHost', () => {
         );
     });
 
-    it('does not open after an export for anonymous users or after a recent dismissal', () => {
+    it('does not open after an export for anonymous users or within 7 days of the last export prompt', () => {
         vi.spyOn(account, 'isLoggedIn').mockReturnValue(false);
         const { unmount } = render(<ReviewHost />);
         act(() => emitReviewSignal('prompt'));
@@ -59,13 +59,26 @@ describe('ReviewHost', () => {
         expect(screen.queryByText('Оцените ERD-редактор')).toBeNull();
         unmount();
         vi.spyOn(account, 'isLoggedIn').mockReturnValue(true);
-        review.markPromptDismissed();
+        review.markExportPrompted();
         render(<ReviewHost />);
         act(() => emitReviewSignal('prompt'));
         act(() => {
             vi.advanceTimersByTime(1200);
         });
         expect(screen.queryByText('Оцените ERD-редактор')).toBeNull();
+    });
+
+    it('opens after an export even if the nudge was dismissed or the user already rated', () => {
+        vi.spyOn(account, 'isLoggedIn').mockReturnValue(true);
+        review.markPromptDismissed();
+        review.markReviewed();
+        render(<ReviewHost />);
+        act(() => emitReviewSignal('prompt'));
+        act(() => {
+            vi.advanceTimersByTime(1200);
+        });
+        expect(screen.getByText('Оцените ERD-редактор')).toBeInTheDocument();
+        expect(review.canExportPrompt()).toBe(false);
     });
 
     it('nudges a logged-in user after five minutes and tracks the prompt', () => {

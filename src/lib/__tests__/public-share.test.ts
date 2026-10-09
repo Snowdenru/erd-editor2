@@ -91,13 +91,22 @@ describe('public-share: fetchPublicDiagram', () => {
 
     it('404 closed и not_found различаются', async () => {
         stub(404, { code: 'closed' });
-        expect(await fetchPublicDiagram('a')).toEqual({ ok: false, code: 'closed' });
+        expect(await fetchPublicDiagram('a')).toEqual({
+            ok: false,
+            code: 'closed',
+        });
         stub(404, { code: 'not_found' });
-        expect(await fetchPublicDiagram('a')).toEqual({ ok: false, code: 'not_found' });
+        expect(await fetchPublicDiagram('a')).toEqual({
+            ok: false,
+            code: 'not_found',
+        });
     });
 
     it('сетевая ошибка -> error', async () => {
         vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('net')));
-        expect(await fetchPublicDiagram('a')).toEqual({ ok: false, code: 'error' });
+        expect(await fetchPublicDiagram('a')).toEqual({
+            ok: false,
+            code: 'error',
+        });
     });
 });

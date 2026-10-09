@@ -72,9 +72,7 @@ export async function fetchPublicDiagram(
     id: string
 ): Promise<PublicFetchResult> {
     try {
-        const res = await fetch(
-            `/api/erd2/public/${encodeURIComponent(id)}/`
-        );
+        const res = await fetch(`/api/erd2/public/${encodeURIComponent(id)}/`);
         if (res.ok) {
             return { ok: true, diagram: (await res.json()) as PublicDiagram };
         }

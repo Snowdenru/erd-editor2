@@ -80,4 +80,23 @@ describe('ShareDialog', () => {
         ).toBeTruthy();
         expect(getShareState).toHaveBeenCalledTimes(6);
     });
+
+    it('кнопка «Копировать» показывает «Скопировано»', async () => {
+        const writeText = vi.fn().mockResolvedValue(undefined);
+        Object.defineProperty(navigator, 'clipboard', {
+            configurable: true,
+            value: { writeText },
+        });
+        vi.mocked(getShareState).mockResolvedValue({
+            ...pro,
+            is_public: true,
+        } as never);
+        open();
+        const buttons = await screen.findAllByRole('button', {
+            name: 'Копировать',
+        });
+        fireEvent.click(buttons[0]);
+        expect(await screen.findByText('Скопировано')).toBeTruthy();
+        expect(writeText).toHaveBeenCalledTimes(1);
+    });
 });

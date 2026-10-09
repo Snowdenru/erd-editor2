@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/button/button';
 import { buildLoginUrl, trackEvent } from '@/lib/sqllab-account';
 
-export type LoginPromptReason = 'export' | 'save_landing' | 'review';
+export type LoginPromptReason = 'export' | 'save_landing' | 'review' | 'share';
 
 const COPY: Record<
     LoginPromptReason,
@@ -34,6 +34,13 @@ const COPY: Record<
         title: 'Оценить редактор могут вошедшие',
         description:
             'Войдите через Яндекс, VK или почту — схема при этом не потеряется. Отзыв привязывается к аккаунту, чтобы его можно было позже изменить.',
+        primary: 'Войти',
+        secondary: 'Не сейчас',
+    },
+    share: {
+        title: 'Поделиться схемой можно после входа',
+        description:
+            'Войдите через Яндекс, VK или почту — схема сохранится в облаке, и для неё можно будет включить публичную ссылку. Публичные ссылки доступны с Pro.',
         primary: 'Войти',
         secondary: 'Не сейчас',
     },

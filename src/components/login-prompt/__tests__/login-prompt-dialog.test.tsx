@@ -94,4 +94,18 @@ describe('LoginPromptDialog', () => {
             { reason: 'export' }
         );
     });
+
+    it('for share explains that sharing needs login', () => {
+        render(
+            <LoginPromptDialog
+                open
+                onOpenChange={() => undefined}
+                reason="share"
+            />
+        );
+
+        expect(
+            screen.getByText('Поделиться схемой можно после входа')
+        ).toBeInTheDocument();
+    });
 });

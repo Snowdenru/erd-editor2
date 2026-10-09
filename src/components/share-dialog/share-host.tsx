@@ -34,7 +34,7 @@ export const ShareHost: React.FC = () => {
             <LoginPromptDialog
                 open={promptOpen}
                 onOpenChange={setPromptOpen}
-                reason="export"
+                reason="share"
                 returnPath={`${window.location.pathname}${window.location.search}`}
             />
         </>

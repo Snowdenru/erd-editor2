@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -42,6 +42,15 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
     const [loading, setLoading] = useState(true);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [copied, setCopied] = useState<'link' | 'embed' | null>(null);
+    const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(
+        () => () => {
+            if (copiedTimer.current) clearTimeout(copiedTimer.current);
+        },
+        []
+    );
 
     useEffect(() => {
         if (!open) return;
@@ -107,8 +116,16 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
     );
 
     const origin = window.location.origin;
-    const copy = (text: string) => {
-        void navigator.clipboard?.writeText(text);
+    const copy = async (key: 'link' | 'embed', text: string) => {
+        try {
+            if (!navigator.clipboard) return;
+            await navigator.clipboard.writeText(text);
+        } catch {
+            return;
+        }
+        setCopied(key);
+        if (copiedTimer.current) clearTimeout(copiedTimer.current);
+        copiedTimer.current = setTimeout(() => setCopied(null), 2000);
     };
 
     return (
@@ -210,7 +227,8 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                                         <Button
                                             size="sm"
                                             onClick={() =>
-                                                copy(
+                                                void copy(
+                                                    'link',
                                                     publicLink(
                                                         origin,
                                                         APP_BASE,
@@ -219,7 +237,9 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                                                 )
                                             }
                                         >
-                                            Копировать
+                                            {copied === 'link'
+                                                ? 'Скопировано'
+                                                : 'Копировать'}
                                         </Button>
                                     </div>
                                 </div>
@@ -240,7 +260,8 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                                         <Button
                                             size="sm"
                                             onClick={() =>
-                                                copy(
+                                                void copy(
+                                                    'embed',
                                                     embedCode(
                                                         origin,
                                                         APP_BASE,
@@ -249,7 +270,9 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                                                 )
                                             }
                                         >
-                                            Копировать
+                                            {copied === 'embed'
+                                                ? 'Скопировано'
+                                                : 'Копировать'}
                                         </Button>
                                     </div>
                                 </div>

@@ -66,6 +66,34 @@ describe('PublicViewPage', () => {
         );
     });
 
+    it('не падает, когда хранилище браузера заблокировано', async () => {
+        // В кросс-сайтовом iframe с заблокированными сторонними данными бросает уже обращение к window.localStorage
+        const original = Object.getOwnPropertyDescriptor(
+            window,
+            'localStorage'
+        );
+        Object.defineProperty(window, 'localStorage', {
+            configurable: true,
+            get() {
+                throw new DOMException('denied', 'SecurityError');
+            },
+        });
+        try {
+            vi.mocked(fetchPublicDiagram).mockResolvedValue({
+                ok: true,
+                diagram,
+            } as never);
+            renderAt('/v/a/embed', true);
+            expect(await screen.findByTestId('canvas')).toBeTruthy();
+        } finally {
+            if (original)
+                Object.defineProperty(window, 'localStorage', original);
+            else
+                delete (window as unknown as Record<string, unknown>)
+                    .localStorage;
+        }
+    });
+
     it('в embed нет шапки с названием, есть подпись', async () => {
         vi.mocked(fetchPublicDiagram).mockResolvedValue({
             ok: true,

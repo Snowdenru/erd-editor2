@@ -3,6 +3,23 @@ import type { ScrollAction } from './local-config-context';
 import { LocalConfigContext } from './local-config-context';
 import type { Theme } from '../theme-context/theme-context';
 
+// В iframe на чужом сайте с заблокированным хранилищем обращение к localStorage бросает SecurityError
+const safeGet = (key: string): string | null => {
+    try {
+        return localStorage.getItem(key);
+    } catch {
+        return null;
+    }
+};
+
+const safeSet = (key: string, value: string): void => {
+    try {
+        localStorage.setItem(key, value);
+    } catch {
+        // хранилище недоступно: настройки живут только до перезагрузки
+    }
+};
+
 const themeKey = 'theme';
 const scrollActionKey = 'scroll_action';
 const showCardinalityKey = 'show_cardinality';
@@ -17,73 +34,67 @@ export const LocalConfigProvider: React.FC<React.PropsWithChildren> = ({
     children,
 }) => {
     const [theme, setTheme] = React.useState<Theme>(
-        (localStorage.getItem(themeKey) as Theme) || 'system'
+        (safeGet(themeKey) as Theme) || 'system'
     );
 
     const [scrollAction, setScrollAction] = React.useState<ScrollAction>(
-        (localStorage.getItem(scrollActionKey) as ScrollAction) || 'pan'
+        (safeGet(scrollActionKey) as ScrollAction) || 'pan'
     );
 
     const [showDBViews, setShowDBViews] = React.useState<boolean>(
         // По умолчанию показываем вьюхи: иначе в готовых схемах (например, зона Current Status в Employees) области выглядят пустыми
-        (localStorage.getItem(showDBViewsKey) ?? 'true') === 'true'
+        (safeGet(showDBViewsKey) ?? 'true') === 'true'
     );
 
     const [showCardinality, setShowCardinality] = React.useState<boolean>(
-        (localStorage.getItem(showCardinalityKey) || 'true') === 'true'
+        (safeGet(showCardinalityKey) || 'true') === 'true'
     );
 
     const [showFieldAttributes, setShowFieldAttributes] =
         React.useState<boolean>(
-            (localStorage.getItem(showFieldAttributesKey) || 'true') === 'true'
+            (safeGet(showFieldAttributesKey) || 'true') === 'true'
         );
 
     const [githubRepoOpened, setGithubRepoOpened] = React.useState<boolean>(
-        (localStorage.getItem(githubRepoOpenedKey) || 'false') === 'true'
+        (safeGet(githubRepoOpenedKey) || 'false') === 'true'
     );
 
     const [starUsDialogLastOpen, setStarUsDialogLastOpen] =
         React.useState<number>(
-            parseInt(localStorage.getItem(starUsDialogLastOpenKey) || '0')
+            parseInt(safeGet(starUsDialogLastOpenKey) || '0')
         );
 
     const [showMiniMapOnCanvas, setShowMiniMapOnCanvas] =
         React.useState<boolean>(
-            (localStorage.getItem(showMiniMapOnCanvasKey) || 'true') === 'true'
+            (safeGet(showMiniMapOnCanvasKey) || 'true') === 'true'
         );
 
     useEffect(() => {
-        localStorage.setItem(
-            starUsDialogLastOpenKey,
-            starUsDialogLastOpen.toString()
-        );
+        safeSet(starUsDialogLastOpenKey, starUsDialogLastOpen.toString());
     }, [starUsDialogLastOpen]);
 
     useEffect(() => {
-        localStorage.setItem(githubRepoOpenedKey, githubRepoOpened.toString());
+        safeSet(githubRepoOpenedKey, githubRepoOpened.toString());
     }, [githubRepoOpened]);
 
     useEffect(() => {
-        localStorage.setItem(themeKey, theme);
+        safeSet(themeKey, theme);
     }, [theme]);
 
     useEffect(() => {
-        localStorage.setItem(scrollActionKey, scrollAction);
+        safeSet(scrollActionKey, scrollAction);
     }, [scrollAction]);
 
     useEffect(() => {
-        localStorage.setItem(showDBViewsKey, showDBViews.toString());
+        safeSet(showDBViewsKey, showDBViews.toString());
     }, [showDBViews]);
 
     useEffect(() => {
-        localStorage.setItem(showCardinalityKey, showCardinality.toString());
+        safeSet(showCardinalityKey, showCardinality.toString());
     }, [showCardinality]);
 
     useEffect(() => {
-        localStorage.setItem(
-            showMiniMapOnCanvasKey,
-            showMiniMapOnCanvas.toString()
-        );
+        safeSet(showMiniMapOnCanvasKey, showMiniMapOnCanvas.toString());
     }, [showMiniMapOnCanvas]);
 
     return (

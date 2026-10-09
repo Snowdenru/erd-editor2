@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     applyPalette,
+    embedCode,
     fetchPublicDiagram,
     isPublicTheme,
+    publicLink,
     PUBLIC_THEMES,
     resolveTheme,
     themeMode,
@@ -108,5 +110,25 @@ describe('public-share: fetchPublicDiagram', () => {
             ok: false,
             code: 'error',
         });
+    });
+});
+
+describe('public-share: ссылки', () => {
+    it('обычный id не меняется', () => {
+        expect(publicLink('https://x.ru', '/tools/erd', 'abc-1')).toBe(
+            'https://x.ru/tools/erd/v/abc-1'
+        );
+        expect(embedCode('https://x.ru', '/tools/erd', 'abc-1')).toContain(
+            'src="https://x.ru/tools/erd/v/abc-1/embed"'
+        );
+    });
+
+    it('пробел и слэш в id кодируются', () => {
+        expect(publicLink('https://x.ru', '/tools/erd', 'a b/c')).toBe(
+            'https://x.ru/tools/erd/v/a%20b%2Fc'
+        );
+        expect(embedCode('https://x.ru', '/tools/erd', 'a b/c')).toContain(
+            'src="https://x.ru/tools/erd/v/a%20b%2Fc/embed"'
+        );
     });
 });

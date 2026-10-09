@@ -40,6 +40,29 @@ describe('ShareDialog', () => {
         vi.clearAllMocks();
     });
 
+    it('закрытая ссылка после окончания подписки: показывает пояснение', async () => {
+        vi.mocked(getShareState).mockResolvedValue({
+            ...free,
+            is_public: true,
+        } as never);
+        open();
+        expect(
+            await screen.findByText(
+                /Ссылка сейчас закрыта: подписка закончилась/
+            )
+        ).toBeTruthy();
+    });
+
+    it('с Pro пояснения о закрытой ссылке нет', async () => {
+        vi.mocked(getShareState).mockResolvedValue({
+            ...pro,
+            is_public: true,
+        } as never);
+        open();
+        await screen.findByRole('switch');
+        expect(screen.queryByText(/Ссылка сейчас закрыта/)).toBeNull();
+    });
+
     it('без Pro показывает стену и событие, переключателя нет', async () => {
         vi.mocked(getShareState).mockResolvedValue(free as never);
         open();

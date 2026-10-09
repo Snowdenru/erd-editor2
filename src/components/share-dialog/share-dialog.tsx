@@ -182,6 +182,15 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                             </p>
                         ) : null}
 
+                        {state.is_public &&
+                        !state.can_share &&
+                        !state.grace_until ? (
+                            <p className="text-sm text-amber-600">
+                                Ссылка сейчас закрыта: подписка закончилась.
+                                Продлите подписку — ссылка заработает снова.
+                            </p>
+                        ) : null}
+
                         {state.is_public ? (
                             <>
                                 <div className="flex flex-col gap-1">

@@ -137,7 +137,7 @@ export async function updateShare(
 
 // Абсолютные ссылки для копирования. Базовый путь приложения (/tools/erd) берём из APP_BASE.
 export const publicLink = (origin: string, base: string, id: string) =>
-    `${origin}${base}/v/${id}`;
+    `${origin}${base}/v/${encodeURIComponent(id)}`;
 
 export const embedCode = (origin: string, base: string, id: string) =>
-    `<iframe src="${origin}${base}/v/${id}/embed" width="100%" height="520" style="border:1px solid #e5e7eb;border-radius:8px" loading="lazy" allowfullscreen></iframe>`;
+    `<iframe src="${origin}${base}/v/${encodeURIComponent(id)}/embed" width="100%" height="520" style="border:1px solid #e5e7eb;border-radius:8px" loading="lazy" allowfullscreen></iframe>`;

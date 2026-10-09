@@ -17,6 +17,7 @@ import { useChartDB } from '@/hooks/use-chartdb';
 import { deleteCloudDiagram } from '@/lib/cloud-delete';
 import { useDialog } from '@/hooks/use-dialog';
 import { emitOpenExport } from '@/lib/export-dialog-events';
+import { emitOpenShare } from '@/lib/share-dialog-events';
 import {
     KeyboardShortcutAction,
     keyboardShortcutsForOS,
@@ -176,6 +177,9 @@ export const Menu: React.FC<MenuProps> = () => {
                         </MenubarItem>
                         <MenubarItem onClick={() => emitOpenExport('formats')}>
                             Экспорт DBML, Mermaid, Markdown, JSON…
+                        </MenubarItem>
+                        <MenubarItem onClick={emitOpenShare}>
+                            Поделиться…
                         </MenubarItem>
                         <MenubarSeparator />
                         <MenubarItem

@@ -26,6 +26,7 @@ import {
 import { logout } from '@/lib/sqllab-auth';
 import { SupportDialog } from '@/components/support/support-dialog';
 import { useErdTier } from '@/hooks/use-erd-tier';
+import { emitOpenShare } from '@/lib/share-dialog-events';
 
 const TIER_LABEL: Record<'erd' | 'pro', string> = {
     erd: 'ERD Pro',
@@ -139,11 +140,8 @@ export const AccountMenu: React.FC = () => {
                         Мои схемы
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem disabled className="justify-between">
+                    <DropdownMenuItem onSelect={emitOpenShare}>
                         Ссылка для встраивания
-                        <span className="ml-auto text-xs text-muted-foreground">
-                            Скоро
-                        </span>
                     </DropdownMenuItem>
                     <DropdownMenuItem disabled className="justify-between">
                         Пригласить в команду

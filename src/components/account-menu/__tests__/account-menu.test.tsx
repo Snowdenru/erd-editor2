@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { SidebarProvider } from '@/components/sidebar/sidebar';
 import * as account from '@/lib/sqllab-account';
 import * as auth from '@/lib/sqllab-auth';
+import { onOpenShare } from '@/lib/share-dialog-events';
 import { AccountMenu } from '../account-menu';
 
 const assign = vi.fn();
@@ -91,29 +92,34 @@ describe('AccountMenu', () => {
         expect(openOpenDiagramDialog).toHaveBeenCalledTimes(1);
     });
 
-    it('the placeholder items are disabled and marked "Скоро"', async () => {
+    it('"Ссылка для встраивания" opens the share dialog, "Пригласить в команду" stays a disabled placeholder', async () => {
         vi.spyOn(account, 'isLoggedIn').mockReturnValue(true);
         vi.spyOn(account, 'fetchProfile').mockResolvedValue({
             full_name: 'Denis S',
             email: 'den@example.com',
         });
+        const onOpen = vi.fn();
+        const off = onOpenShare(onOpen);
         renderMenu();
         await waitFor(() =>
             expect(screen.getByText('Denis S')).toBeInTheDocument()
         );
         fireEvent.pointerDown(screen.getByText('Denis S'));
 
-        expect(
-            screen
-                .getByText('Ссылка для встраивания')
-                .closest('[role="menuitem"]')
-        ).toHaveAttribute('data-disabled');
+        const embed = screen
+            .getByText('Ссылка для встраивания')
+            .closest('[role="menuitem"]');
+        expect(embed).not.toHaveAttribute('data-disabled');
         expect(
             screen
                 .getByText('Пригласить в команду')
                 .closest('[role="menuitem"]')
         ).toHaveAttribute('data-disabled');
-        expect(screen.getAllByText('Скоро')).toHaveLength(2);
+        expect(screen.getAllByText('Скоро')).toHaveLength(1);
+
+        fireEvent.click(screen.getByText('Ссылка для встраивания'));
+        expect(onOpen).toHaveBeenCalledTimes(1);
+        off();
     });
 
     it('"Тарифы" links to /pricing and "Поддержка" opens a modal', async () => {

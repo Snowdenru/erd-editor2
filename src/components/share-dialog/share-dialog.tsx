@@ -20,12 +20,15 @@ import {
     type ShareState,
 } from '@/lib/public-share';
 import { trackEvent } from '@/lib/sqllab-account';
+import { emitSyncNow } from '@/lib/sync-status-events';
 
 export interface ShareDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     diagramId: string;
     retryDelayMs?: number;
+    // В пустую схему синхронизация ничего не пишет, облачной копии не будет.
+    hasTables?: boolean;
 }
 
 // Облачная копия появляется после фонового автосохранения: при 404 несколько раз переспрашиваем.
@@ -37,6 +40,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
     onOpenChange,
     diagramId,
     retryDelayMs = DEFAULT_RETRY_MS,
+    hasTables = true,
 }) => {
     const [state, setState] = useState<ShareState | null>(null);
     const [loading, setLoading] = useState(true);
@@ -55,8 +59,15 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
     useEffect(() => {
         if (!open) return;
         let cancelled = false;
-        setLoading(true);
         setError(null);
+        if (!hasTables) {
+            setState(null);
+            setLoading(false);
+            return;
+        }
+        setLoading(true);
+        // Не ждём паузу автосохранения: отправляем текущую версию схемы в облако сразу.
+        emitSyncNow();
         const load = async () => {
             for (let attempt = 0; attempt <= RETRIES; attempt++) {
                 const result = await getShareState(diagramId);
@@ -79,7 +90,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
         return () => {
             cancelled = true;
         };
-    }, [open, diagramId, retryDelayMs]);
+    }, [open, diagramId, retryDelayMs, hasTables]);
 
     const wallShown =
         open && !loading && state && !state.can_share && !state.is_public;
@@ -141,6 +152,11 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
 
                 {loading ? (
                     <p className="text-sm text-muted-foreground">Загрузка…</p>
+                ) : !hasTables ? (
+                    <p className="text-sm">
+                        Схема пока пустая. Добавьте хотя бы одну таблицу — после
+                        этого её можно будет открыть по ссылке.
+                    </p>
                 ) : !state ? (
                     <p className="text-sm">
                         Схема ещё не сохранена в облаке. Подождите несколько

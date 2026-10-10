@@ -7,7 +7,7 @@ import { ShareDialog } from './share-dialog';
 
 export const ShareHost: React.FC = () => {
     const { guard, promptOpen, setPromptOpen } = useLoginGate();
-    const { diagramId } = useChartDB();
+    const { diagramId, currentDiagram } = useChartDB();
     const [open, setOpen] = useState(false);
     const [openCount, setOpenCount] = useState(0);
 
@@ -30,6 +30,7 @@ export const ShareHost: React.FC = () => {
                 open={open}
                 onOpenChange={setOpen}
                 diagramId={diagramId}
+                hasTables={(currentDiagram.tables?.length ?? 0) > 0}
             />
             <LoginPromptDialog
                 open={promptOpen}

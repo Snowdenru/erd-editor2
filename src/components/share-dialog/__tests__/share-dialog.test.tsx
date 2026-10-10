@@ -104,6 +104,34 @@ describe('ShareDialog', () => {
         expect(getShareState).toHaveBeenCalledTimes(6);
     });
 
+    it('пустая схема — подсказка добавить таблицу, без запросов в облако', async () => {
+        render(
+            <ShareDialog
+                open
+                onOpenChange={() => {}}
+                diagramId="d1"
+                hasTables={false}
+            />
+        );
+        expect(await screen.findByText(/Схема пока пустая/)).toBeTruthy();
+        expect(getShareState).not.toHaveBeenCalled();
+    });
+
+    it('при открытии сразу запускает синхронизацию с облаком', async () => {
+        const handler = vi.fn();
+        window.addEventListener('erd2:sync-now', handler);
+        vi.mocked(getShareState).mockResolvedValue({
+            is_public: false,
+            public_theme: 'light',
+            grace_until: null,
+            can_share: true,
+        } as never);
+        open(1);
+        await screen.findByRole('switch');
+        window.removeEventListener('erd2:sync-now', handler);
+        expect(handler).toHaveBeenCalledTimes(1);
+    });
+
     it('кнопка «Копировать» показывает «Скопировано»', async () => {
         const writeText = vi.fn().mockResolvedValue(undefined);
         Object.defineProperty(navigator, 'clipboard', {

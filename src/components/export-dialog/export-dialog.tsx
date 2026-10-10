@@ -20,6 +20,7 @@ import { applyFilterOnDiagram } from '@/lib/domain/diagram-filter/filter';
 import type { ExportTab } from '@/lib/export-dialog-events';
 import { emitReviewSignal } from '@/lib/review-events';
 import { trackEvent } from '@/lib/sqllab-account';
+import { EmbedTab } from './embed-tab';
 import { FormatsTab } from './formats-tab';
 import { ImageTab } from './image-tab';
 import { SqlTab } from './sql-tab';
@@ -83,10 +84,10 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                     <DialogTitle>Экспорт схемы</DialogTitle>
                     <DialogDescription>
                         Скачайте схему как изображение, SQL для нужной СУБД или
-                        файл для документации.
+                        файл для документации, либо встройте её на сайт.
                     </DialogDescription>
                 </DialogHeader>
-                {hasActiveFilter && tab !== 'image' && (
+                {hasActiveFilter && tab !== 'image' && tab !== 'embed' && (
                     <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/30 px-3 py-2 text-sm">
                         <span className="text-muted-foreground">
                             Фильтр холста скрывает часть схемы: видно{' '}
@@ -122,6 +123,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                         <TabsTrigger value="image">Изображение</TabsTrigger>
                         <TabsTrigger value="sql">SQL</TabsTrigger>
                         <TabsTrigger value="formats">Форматы</TabsTrigger>
+                        <TabsTrigger value="embed">Встроить</TabsTrigger>
                     </TabsList>
                     <TabsContent
                         value="image"
@@ -146,6 +148,12 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                             diagram={effectiveDiagram}
                             onExported={handleExported}
                         />
+                    </TabsContent>
+                    <TabsContent
+                        value="embed"
+                        className="flex min-h-0 flex-1 flex-col pt-2"
+                    >
+                        <EmbedTab onClose={() => onOpenChange(false)} />
                     </TabsContent>
                 </Tabs>
             </DialogContent>

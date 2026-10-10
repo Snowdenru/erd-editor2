@@ -13,6 +13,7 @@ import type { DiagramFilter } from '@/lib/domain/diagram-filter/diagram-filter';
 import * as account from '@/lib/sqllab-account';
 import * as download from '@/lib/export/download';
 import * as reviewEvents from '@/lib/review-events';
+import { onOpenShare } from '@/lib/share-dialog-events';
 import { shopDiagram } from '@/lib/export/__tests__/fixtures';
 import { ExportDialog } from '../export-dialog';
 
@@ -44,9 +45,16 @@ vi.mock('@/components/code-snippet/code-snippet', () => ({
     ),
 }));
 
-const renderDialog = (initialTab: 'image' | 'sql' | 'formats' = 'image') =>
+const renderDialog = (
+    initialTab: 'image' | 'sql' | 'formats' | 'embed' = 'image',
+    onOpenChange: (open: boolean) => void = vi.fn()
+) =>
     render(
-        <ExportDialog open onOpenChange={vi.fn()} initialTab={initialTab} />
+        <ExportDialog
+            open
+            onOpenChange={onOpenChange}
+            initialTab={initialTab}
+        />
     );
 
 // «Скачать» заблокирована, пока считается превью, поэтому ждём разблокировки
@@ -81,6 +89,25 @@ describe('ExportDialog', () => {
         expect(screen.getByTestId('code').textContent).toContain(
             'CREATE TABLE'
         );
+    });
+
+    describe('embed tab', () => {
+        it('closes the export dialog and opens the share dialog', () => {
+            const onOpenChange = vi.fn();
+            const onShare = vi.fn();
+            const off = onOpenShare(onShare);
+            renderDialog('embed', onOpenChange);
+
+            fireEvent.click(
+                screen.getByRole('button', {
+                    name: 'Получить ссылку и код для встраивания',
+                })
+            );
+
+            expect(onOpenChange).toHaveBeenCalledWith(false);
+            expect(onShare).toHaveBeenCalledTimes(1);
+            off();
+        });
     });
 
     describe('image tab', () => {

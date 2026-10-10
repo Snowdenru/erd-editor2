@@ -1,5 +1,5 @@
 // src/lib/export-dialog-events.ts
-export type ExportTab = 'image' | 'sql' | 'formats';
+export type ExportTab = 'image' | 'sql' | 'formats' | 'embed';
 
 const EVENT_NAME = 'erd2:open-export';
 

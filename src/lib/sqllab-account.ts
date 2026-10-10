@@ -111,7 +111,13 @@ export type FunnelEvent =
     | 'erd2_share_enable'
     | 'erd2_share_disable'
     | 'erd2_share_wall_view'
-    | 'erd2_public_view';
+    | 'erd2_public_view'
+    | 'erd2_ai_open'
+    | 'erd2_ai_start'
+    | 'erd2_ai_success'
+    | 'erd2_ai_fail'
+    | 'erd2_ai_restore'
+    | 'erd2_ai_limit_wall';
 
 // Аналитика выключена при предрендере, при редиректе быстрого входа и при ручном флаге erd2_no_track=1
 // (для smoke-проверок и ручных прогонов, чтобы не портить статистику).

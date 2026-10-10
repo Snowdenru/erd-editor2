@@ -127,13 +127,13 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                     </TabsList>
                     <TabsContent
                         value="image"
-                        className="flex min-h-0 flex-1 flex-col pt-2"
+                        className="flex min-h-0 flex-1 flex-col pt-2 data-[state=inactive]:hidden"
                     >
                         <ImageTab onExported={handleExported} />
                     </TabsContent>
                     <TabsContent
                         value="sql"
-                        className="flex min-h-0 flex-1 flex-col pt-2"
+                        className="flex min-h-0 flex-1 flex-col pt-2 data-[state=inactive]:hidden"
                     >
                         <SqlTab
                             diagram={effectiveDiagram}
@@ -142,7 +142,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                     </TabsContent>
                     <TabsContent
                         value="formats"
-                        className="flex min-h-0 flex-1 flex-col pt-2"
+                        className="flex min-h-0 flex-1 flex-col pt-2 data-[state=inactive]:hidden"
                     >
                         <FormatsTab
                             diagram={effectiveDiagram}
@@ -151,7 +151,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                     </TabsContent>
                     <TabsContent
                         value="embed"
-                        className="flex min-h-0 flex-1 flex-col pt-2"
+                        className="flex min-h-0 flex-1 flex-col pt-2 data-[state=inactive]:hidden"
                     >
                         <EmbedTab onClose={() => onOpenChange(false)} />
                     </TabsContent>

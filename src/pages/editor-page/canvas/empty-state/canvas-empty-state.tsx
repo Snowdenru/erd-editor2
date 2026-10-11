@@ -1,10 +1,11 @@
 import React, { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Database, Plus } from 'lucide-react';
+import { Database, Plus, Sparkles } from 'lucide-react';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { useDialog } from '@/hooks/use-dialog';
 import { Button } from '@/components/button/button';
 import { Spinner } from '@/components/spinner/spinner';
+import { emitOpenAiGenerate } from '@/lib/ai-generate/events';
 
 const CanvasEmptyStateExamples = React.lazy(() =>
     import('./canvas-empty-state-examples').then((module) => ({
@@ -31,6 +32,16 @@ export const CanvasEmptyState: React.FC = () => {
                     >
                         <Database className="mr-1.5 size-4" />
                         {t('canvas_empty_state.import_from_database')}
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() =>
+                            emitOpenAiGenerate({ source: 'empty_state' })
+                        }
+                    >
+                        <Sparkles className="mr-1.5 size-4" />
+                        Создать с ИИ
                     </Button>
                     <Button
                         type="button"

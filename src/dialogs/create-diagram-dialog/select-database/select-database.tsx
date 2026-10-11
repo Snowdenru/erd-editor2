@@ -8,6 +8,9 @@ import {
     DialogInternalContent,
     DialogTitle,
 } from '@/components/dialog/dialog';
+import { Sparkles } from 'lucide-react';
+import { emitOpenAiGenerate } from '@/lib/ai-generate/events';
+import { toApiDialect } from '@/lib/ai-generate/dialect';
 import { DatabaseType } from '@/lib/domain/database-type';
 import { useTranslation } from 'react-i18next';
 import { SelectDatabaseContent } from './select-database-content';
@@ -29,7 +32,7 @@ export const SelectDatabase: React.FC<SelectDatabaseProps> = ({
     createNewDiagram,
 }) => {
     const { t } = useTranslation();
-    const { openImportDiagramDialog } = useDialog();
+    const { openImportDiagramDialog, closeCreateDiagramDialog } = useDialog();
 
     return (
         <>
@@ -65,6 +68,21 @@ export const SelectDatabase: React.FC<SelectDatabaseProps> = ({
                     </Button>
                 )}
                 <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:space-x-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                            // Диалог схемы закрываем, чтобы окно ИИ не наложилось поверх него
+                            closeCreateDiagramDialog();
+                            emitOpenAiGenerate({
+                                source: 'create_dialog',
+                                dialect: toApiDialect(databaseType),
+                            });
+                        }}
+                    >
+                        <Sparkles className="mr-1.5 size-4" />
+                        Создать с ИИ
+                    </Button>
                     <Button
                         type="button"
                         variant="outline"

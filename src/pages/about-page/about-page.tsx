@@ -10,6 +10,7 @@ import { FAQ_ITEMS } from './faq-items';
 import { AboutSeo } from './about-seo';
 import { appUrl } from '@/lib/app-config';
 import { DdlTryBlock } from './ddl-try-block';
+import { AiPromptBlock } from './ai-prompt-block';
 import { MarketingHeader } from '@/components/marketing-layout/marketing-header';
 import { MarketingFooter } from '@/components/marketing-layout/marketing-footer';
 import {
@@ -356,6 +357,9 @@ const AboutPageComponent: React.FC = () => {
                         />
                     </div>
                 </div>
+
+                {/* Попробовать: описать базу словами */}
+                <AiPromptBlock />
 
                 {/* Попробовать: вставить DDL */}
                 <DdlTryBlock />

@@ -38,13 +38,15 @@ export function clearPending(): void {
 
 // Запрос переживает вход: пользователь уходит на /auth/login и возвращается на ту же страницу.
 export function savePending(
-    p: { prompt: string; dialect: AiDialect },
+    // path — маршрут, где после входа должен смонтироваться хост (по умолчанию текущая страница)
+    p: { prompt: string; dialect: AiDialect; path?: string },
     now: number = Date.now()
 ): void {
     try {
         const value: PendingPrompt = {
-            ...p,
-            path: window.location.pathname,
+            prompt: p.prompt,
+            dialect: p.dialect,
+            path: p.path ?? window.location.pathname,
             userId: currentUserId(),
             savedAt: now,
         };

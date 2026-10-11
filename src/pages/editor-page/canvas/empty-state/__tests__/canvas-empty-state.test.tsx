@@ -28,6 +28,7 @@ vi.mock('@/hooks/use-example-diagrams', () => ({
 }));
 
 import { CanvasEmptyState } from '../canvas-empty-state';
+import * as aiEvents from '@/lib/ai-generate/events';
 
 describe('CanvasEmptyState', () => {
     beforeEach(() => {
@@ -62,5 +63,23 @@ describe('CanvasEmptyState', () => {
         fireEvent.click(screen.getByText('Новая таблица'));
 
         expect(mockCreateTable).toHaveBeenCalledWith();
+    });
+
+    it('offers AI generation and opens the AI dialog with the empty_state source', () => {
+        const emit = vi
+            .spyOn(aiEvents, 'emitOpenAiGenerate')
+            .mockImplementation(() => undefined);
+        render(
+            <MemoryRouter
+                basename="/tools/erd2"
+                initialEntries={['/tools/erd2/diagrams/x']}
+            >
+                <CanvasEmptyState />
+            </MemoryRouter>
+        );
+
+        fireEvent.click(screen.getByText('Создать с ИИ'));
+
+        expect(emit).toHaveBeenCalledWith({ source: 'empty_state' });
     });
 });

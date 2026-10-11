@@ -43,3 +43,13 @@ describe('pending prompt', () => {
         expect(consumePending()).toBeNull();
     });
 });
+
+describe('pending prompt with explicit path', () => {
+    it('is stored for the given route, not the current page', () => {
+        savePending({ prompt: 'Школа', dialect: 'mysql', path: '/other/new' });
+        expect(consumePending()).toBeNull();
+        window.history.pushState({}, '', '/other/new');
+        expect(consumePending()).toMatchObject({ path: '/other/new' });
+        window.history.pushState({}, '', '/');
+    });
+});

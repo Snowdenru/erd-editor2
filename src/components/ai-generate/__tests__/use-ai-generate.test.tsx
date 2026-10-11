@@ -145,6 +145,71 @@ describe('useAiGenerate.generate', () => {
         );
     });
 
+    it('treats sanity / no_tables errors as parse failures with a refund', async () => {
+        const { result } = renderHook(() => useAiGenerate());
+        for (const message of ['sanity', 'no_tables']) {
+            m.finalizeGeneration.mockClear();
+            m.ddlToDiagram.mockRejectedValueOnce(new Error(message));
+            await act(async () => {
+                await result.current.generate('школа', 'mysql');
+            });
+            expect(m.finalizeGeneration).toHaveBeenCalledTimes(1);
+            expect(m.finalizeGeneration).toHaveBeenCalledWith('g1', {
+                status: 'parse_failed',
+            });
+            expect(result.current.error).toBe('parse');
+        }
+    });
+
+    it('keeps the parse error when the refund call itself fails', async () => {
+        m.ddlToDiagram.mockRejectedValue(new Error('syntax'));
+        m.finalizeGeneration.mockRejectedValue(new Error('offline'));
+        const { result } = renderHook(() => useAiGenerate());
+        await act(async () => {
+            await result.current.generate('школа', 'mysql');
+        });
+        expect(result.current.error).toBe('parse');
+        expect(result.current.phase).toBe('idle');
+    });
+
+    it('refunds and reports a save error when addDiagram throws', async () => {
+        m.addDiagram.mockRejectedValue(new Error('quota'));
+        const { result } = renderHook(() => useAiGenerate());
+        await act(async () => {
+            await result.current.generate('школа', 'mysql');
+        });
+        expect(m.finalizeGeneration).toHaveBeenCalledTimes(1);
+        expect(m.finalizeGeneration).toHaveBeenCalledWith('g1', {
+            status: 'parse_failed',
+        });
+        expect(result.current.error).toBe('save');
+        expect(m.navigate).not.toHaveBeenCalled();
+    });
+
+    it('saves before finalizing and does not refund if navigate throws', async () => {
+        const order: string[] = [];
+        m.addDiagram.mockImplementation(async () => {
+            order.push('add');
+        });
+        m.finalizeGeneration.mockImplementation(async () => {
+            order.push('finalize');
+            return { refunded: false, remaining: 2 };
+        });
+        m.navigate.mockImplementation(() => {
+            throw new Error('nav');
+        });
+        const { result } = renderHook(() => useAiGenerate());
+        await act(async () => {
+            await result.current.generate('школа', 'mysql');
+        });
+        expect(order).toEqual(['add', 'finalize']);
+        expect(m.finalizeGeneration).toHaveBeenCalledTimes(1);
+        expect(m.finalizeGeneration).toHaveBeenCalledWith(
+            'g1',
+            expect.objectContaining({ status: 'success' })
+        );
+    });
+
     it('maps off-topic and provider outcomes to errors without saving', async () => {
         m.streamGenerate.mockResolvedValueOnce({
             status: 'rejected_off_topic',
@@ -166,6 +231,7 @@ describe('useAiGenerate.generate', () => {
             await result.current.generate('школа', 'mysql');
         });
         expect(result.current.error).toBe('provider');
+        expect(m.finalizeGeneration).not.toHaveBeenCalled();
         expect(m.addDiagram).not.toHaveBeenCalled();
     });
 

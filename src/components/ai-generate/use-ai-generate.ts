@@ -22,7 +22,12 @@ import type {
 } from '@/lib/ai-generate/types';
 
 export type AiPhase = 'idle' | 'generating' | 'importing';
-export type AiUiError = AiErrorKind | 'off_topic' | 'provider' | 'parse';
+export type AiUiError =
+    | AiErrorKind
+    | 'off_topic'
+    | 'provider'
+    | 'parse'
+    | 'save';
 
 export interface AiGenerateApi {
     phase: AiPhase;
@@ -78,14 +83,36 @@ export function useAiGenerate(
         }
     }, []);
 
-    const openDiagram = useCallback(
+    // Возвращает true, если схема сохранена в браузере
+    const saveDiagram = useCallback(
         async (diagram: Awaited<ReturnType<typeof ddlToDiagram>>) => {
-            await addDiagram({ diagram });
+            try {
+                await addDiagram({ diagram });
+                return true;
+            } catch {
+                return false;
+            }
+        },
+        [addDiagram]
+    );
+
+    // Сервер вернёт попытку (в пределах дневного бюджета возвратов)
+    const refund = useCallback(
+        async (generationId: string) => {
+            await finalizeGeneration(generationId, { status: 'parse_failed' })
+                .then((r) => setRemaining(r.remaining))
+                .catch(() => undefined);
+        },
+        [setRemaining]
+    );
+
+    const openDiagram = useCallback(
+        (diagram: Awaited<ReturnType<typeof ddlToDiagram>>) => {
             closeCreateDiagramDialog();
             onDoneRef.current?.();
             navigate(diagramPath(diagram.id));
         },
-        [addDiagram, closeCreateDiagramDialog, navigate]
+        [closeCreateDiagramDialog, navigate]
     );
 
     const generate = useCallback(
@@ -131,16 +158,16 @@ export function useAiGenerate(
                         prompt,
                     });
                 } catch {
-                    // Сервер вернёт попытку (в пределах дневного бюджета возвратов)
-                    await finalizeGeneration(outcome.generationId, {
-                        status: 'parse_failed',
-                    })
-                        .then((r) => setRemaining(r.remaining))
-                        .catch(() => undefined);
+                    await refund(outcome.generationId);
                     fail('parse');
                     return;
                 }
 
+                if (!(await saveDiagram(diagram))) {
+                    await refund(outcome.generationId);
+                    fail('save');
+                    return;
+                }
                 await finalizeGeneration(outcome.generationId, {
                     status: 'success',
                     table_count: diagram.tables?.length ?? 0,
@@ -151,7 +178,7 @@ export function useAiGenerate(
                     tables: diagram.tables?.length ?? 0,
                 });
                 setPhase('idle');
-                await openDiagram(diagram);
+                openDiagram(diagram);
             } catch (e) {
                 const kind = aiErrorKind(e);
                 if (kind === 'aborted') {
@@ -164,7 +191,7 @@ export function useAiGenerate(
                 abortRef.current = null;
             }
         },
-        [fail, openDiagram, setRemaining]
+        [fail, openDiagram, refund, saveDiagram, setRemaining]
     );
 
     const cancel = useCallback(() => {
@@ -190,9 +217,13 @@ export function useAiGenerate(
                     fail('parse');
                     return;
                 }
+                if (!(await saveDiagram(diagram))) {
+                    fail('save');
+                    return;
+                }
                 trackEvent('erd2_ai_restore', page(), {});
                 setPhase('idle');
-                await openDiagram(diagram);
+                openDiagram(diagram);
             } catch (e) {
                 const kind = aiErrorKind(e);
                 fail(kind === 'aborted' ? 'network' : kind);
@@ -200,7 +231,7 @@ export function useAiGenerate(
                 busyRef.current = false;
             }
         },
-        [fail, openDiagram]
+        [fail, openDiagram, saveDiagram]
     );
 
     const reload = useCallback(async () => {

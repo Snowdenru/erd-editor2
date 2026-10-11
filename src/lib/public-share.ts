@@ -18,6 +18,15 @@ export const THEME_LABELS: Record<PublicTheme, string> = {
     'palette-violet': 'Фиолетовая',
 };
 
+// Цвет образца рядом с названием темы в диалоге «Поделиться».
+export const THEME_SWATCH: Record<PublicTheme, string> = {
+    light: '#ffffff',
+    dark: '#1f2937',
+    'palette-blue': '#3b82f6',
+    'palette-green': '#22c55e',
+    'palette-violet': '#8b5cf6',
+};
+
 export const isPublicTheme = (value: unknown): value is PublicTheme =>
     typeof value === 'string' &&
     (PUBLIC_THEMES as readonly string[]).includes(value);

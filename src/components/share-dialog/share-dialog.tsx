@@ -14,6 +14,7 @@ import {
     getShareState,
     publicLink,
     PUBLIC_THEMES,
+    THEME_SWATCH,
     THEME_LABELS,
     updateShare,
     type PublicTheme,
@@ -173,20 +174,44 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                     </div>
                 ) : (
                     <div className="flex flex-col gap-4">
-                        <label className="flex items-center justify-between gap-3 text-sm">
-                            <span>Доступ по ссылке</span>
-                            <input
-                                type="checkbox"
+                        <div className="flex items-center justify-between gap-3">
+                            <div className="flex flex-col">
+                                <span
+                                    id="share-public-label"
+                                    className="text-sm font-medium"
+                                >
+                                    Сделать схему публичной
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                    {state.is_public
+                                        ? 'Любой, у кого есть ссылка, может её посмотреть'
+                                        : 'Сейчас схему видите только вы'}
+                                </span>
+                            </div>
+                            <button
+                                type="button"
                                 role="switch"
-                                checked={state.is_public}
+                                aria-checked={state.is_public}
+                                aria-labelledby="share-public-label"
                                 disabled={busy}
-                                onChange={(event) =>
-                                    void apply({
-                                        is_public: event.target.checked,
-                                    })
+                                onClick={() =>
+                                    void apply({ is_public: !state.is_public })
                                 }
-                            />
-                        </label>
+                                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${
+                                    state.is_public
+                                        ? 'bg-primary'
+                                        : 'bg-muted-foreground/40'
+                                }`}
+                            >
+                                <span
+                                    className={`inline-block size-5 rounded-full bg-white shadow transition-transform ${
+                                        state.is_public
+                                            ? 'translate-x-5'
+                                            : 'translate-x-0.5'
+                                    }`}
+                                />
+                            </button>
+                        </div>
 
                         {state.grace_until ? (
                             <p className="text-sm text-amber-600">
@@ -230,10 +255,31 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                                                     })
                                                 }
                                             >
+                                                <span
+                                                    aria-hidden
+                                                    className="mr-2 inline-block size-3 rounded-full border"
+                                                    style={{
+                                                        background:
+                                                            THEME_SWATCH[theme],
+                                                    }}
+                                                />
                                                 {THEME_LABELS[theme]}
                                             </Button>
                                         ))}
                                     </div>
+                                    <span className="text-xs text-muted-foreground">
+                                        Тема задаёт фон страницы и цвета таблиц
+                                        у посетителей. В вашем редакторе ничего
+                                        не меняется.
+                                    </span>
+                                    <iframe
+                                        key={state.public_theme}
+                                        title="Предпросмотр публичной схемы"
+                                        src={`${APP_BASE}/v/${encodeURIComponent(
+                                            diagramId
+                                        )}/embed?theme=${state.public_theme}`}
+                                        className="mt-1 h-56 w-full rounded border"
+                                    />
                                 </div>
                                 <div className="flex flex-col gap-1">
                                     <span className="text-sm font-medium">

@@ -10,7 +10,12 @@ import {
 import { Button } from '@/components/button/button';
 import { buildLoginUrl, trackEvent } from '@/lib/sqllab-account';
 
-export type LoginPromptReason = 'export' | 'save_landing' | 'review' | 'share';
+export type LoginPromptReason =
+    | 'export'
+    | 'save_landing'
+    | 'review'
+    | 'share'
+    | 'ai_generate';
 
 const COPY: Record<
     LoginPromptReason,
@@ -42,6 +47,13 @@ const COPY: Record<
         description:
             'Войдите через Яндекс, VK или почту — схема сохранится в облаке, и для неё можно будет включить публичную ссылку. Публичные ссылки доступны с Pro.',
         primary: 'Войти',
+        secondary: 'Не сейчас',
+    },
+    ai_generate: {
+        title: 'Войдите, чтобы сгенерировать схему',
+        description:
+            'ИИ-генерация доступна после входа через Яндекс, VK или почту. Ваше описание сохранится: после входа схема начнёт строиться сама. Бесплатно — несколько генераций на пробу.',
+        primary: 'Войти и сгенерировать',
         secondary: 'Не сейчас',
     },
 };

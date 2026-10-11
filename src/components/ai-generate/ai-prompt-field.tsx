@@ -53,6 +53,7 @@ export const AiPromptField: React.FC<AiPromptFieldProps> = ({
                     key={option.value}
                     type="button"
                     disabled={disabled}
+                    aria-pressed={dialect === option.value}
                     onClick={() => onDialectChange(option.value)}
                     className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors disabled:opacity-50 ${
                         dialect === option.value

@@ -7,6 +7,7 @@ import type { AiHistoryItem } from '@/lib/ai-generate/types';
 export interface AiHistoryListProps {
     items: AiHistoryItem[];
     loaded: boolean;
+    failed?: boolean;
     disabled: boolean;
     onOpen: (id: string) => void;
     onRegenerate: (item: AiHistoryItem) => void;
@@ -28,12 +29,31 @@ const formatDate = (iso: string): string => {
 export const AiHistoryList: React.FC<AiHistoryListProps> = ({
     items,
     loaded,
+    failed = false,
     disabled,
     onOpen,
     onRegenerate,
     onDelete,
 }) => {
-    if (loaded && items.length === 0) {
+    if (!loaded) {
+        return (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+                Загружаю ваши генерации…
+            </p>
+        );
+    }
+    if (failed && items.length === 0) {
+        return (
+            <p
+                role="alert"
+                className="py-8 text-center text-sm text-destructive"
+            >
+                Не удалось загрузить список генераций. Закройте окно и откройте
+                его снова.
+            </p>
+        );
+    }
+    if (items.length === 0) {
         return (
             <p className="py-8 text-center text-sm text-muted-foreground">
                 Здесь появятся ваши генерации. Любой вариант можно открыть
@@ -50,8 +70,9 @@ export const AiHistoryList: React.FC<AiHistoryListProps> = ({
                         <button
                             type="button"
                             aria-label="Удалить из списка"
+                            disabled={disabled}
                             onClick={() => onDelete(item.id)}
-                            className="text-muted-foreground hover:text-destructive"
+                            className="text-muted-foreground hover:text-destructive disabled:opacity-50"
                         >
                             <Trash2 className="size-4" />
                         </button>

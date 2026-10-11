@@ -21,6 +21,7 @@ const makeAi = (over: Partial<AiGenerateApi> = {}): AiGenerateApi => ({
     usage: FREE_USAGE,
     history: [],
     historyLoaded: true,
+    historyFailed: false,
     generate: vi.fn(),
     cancel: vi.fn(),
     restore: vi.fn(),
@@ -33,13 +34,14 @@ const makeAi = (over: Partial<AiGenerateApi> = {}): AiGenerateApi => ({
 const renderDialog = (
     ai: AiGenerateApi,
     onSubmit = vi.fn(),
-    initialPrompt = ''
+    initialPrompt = '',
+    onOpenChange: (o: boolean) => void = () => undefined
 ) =>
     render(
         <MemoryRouter>
             <AiGenerateDialog
                 open
-                onOpenChange={() => undefined}
+                onOpenChange={onOpenChange}
                 ai={ai}
                 initialPrompt={initialPrompt}
                 initialDialect="postgresql"
@@ -146,6 +148,7 @@ describe('AiGenerateDialog progress and errors', () => {
         ['parse', /не удалось собрать диаграмму/i],
         ['cooldown', /подождите/i],
         ['network', /не удалось связаться/i],
+        ['auth', /нужно войти в аккаунт/i],
         ['invalid_prompt', /опишите базу подробнее/i],
     ] as const)('shows a message for %s', (error, pattern) => {
         renderDialog(makeAi({ error }));
@@ -242,5 +245,78 @@ describe('AiGenerateDialog lifecycle', () => {
         expect(
             screen.getByText(/не удалось сохранить схему/i)
         ).toBeInTheDocument();
+    });
+});
+
+describe('AiGenerateDialog review fixes', () => {
+    const item = {
+        id: 'g1',
+        prompt: 'Школа',
+        dialect: 'mysql' as const,
+        table_count: 3,
+        diagram_id: null,
+        tables: ['students'],
+        created_at: '2026-10-03T10:00:00Z',
+    };
+
+    it('shows a restore error in the history tab too', () => {
+        renderDialog(makeAi({ history: [item], error: 'save' }));
+        fireEvent.click(screen.getByRole('tab', { name: /мои генерации/i }));
+        expect(screen.getByRole('alert')).toHaveTextContent(
+            /не удалось сохранить схему/i
+        );
+        expect(
+            screen.queryByText(/попытка возвращена/i)
+        ).not.toBeInTheDocument();
+    });
+
+    it('allows closing with Escape while importing, blocks it while generating', () => {
+        const onOpenChange = vi.fn();
+        const { unmount } = renderDialog(
+            makeAi({ phase: 'importing' }),
+            vi.fn(),
+            '',
+            onOpenChange
+        );
+        fireEvent.keyDown(document.activeElement ?? document.body, {
+            key: 'Escape',
+        });
+        expect(onOpenChange).toHaveBeenCalledWith(false);
+        unmount();
+
+        const blocked = vi.fn();
+        renderDialog(
+            makeAi({ phase: 'generating', tableCount: 1 }),
+            vi.fn(),
+            '',
+            blocked
+        );
+        fireEvent.keyDown(document.activeElement ?? document.body, {
+            key: 'Escape',
+        });
+        expect(blocked).not.toHaveBeenCalled();
+    });
+
+    it('shows loading and failure states in history', () => {
+        const { unmount } = renderDialog(makeAi({ historyLoaded: false }));
+        fireEvent.click(screen.getByRole('tab', { name: /мои генерации/i }));
+        expect(screen.getByText(/загружаю/i)).toBeInTheDocument();
+        unmount();
+        renderDialog(makeAi({ historyFailed: true }));
+        fireEvent.click(screen.getByRole('tab', { name: /мои генерации/i }));
+        expect(
+            screen.getByText(/не удалось загрузить список/i)
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/здесь появятся/i)).not.toBeInTheDocument();
+    });
+
+    it('disables delete while busy and clears the error on open', () => {
+        const ai = makeAi({ history: [item], phase: 'importing' });
+        renderDialog(ai);
+        expect(ai.clearError).toHaveBeenCalled();
+        fireEvent.click(screen.getByRole('tab', { name: /мои генерации/i }));
+        expect(
+            screen.getByRole('button', { name: 'Удалить из списка' })
+        ).toBeDisabled();
     });
 });

@@ -109,6 +109,7 @@ export type AiErrorKind =
     | 'cooldown'
     | 'limit_free'
     | 'limit_daily'
+    | 'auth'
     | 'network';
 
 export function aiErrorKind(e: unknown): AiErrorKind | 'aborted' {
@@ -127,6 +128,8 @@ export function aiErrorKind(e: unknown): AiErrorKind | 'aborted' {
             case 'daily_ceiling':
                 return 'limit_daily';
         }
+        // после switch: 403 с кодом лимита уже распознан выше
+        if (e.status === 401 || e.status === 403) return 'auth';
     }
     return 'network';
 }

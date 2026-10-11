@@ -220,6 +220,10 @@ describe('aiErrorKind', () => {
         expect(aiErrorKind(new AiApiError(429, 'daily_ceiling', 30))).toBe(
             'limit_daily'
         );
+        expect(aiErrorKind(new AiApiError(401, 'not_authenticated'))).toBe(
+            'auth'
+        );
+        expect(aiErrorKind(new AiApiError(403, 'forbidden'))).toBe('auth');
         expect(aiErrorKind(new AiApiError(500, 'whatever'))).toBe('network');
         expect(aiErrorKind(new TypeError('Failed to fetch'))).toBe('network');
         expect(aiErrorKind(new DOMException('aborted', 'AbortError'))).toBe(

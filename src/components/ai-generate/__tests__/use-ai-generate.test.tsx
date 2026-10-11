@@ -251,6 +251,25 @@ describe('useAiGenerate.generate', () => {
         );
     });
 
+    it('maps an auth failure to the auth error', async () => {
+        m.streamGenerate.mockRejectedValue(new AiApiError(401, 'unauth'));
+        const { result } = renderHook(() => useAiGenerate());
+        await act(async () => {
+            await result.current.generate('школа', 'mysql');
+        });
+        expect(result.current.error).toBe('auth');
+    });
+
+    it('flags a failed history load', async () => {
+        m.listGenerations.mockRejectedValue(new Error('x'));
+        const { result } = renderHook(() => useAiGenerate());
+        await act(async () => {
+            await result.current.reload();
+        });
+        expect(result.current.historyFailed).toBe(true);
+        expect(result.current.historyLoaded).toBe(true);
+    });
+
     it('maps cooldown and daily ceiling', async () => {
         m.streamGenerate.mockRejectedValueOnce(new AiApiError(429, 'cooldown'));
         const { result } = renderHook(() => useAiGenerate());

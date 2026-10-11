@@ -37,6 +37,7 @@ export interface AiGenerateApi {
     usage: AiUsage | null;
     history: AiHistoryItem[];
     historyLoaded: boolean;
+    historyFailed: boolean;
     generate: (prompt: string, dialect: AiDialect) => Promise<void>;
     cancel: () => void;
     restore: (id: string) => Promise<void>;
@@ -61,6 +62,7 @@ export function useAiGenerate(
     const [usage, setUsage] = useState<AiUsage | null>(null);
     const [history, setHistory] = useState<AiHistoryItem[]>([]);
     const [historyLoaded, setHistoryLoaded] = useState(false);
+    const [historyFailed, setHistoryFailed] = useState(false);
 
     const busyRef = useRef(false);
     const abortRef = useRef<AbortController | null>(null);
@@ -239,8 +241,10 @@ export function useAiGenerate(
             const data = await listGenerations();
             setUsage(data.usage);
             setHistory(data.results);
+            setHistoryFailed(false);
         } catch {
             // история не критична: диалог работает и без неё
+            setHistoryFailed(true);
         } finally {
             setHistoryLoaded(true);
         }
@@ -265,6 +269,7 @@ export function useAiGenerate(
         usage,
         history,
         historyLoaded,
+        historyFailed,
         generate,
         cancel,
         restore,

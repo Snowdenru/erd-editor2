@@ -29,9 +29,47 @@ const ERROR_TEXT: Record<
     parse: 'Не удалось собрать диаграмму из ответа ИИ. Попробуйте ещё раз или измените описание.',
     cooldown: 'Подождите несколько секунд перед следующей генерацией.',
     network:
-        'Не удалось связаться с сервером. Проверьте соединение и что вы вошли в аккаунт, затем повторите.',
-    save: 'Не удалось сохранить схему на устройстве. Попытка возвращена — повторите.',
+        'Не удалось связаться с сервером. Проверьте соединение и повторите.',
+    auth: 'Нужно войти в аккаунт, чтобы создавать схемы с ИИ.',
+    save: 'Не удалось сохранить схему на устройстве. Повторите.',
     invalid_prompt: 'Опишите базу подробнее: нужно от 3 до 2000 символов.',
+};
+
+const ErrorBlock: React.FC<{ error: AiUiError | null }> = ({ error }) => {
+    if (!error) return null;
+    if (error === 'limit_free') {
+        return (
+            <div
+                role="alert"
+                className="rounded-xl border border-pink-600/40 bg-pink-600/5 p-4 text-sm"
+            >
+                <p className="font-semibold">
+                    Бесплатные генерации закончились
+                </p>
+                <p className="mt-1 text-muted-foreground">
+                    С ERD Pro — до 30 генераций в день и схемы до 20 таблиц.
+                    Прошлые варианты можно открыть во вкладке «Мои генерации»
+                    без ограничений.
+                </p>
+                <Button asChild className="mt-3">
+                    <Link to="/pricing">Открыть ERD Pro</Link>
+                </Button>
+            </div>
+        );
+    }
+    if (error === 'limit_daily') {
+        return (
+            <p role="alert" className="rounded-xl border p-4 text-sm">
+                Дневной лимит исчерпан — счётчик обнулится завтра. Прошлые
+                варианты можно открыть во вкладке «Мои генерации».
+            </p>
+        );
+    }
+    return (
+        <p role="alert" className="text-sm text-destructive">
+            {ERROR_TEXT[error]}
+        </p>
+    );
 };
 
 export interface AiGenerateDialogProps {
@@ -58,15 +96,6 @@ export const AiGenerateDialog: React.FC<AiGenerateDialogProps> = ({
     const [dialect, setDialect] = useState<AiDialect>(initialDialect);
     const [showSql, setShowSql] = useState(false);
 
-    useEffect(() => {
-        if (open) {
-            setPrompt(initialPrompt);
-            setDialect(initialDialect);
-            setTab('new');
-            setShowSql(false);
-        }
-    }, [open, initialPrompt, initialDialect]);
-
     // В хуке нет очистки при размонтировании: закрытие диалога обрывает генерацию здесь.
     const aiRef = useRef(ai);
     aiRef.current = ai;
@@ -74,6 +103,16 @@ export const AiGenerateDialog: React.FC<AiGenerateDialogProps> = ({
         if (!open) return;
         return () => aiRef.current.cancel();
     }, [open]);
+
+    useEffect(() => {
+        if (open) {
+            aiRef.current.clearError();
+            setPrompt(initialPrompt);
+            setDialect(initialDialect);
+            setTab('new');
+            setShowSql(false);
+        }
+    }, [open, initialPrompt, initialDialect]);
 
     const busy = ai.phase !== 'idle';
     const trimmed = prompt.trim();
@@ -96,13 +135,13 @@ export const AiGenerateDialog: React.FC<AiGenerateDialogProps> = ({
         <Dialog
             open={open}
             onOpenChange={(next) => {
-                if (busy) return; // во время генерации закрыть можно только кнопкой «Отмена»
+                if (ai.phase === 'generating') return; // во время генерации закрыть можно только кнопкой «Отмена»
                 onOpenChange(next);
             }}
         >
             <DialogContent
-                className="flex max-h-dvh w-full flex-col gap-4 md:max-w-screen-sm"
-                showClose={!busy}
+                className="flex max-h-dvh w-full flex-col gap-4 overflow-y-auto md:max-w-screen-sm"
+                showClose={ai.phase !== 'generating'}
             >
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
@@ -140,14 +179,18 @@ export const AiGenerateDialog: React.FC<AiGenerateDialogProps> = ({
                 </div>
 
                 {tab === 'history' ? (
-                    <AiHistoryList
-                        items={ai.history}
-                        loaded={ai.historyLoaded}
-                        disabled={busy}
-                        onOpen={(id) => void ai.restore(id)}
-                        onRegenerate={regenerate}
-                        onDelete={(id) => void ai.remove(id)}
-                    />
+                    <>
+                        <ErrorBlock error={ai.error} />
+                        <AiHistoryList
+                            items={ai.history}
+                            loaded={ai.historyLoaded}
+                            failed={ai.historyFailed}
+                            disabled={busy}
+                            onOpen={(id) => void ai.restore(id)}
+                            onRegenerate={regenerate}
+                            onDelete={(id) => void ai.remove(id)}
+                        />
+                    </>
                 ) : busy ? (
                     <div className="flex flex-col items-center gap-3 py-6 text-center">
                         <Spinner className="text-pink-600" />
@@ -190,31 +233,7 @@ export const AiGenerateDialog: React.FC<AiGenerateDialogProps> = ({
                             onDialectChange={setDialect}
                         />
 
-                        {ai.error === 'limit_free' ? (
-                            <div className="rounded-xl border border-pink-600/40 bg-pink-600/5 p-4 text-sm">
-                                <p className="font-semibold">
-                                    Бесплатные генерации закончились
-                                </p>
-                                <p className="mt-1 text-muted-foreground">
-                                    С ERD Pro — до 30 генераций в день и схемы
-                                    до 20 таблиц. Прошлые варианты можно открыть
-                                    во вкладке «Мои генерации» без ограничений.
-                                </p>
-                                <Button asChild className="mt-3">
-                                    <Link to="/pricing">Открыть ERD Pro</Link>
-                                </Button>
-                            </div>
-                        ) : ai.error === 'limit_daily' ? (
-                            <p className="rounded-xl border p-4 text-sm">
-                                Дневной лимит исчерпан — счётчик обнулится
-                                завтра. Прошлые варианты можно открыть во
-                                вкладке «Мои генерации».
-                            </p>
-                        ) : ai.error ? (
-                            <p className="text-sm text-destructive">
-                                {ERROR_TEXT[ai.error]}
-                            </p>
-                        ) : null}
+                        <ErrorBlock error={ai.error} />
 
                         <div className="flex items-center justify-between gap-3">
                             <span className="text-xs text-muted-foreground">

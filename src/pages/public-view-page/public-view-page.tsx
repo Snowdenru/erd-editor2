@@ -22,6 +22,7 @@ import { appUrl } from '@/lib/app-config';
 import {
     applyPalette,
     fetchPublicDiagram,
+    paletteVars,
     resolveTheme,
     themeMode,
     type PublicDiagram,
@@ -88,10 +89,11 @@ const PublicViewInner: React.FC<{ embed: boolean }> = ({ embed }) => {
         null
     );
     const containerRef = useRef<HTMLDivElement>(null);
+    const isPreview = search.get('preview') === '1';
 
     useEffect(() => {
         let cancelled = false;
-        void fetchPublicDiagram(id).then((res) => {
+        void fetchPublicDiagram(id, { preview: isPreview }).then((res) => {
             if (cancelled) return;
             if (res.ok) {
                 setState({ kind: 'ready', diagram: res.diagram });
@@ -105,7 +107,7 @@ const PublicViewInner: React.FC<{ embed: boolean }> = ({ embed }) => {
         return () => {
             cancelled = true;
         };
-    }, [id, embed]);
+    }, [id, embed, isPreview]);
 
     const diagram = state.kind === 'ready' ? state.diagram : null;
     const theme: PublicTheme = resolveTheme(
@@ -160,7 +162,10 @@ const PublicViewInner: React.FC<{ embed: boolean }> = ({ embed }) => {
                 <meta name="robots" content="noindex,nofollow" />
                 <title>{`${diagram.title} — схема базы данных | SQL Lab`}</title>
             </Helmet>
-            <section className="flex h-screen w-screen flex-col bg-background">
+            <section
+                className="flex h-screen w-screen flex-col bg-background"
+                style={paletteVars(theme) as React.CSSProperties | undefined}
+            >
                 {!embed ? (
                     <nav className="flex h-12 shrink-0 items-center justify-between border-b px-4">
                         <h1 className="truncate font-primary text-base font-semibold">

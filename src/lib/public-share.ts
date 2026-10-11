@@ -41,6 +41,31 @@ export const resolveTheme = (
     return 'light';
 };
 
+// Цветные темы красят всю страницу: фон, карточки таблиц, рамки и акценты берут оттенок палитры.
+// Переменные задаём на обёртке просмотра, так что редактор посетителя не затрагивается.
+const PALETTE_HUE: Record<string, number> = {
+    'palette-blue': 217,
+    'palette-green': 142,
+    'palette-violet': 262,
+};
+
+export function paletteVars(theme: PublicTheme): Record<string, string> | null {
+    const hue = PALETTE_HUE[theme];
+    if (hue === undefined) return null;
+    return {
+        '--background': `${hue} 70% 96%`,
+        '--card': `${hue} 80% 99%`,
+        '--popover': `${hue} 80% 99%`,
+        '--muted': `${hue} 60% 91%`,
+        '--accent': `${hue} 60% 89%`,
+        '--border': `${hue} 45% 80%`,
+        '--input': `${hue} 45% 80%`,
+        '--primary': `${hue} 70% 45%`,
+        '--primary-foreground': '0 0% 100%',
+        '--ring': `${hue} 70% 45%`,
+    };
+}
+
 export const themeMode = (theme: PublicTheme): 'light' | 'dark' =>
     theme === 'dark' ? 'dark' : 'light';
 
@@ -77,11 +102,16 @@ export type PublicFetchResult =
     | { ok: true; diagram: PublicDiagram }
     | { ok: false; code: 'not_found' | 'closed' | 'error' };
 
+// preview=true: показ внутри диалога «Поделиться», сервер не прибавляет его к счётчику просмотров.
 export async function fetchPublicDiagram(
-    id: string
+    id: string,
+    options: { preview?: boolean } = {}
 ): Promise<PublicFetchResult> {
     try {
-        const res = await fetch(`/api/erd2/public/${encodeURIComponent(id)}/`);
+        const query = options.preview ? '?preview=1' : '';
+        const res = await fetch(
+            `/api/erd2/public/${encodeURIComponent(id)}/${query}`
+        );
         if (res.ok) {
             return { ok: true, diagram: (await res.json()) as PublicDiagram };
         }
@@ -105,6 +135,7 @@ export interface ShareState {
     public_theme: PublicTheme;
     grace_until: string | null;
     can_share: boolean;
+    view_count: number;
 }
 
 const shareUrl = (id: string) =>

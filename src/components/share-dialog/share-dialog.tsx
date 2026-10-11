@@ -213,6 +213,17 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                             </button>
                         </div>
 
+                        {state.is_public ? (
+                            <p className="text-sm">
+                                Просмотров: <b>{state.view_count ?? 0}</b>
+                                <span className="text-xs text-muted-foreground">
+                                    {' '}
+                                    — уникальных посетителей, один человек
+                                    считается раз в сутки
+                                </span>
+                            </p>
+                        ) : null}
+
                         {state.grace_until ? (
                             <p className="text-sm text-amber-600">
                                 Доступ закроется{' '}
@@ -277,7 +288,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                                         title="Предпросмотр публичной схемы"
                                         src={`${APP_BASE}/v/${encodeURIComponent(
                                             diagramId
-                                        )}/embed?theme=${state.public_theme}`}
+                                        )}/embed?theme=${state.public_theme}&preview=1`}
                                         className="mt-1 h-56 w-full rounded border"
                                     />
                                 </div>

@@ -4,6 +4,7 @@ import {
     embedCode,
     fetchPublicDiagram,
     isPublicTheme,
+    paletteVars,
     publicLink,
     PUBLIC_THEMES,
     resolveTheme,
@@ -130,5 +131,53 @@ describe('public-share: ссылки', () => {
         expect(embedCode('https://x.ru', '/tools/erd', 'a b/c')).toContain(
             'src="https://x.ru/tools/erd/v/a%20b%2Fc/embed"'
         );
+    });
+});
+
+describe('fetchPublicDiagram: предпросмотр', () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    const stubFetch = () => {
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: false,
+            status: 500,
+        });
+        vi.stubGlobal('fetch', fetchMock);
+        return fetchMock;
+    };
+
+    it('с preview добавляет ?preview=1', async () => {
+        const fetchMock = stubFetch();
+        await fetchPublicDiagram('d1', { preview: true });
+        expect(fetchMock).toHaveBeenCalledWith(
+            '/api/erd2/public/d1/?preview=1'
+        );
+    });
+
+    it('без preview параметра нет', async () => {
+        const fetchMock = stubFetch();
+        await fetchPublicDiagram('d1');
+        expect(fetchMock).toHaveBeenCalledWith('/api/erd2/public/d1/');
+    });
+});
+
+describe('paletteVars', () => {
+    it('цветные темы красят фон и рамки', () => {
+        for (const theme of [
+            'palette-blue',
+            'palette-green',
+            'palette-violet',
+        ] as const) {
+            const vars = paletteVars(theme);
+            expect(vars?.['--background']).toBeTruthy();
+            expect(vars?.['--border']).toBeTruthy();
+        }
+    });
+
+    it('светлая и тёмная ничего не переопределяют', () => {
+        expect(paletteVars('light')).toBeNull();
+        expect(paletteVars('dark')).toBeNull();
     });
 });

@@ -132,6 +132,29 @@ describe('ShareDialog', () => {
         expect(handler).toHaveBeenCalledTimes(1);
     });
 
+    it('публичная схема показывает число просмотров', async () => {
+        vi.mocked(getShareState).mockResolvedValue({
+            ...pro,
+            is_public: true,
+            view_count: 12,
+        } as never);
+        open();
+        expect(await screen.findByText('12')).toBeTruthy();
+        expect(screen.getByText(/Просмотров/)).toBeTruthy();
+    });
+
+    it('предпросмотр не засчитывается как просмотр', async () => {
+        vi.mocked(getShareState).mockResolvedValue({
+            ...pro,
+            is_public: true,
+        } as never);
+        open();
+        const frame = (await screen.findByTitle(
+            'Предпросмотр публичной схемы'
+        )) as HTMLIFrameElement;
+        expect(frame.getAttribute('src')).toContain('preview=1');
+    });
+
     it('кнопка «Копировать» показывает «Скопировано»', async () => {
         const writeText = vi.fn().mockResolvedValue(undefined);
         Object.defineProperty(navigator, 'clipboard', {

@@ -52,4 +52,31 @@ describe('ddlToDiagram', () => {
             ddlToDiagram({ ddl: '???', dialect: 'postgresql', prompt: 'школа' })
         ).rejects.toThrow('syntax');
     });
+
+    it('rejects broken SQL with the stable sanity error before parsing', async () => {
+        await expect(
+            ddlToDiagram({
+                ddl: 'CREATE TABLE a (id int,,);',
+                dialect: 'postgresql',
+                prompt: 'школа',
+            })
+        ).rejects.toThrow('sanity');
+        expect(sqlImportToDiagram).not.toHaveBeenCalled();
+    });
+
+    it.each(['postgresql', 'mysql', 'mssql', 'sqlite'] as const)(
+        'passes valid multi-table DDL through the guard (%s)',
+        async (dialect) => {
+            sqlImportToDiagram.mockResolvedValue({
+                id: 'd1',
+                name: 'x',
+                tables: [{ id: 't1' }],
+            });
+            const ddl =
+                'CREATE TABLE a (id int PRIMARY KEY, name varchar(50));\n' +
+                'CREATE TABLE b (id int PRIMARY KEY, a_id int, FOREIGN KEY (a_id) REFERENCES a(id));';
+            await ddlToDiagram({ ddl, dialect, prompt: 'школа' });
+            expect(sqlImportToDiagram).toHaveBeenCalledTimes(1);
+        }
+    );
 });

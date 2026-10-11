@@ -1,5 +1,6 @@
 import { sqlImportToDiagram } from '@/lib/data/sql-import';
 import type { Diagram } from '@/lib/domain/diagram';
+import { findSqlSanityProblem } from '@/pages/editor-page/side-panel/ddl-section/sql-sanity';
 import { toDatabaseType } from './dialect';
 import { titleFromPrompt } from './format';
 import type { AiDialect } from './types';
@@ -14,6 +15,9 @@ export async function ddlToDiagram({
     prompt: string;
 }): Promise<Diagram> {
     const type = toDatabaseType(dialect);
+    if (findSqlSanityProblem(ddl, type)) {
+        throw new Error('sanity');
+    }
     const diagram = await sqlImportToDiagram({
         sqlContent: ddl,
         sourceDatabaseType: type,

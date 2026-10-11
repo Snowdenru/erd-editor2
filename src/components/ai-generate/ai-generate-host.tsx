@@ -1,7 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { LoginPromptDialog } from '@/components/login-prompt/login-prompt-dialog';
 import { onOpenAiGenerate } from '@/lib/ai-generate/events';
-import { consumePending, savePending } from '@/lib/ai-generate/pending';
+import {
+    clearPending,
+    consumePending,
+    savePending,
+} from '@/lib/ai-generate/pending';
 import type { AiDialect } from '@/lib/ai-generate/types';
 import { isLoggedIn, trackEvent } from '@/lib/sqllab-account';
 import { AiGenerateDialog } from './ai-generate-dialog';
@@ -25,11 +29,11 @@ export const AiGenerateHost: React.FC = () => {
     const ai = useAiGenerate({ onDone: () => setOpen(false) });
     const { generate, reload, error, clearError } = ai;
     // Последний отправленный запрос: нужен, если сервер ответил «не авторизован».
-    const lastRef = useRef<Seed | null>(null);
+    const lastRef = useRef<(Seed & { resumed: boolean }) | null>(null);
 
     const start = useCallback(
-        (prompt: string, dialect: AiDialect) => {
-            lastRef.current = { prompt, dialect };
+        (prompt: string, dialect: AiDialect, resumed = false) => {
+            lastRef.current = { prompt, dialect, resumed };
             void generate(prompt, dialect);
         },
         [generate]
@@ -90,14 +94,18 @@ export const AiGenerateHost: React.FC = () => {
         if (!pending) return;
         trackEvent('erd2_ai_open', page(), { source: 'resume' });
         openWith({ prompt: pending.prompt, dialect: pending.dialect });
-        start(pending.prompt, pending.dialect);
+        start(pending.prompt, pending.dialect, true);
     }, [start, openWith]);
 
     // Токен есть, но сервер ответил 401/403 (сессия истекла): тот же путь через вход.
     useEffect(() => {
         if (error !== 'auth') return;
-        if (lastRef.current) {
-            savePending(lastRef.current);
+        const last = lastRef.current;
+        // Запрос уже возобновлялся после входа и снова получил отказ: не зацикливаем
+        // вход, показываем сообщение об ошибке в диалоге.
+        if (last?.resumed) return;
+        if (last) {
+            savePending({ prompt: last.prompt, dialect: last.dialect });
         }
         clearError();
         setLoginOpen(true);
@@ -115,7 +123,12 @@ export const AiGenerateHost: React.FC = () => {
             />
             <LoginPromptDialog
                 open={loginOpen}
-                onOpenChange={setLoginOpen}
+                onOpenChange={(next) => {
+                    // «Не сейчас» / закрытие: сохранённый запрос больше не нужен.
+                    // Кнопка «Войти» диалог не закрывает, так что запрос доживёт до входа.
+                    if (!next) clearPending();
+                    setLoginOpen(next);
+                }}
                 reason="ai_generate"
             />
         </>

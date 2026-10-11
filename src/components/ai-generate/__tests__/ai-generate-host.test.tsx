@@ -179,4 +179,44 @@ describe('AiGenerateHost', () => {
         expect(consumePending()).toMatchObject({ prompt: 'Интернет-магазин' });
         expect(m.clearError).toHaveBeenCalled();
     });
+
+    it('"Не сейчас" drops the saved prompt', () => {
+        m.isLoggedIn.mockReturnValue(false);
+        renderHost();
+        act(() =>
+            emitOpenAiGenerate({
+                source: 'landing',
+                prompt: 'Школа и ученики',
+                autostart: true,
+            })
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Не сейчас' }));
+        expect(consumePending()).toBeNull();
+    });
+
+    it('does not replay a pending prompt on a second mount', () => {
+        savePending({ prompt: 'Клиника и пациенты', dialect: 'postgresql' });
+        const first = renderHost();
+        first.unmount();
+        renderHost();
+        expect(m.generate).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not loop to login when a resumed request gets auth again', () => {
+        savePending({ prompt: 'Клиника и пациенты', dialect: 'postgresql' });
+        const view = renderHost();
+        expect(m.generate).toHaveBeenCalledTimes(1);
+        const clears = m.clearError.mock.calls.length;
+        m.error = 'auth';
+        view.rerender(
+            <MemoryRouter>
+                <AiGenerateHost />
+            </MemoryRouter>
+        );
+        expect(
+            screen.queryByText(/войдите, чтобы сгенерировать схему/i)
+        ).not.toBeInTheDocument();
+        expect(consumePending()).toBeNull();
+        expect(m.clearError.mock.calls.length).toBe(clears);
+    });
 });

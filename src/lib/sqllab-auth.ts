@@ -1,4 +1,5 @@
 import Cookies from 'js-cookie';
+import { clearPending } from '@/lib/ai-generate/pending';
 
 const ACCESS_KEY = 'access_token';
 const REFRESH_KEY = 'refresh_token';
@@ -66,4 +67,6 @@ export async function logout(): Promise<void> {
     }
     Cookies.remove(ACCESS_KEY);
     Cookies.remove(REFRESH_KEY);
+    // Недописанный ИИ-запрос не должен достаться следующему пользователю
+    clearPending();
 }

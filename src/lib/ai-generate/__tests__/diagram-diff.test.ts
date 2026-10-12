@@ -113,4 +113,48 @@ describe('diffDiagrams', () => {
             'orders.user_id → users.id',
         ]);
     });
+
+    it('ignores views, many-to-many and relationships that touch views', () => {
+        const users = table('users', [field('id')]);
+        const tags = table('tags', [field('id')]);
+        const view = table('v_users', [field('id')], { isView: true });
+        const rels = [
+            relationship(users, 'id', tags, 'id', {
+                sourceCardinality: 'many',
+                targetCardinality: 'many',
+            }),
+            relationship(view, 'id', users, 'id'),
+        ];
+        const full = diagram([users, tags, view], rels);
+        const bare = diagram([users, tags]);
+        expect(diffDiagrams(full, bare).isEmpty).toBe(true);
+        expect(diffDiagrams(bare, full).isEmpty).toBe(true);
+    });
+
+    it('treats a reversed foreign key and int/integer as the same schema', () => {
+        const users = table('users', [field('id', { primaryKey: true })]);
+        const orders = table('orders', [field('user_id')]);
+        const before = diagram(
+            [users, orders],
+            [relationship(orders, 'user_id', users, 'id')]
+        );
+        const after = diagram(
+            [
+                table('users', [
+                    field('id', {
+                        primaryKey: true,
+                        type: { id: 'int', name: 'INT' },
+                    }),
+                ]),
+                orders,
+            ],
+            [
+                relationship(users, 'id', orders, 'user_id', {
+                    sourceCardinality: 'one',
+                    targetCardinality: 'many',
+                }),
+            ]
+        );
+        expect(diffDiagrams(before, after).isEmpty).toBe(true);
+    });
 });

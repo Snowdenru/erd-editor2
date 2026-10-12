@@ -27,9 +27,27 @@ export interface DiagramDiff {
 
 const key = (name: string): string => name.trim().toLowerCase();
 
+// Один и тот же тип в разных написаниях: импорт возвращает int там, где в схеме integer
+const TYPE_ALIASES: Record<string, string> = {
+    int: 'integer',
+    int4: 'integer',
+    int8: 'bigint',
+    int2: 'smallint',
+    bool: 'boolean',
+    'character varying': 'varchar',
+    character: 'char',
+};
+const typeKey = (name: string): string => {
+    const k = key(name);
+    return TYPE_ALIASES[k] ?? k;
+};
+
+// PRIMARY KEY подразумевает UNIQUE, импорт расставляет оба флага
+const isUnique = (f: DBField): boolean => Boolean(f.unique || f.primaryKey);
+
 const describeFieldChanges = (a: DBField, b: DBField): string[] => {
     const changes: string[] = [];
-    if (key(a.type.name) !== key(b.type.name)) {
+    if (typeKey(a.type.name) !== typeKey(b.type.name)) {
         changes.push(`тип: ${a.type.name} → ${b.type.name}`);
     }
     const lengthA = a.characterMaximumLength ?? '';
@@ -45,8 +63,8 @@ const describeFieldChanges = (a: DBField, b: DBField): string[] => {
             a.primaryKey ? 'снят PRIMARY KEY' : 'добавлен PRIMARY KEY'
         );
     }
-    if (a.unique !== b.unique) {
-        changes.push(a.unique ? 'снят UNIQUE' : 'добавлен UNIQUE');
+    if (isUnique(a) !== isUnique(b)) {
+        changes.push(isUnique(a) ? 'снят UNIQUE' : 'добавлен UNIQUE');
     }
     if ((a.default ?? '') !== (b.default ?? '')) {
         changes.push(`по умолчанию: ${a.default || '—'} → ${b.default || '—'}`);
@@ -85,14 +103,25 @@ const diffTable = (before: DBTable, after: DBTable): TableDiff => {
         if (changes.length) changedFields.push({ name: f.name, changes });
     }
 
+    // Импорт добавляет безымянный уникальный индекс по PRIMARY KEY: это та же сущность, что и сам ключ
+    const withoutPkIndex = (t: DBTable) => {
+        const pk = t.fields
+            .filter((f) => f.primaryKey)
+            .map((f) => f.id)
+            .sort()
+            .join(',');
+        return t.indexes.filter(
+            (i) => !(i.unique && pk && [...i.fieldIds].sort().join(',') === pk)
+        );
+    };
     const beforeIdx = new Map(
-        before.indexes.map((i) => [
+        withoutPkIndex(before).map((i) => [
             indexSignature(before, i.fieldIds, i.unique),
             i,
         ])
     );
     const afterIdx = new Map(
-        after.indexes.map((i) => [
+        withoutPkIndex(after).map((i) => [
             indexSignature(after, i.fieldIds, i.unique),
             i,
         ])
@@ -116,10 +145,16 @@ const diffTable = (before: DBTable, after: DBTable): TableDiff => {
     };
 };
 
+// Представления и связи m:n в экспорт для модели не попадают, поэтому в сравнении не участвуют
+const comparableTables = (diagram: Diagram): DBTable[] =>
+    (diagram.tables ?? []).filter((t) => !t.isView);
+
 const relationshipLabels = (diagram: Diagram): Map<string, string> => {
     const tables = diagram.tables ?? [];
     const result = new Map<string, string>();
     for (const r of diagram.relationships ?? []) {
+        if (r.sourceCardinality === 'many' && r.targetCardinality === 'many')
+            continue;
         const source = tables.find((t) => t.id === r.sourceTableId);
         const target = tables.find((t) => t.id === r.targetTableId);
         const sourceField = source?.fields.find(
@@ -129,18 +164,26 @@ const relationshipLabels = (diagram: Diagram): Map<string, string> => {
             (f) => f.id === r.targetFieldId
         );
         if (!source || !target || !sourceField || !targetField) continue;
+        if (source.isView || target.isView) continue;
         const label = `${source.name}.${sourceField.name} → ${target.name}.${targetField.name}`;
-        result.set(key(label), label);
+        // направление не важно: импорт строит FK от родителя к потомку, схема могла хранить наоборот
+        const ends = [
+            `${source.name}.${sourceField.name}`,
+            `${target.name}.${targetField.name}`,
+        ]
+            .map(key)
+            .sort();
+        result.set(ends.join('|'), label);
     }
     return result;
 };
 
 export function diffDiagrams(before: Diagram, after: Diagram): DiagramDiff {
     const beforeTables = new Map(
-        (before.tables ?? []).map((t) => [key(t.name), t])
+        comparableTables(before).map((t) => [key(t.name), t])
     );
     const afterTables = new Map(
-        (after.tables ?? []).map((t) => [key(t.name), t])
+        comparableTables(after).map((t) => [key(t.name), t])
     );
 
     const tables: TableDiff[] = [];

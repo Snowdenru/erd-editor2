@@ -293,4 +293,104 @@ describe('mergeAiDiagram', () => {
         ]);
         expect(NEW_TABLE_ROWS).toBe(4);
     });
+
+    describe('то, чего нет в экспорте для модели', () => {
+        const users = table('users', [field('id', { primaryKey: true })], {
+            schema: 'public',
+            x: 10,
+        });
+        const tags = table('tags', [field('id', { primaryKey: true })]);
+        const view = table('v_users', [field('id')], {
+            id: 'view-id',
+            isView: true,
+            x: 500,
+        });
+        const mn = relationship(users, 'id', tags, 'id', {
+            id: 'r-mn',
+            sourceCardinality: 'many',
+            targetCardinality: 'many',
+        });
+        const viewRel = relationship(view, 'id', users, 'id', {
+            id: 'r-view',
+        });
+        const current = diagram([users, tags, view], [mn, viewRel]);
+        // модель вернула только обычные таблицы, без схемы и без связей
+        const proposal = () =>
+            diagram([
+                table('users', [field('id', { id: 'p-u' })], {
+                    id: 'p-users',
+                }),
+                table('tags', [field('id', { id: 'p-t' })], { id: 'p-tags' }),
+            ]);
+
+        it('оставляет представления на месте, после предложенных таблиц', () => {
+            const merged = mergeAiDiagram(current, proposal());
+            expect(merged.tables!.map((t) => t.name)).toEqual([
+                'users',
+                'tags',
+                'v_users',
+            ]);
+            expect(merged.tables!.at(-1)).toBe(view);
+        });
+
+        it('не заменяет представление одноимённой таблицей из ответа', () => {
+            const p = proposal();
+            p.tables!.push(table('V_Users', [field('id')], { id: 'p-v' }));
+            const merged = mergeAiDiagram(current, p);
+            expect(
+                merged.tables!.filter((t) => t.name.match(/v_users/i))
+            ).toHaveLength(1);
+            expect(merged.tables!.find((t) => t.id === 'view-id')).toBe(view);
+        });
+
+        it('переносит m:n и связи с представлениями', () => {
+            const merged = mergeAiDiagram(current, proposal());
+            expect(merged.relationships).toEqual([mn, viewRel]);
+        });
+
+        it('не дублирует связь, уже полученную из ответа', () => {
+            const p = proposal();
+            p.relationships = [
+                relationship(p.tables![0], 'id', p.tables![1], 'id', {
+                    sourceCardinality: 'many',
+                    targetCardinality: 'many',
+                }),
+            ];
+            const merged = mergeAiDiagram(current, p);
+            expect(merged.relationships).toHaveLength(2);
+            expect(
+                merged.relationships!.filter((r) => r.id === 'r-mn')
+            ).toHaveLength(1);
+        });
+
+        it('отбрасывает перенесённые связи, если таблица или поле исчезли', () => {
+            const noTags = diagram([
+                table('users', [field('id', { id: 'p-u' })]),
+            ]);
+            expect(mergeAiDiagram(current, noTags).relationships).toEqual([
+                viewRel,
+            ]);
+            const noViewField = diagram([
+                table('users', [field('other', { id: 'p-o' })]),
+                table('tags', [field('id', { id: 'p-t' })]),
+            ]);
+            expect(mergeAiDiagram(current, noViewField).relationships).toEqual(
+                []
+            );
+        });
+
+        it('сохраняет schema совпавшей таблицы, даже если модель её не указала', () => {
+            const merged = mergeAiDiagram(current, proposal());
+            expect(merged.tables!.find((t) => t.name === 'users')!.schema).toBe(
+                'public'
+            );
+            const p = proposal();
+            p.tables![0].schema = 'other';
+            expect(
+                mergeAiDiagram(current, p).tables!.find(
+                    (t) => t.name === 'users'
+                )!.schema
+            ).toBe('public');
+        });
+    });
 });

@@ -27,7 +27,15 @@ export function mergeAiDiagram(current: Diagram, proposed: Diagram): Diagram {
         : 0;
     let newCount = 0;
 
-    const tables = (proposed.tables ?? []).map((p): DBTable => {
+    // exportBaseSQL не отдаёт модели представления, поэтому в ответе их нет: остаются как были
+    const views = currentTables.filter((t) => t.isView);
+    const viewNames = new Set(views.map((t) => key(t.name)));
+    const viewIds = new Set(views.map((t) => t.id));
+
+    const proposedTables = (proposed.tables ?? []).filter(
+        (p) => !viewNames.has(key(p.name))
+    );
+    const mergedFromProposal = proposedTables.map((p): DBTable => {
         const candidate = currentByName.get(key(p.name));
         // второй дубль по имени не получает id уже занятой текущей таблицы
         const old =
@@ -74,6 +82,7 @@ export function mergeAiDiagram(current: Diagram, proposed: Diagram): Diagram {
                 order: old.order,
                 expanded: old.expanded,
                 parentAreaId: old.parentAreaId,
+                schema: old.schema,
                 createdAt: old.createdAt,
                 comments: p.comments ?? old.comments,
                 fields,
@@ -94,6 +103,8 @@ export function mergeAiDiagram(current: Diagram, proposed: Diagram): Diagram {
             indexes,
         };
     });
+
+    const tables = [...mergedFromProposal, ...views];
 
     const relKey = (r: DBRelationship): string =>
         `${r.sourceTableId}|${r.sourceFieldId}|${r.targetTableId}|${r.targetFieldId}`;
@@ -121,6 +132,28 @@ export function mergeAiDiagram(current: Diagram, proposed: Diagram): Diagram {
             targetFieldId,
         };
         relationships.push(currentRels.get(relKey(mapped)) ?? mapped);
+    }
+
+    // Связи с представлениями и m:n экспортёр тоже не передаёт: переносим их из текущей схемы,
+    // если обе таблицы и оба поля ещё на месте
+    const fieldIdsByTable = new Map(
+        tables.map((t) => [t.id, new Set(t.fields.map((f) => f.id))])
+    );
+    const produced = new Set(relationships.map(relKey));
+    for (const r of current.relationships ?? []) {
+        const touchesView =
+            viewIds.has(r.sourceTableId) || viewIds.has(r.targetTableId);
+        const manyToMany =
+            r.sourceCardinality === 'many' && r.targetCardinality === 'many';
+        if (!touchesView && !manyToMany) continue;
+        if (
+            !fieldIdsByTable.get(r.sourceTableId)?.has(r.sourceFieldId) ||
+            !fieldIdsByTable.get(r.targetTableId)?.has(r.targetFieldId)
+        )
+            continue;
+        if (produced.has(relKey(r))) continue;
+        produced.add(relKey(r));
+        relationships.push(r);
     }
 
     const tableIds = new Set(tables.map((t) => t.id));

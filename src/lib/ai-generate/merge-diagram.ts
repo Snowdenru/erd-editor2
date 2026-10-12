@@ -5,9 +5,9 @@ import { MIN_TABLE_SIZE, type DBTable } from '@/lib/domain/db-table';
 
 const key = (name: string): string => name.trim().toLowerCase();
 
-const NEW_TABLE_GAP = 80;
-const NEW_TABLE_ROW_STEP = 360;
-const NEW_TABLE_ROWS = 4;
+export const NEW_TABLE_GAP = 80;
+export const NEW_TABLE_ROW_STEP = 360;
+export const NEW_TABLE_ROWS = 4;
 
 // Сливает предложенную ИИ схему в текущую «на месте»: совпавшие по имени таблицы и поля
 // сохраняют id, положение и оформление, новые таблицы ставятся правее существующих.
@@ -16,6 +16,7 @@ export function mergeAiDiagram(current: Diagram, proposed: Diagram): Diagram {
     const currentByName = new Map(currentTables.map((t) => [key(t.name), t]));
     const tableIdMap = new Map<string, string>();
     const fieldIdMap = new Map<string, string>();
+    const claimedTables = new Set<string>();
 
     const right = currentTables.reduce(
         (max, t) => Math.max(max, t.x + (t.width ?? MIN_TABLE_SIZE)),
@@ -27,14 +28,26 @@ export function mergeAiDiagram(current: Diagram, proposed: Diagram): Diagram {
     let newCount = 0;
 
     const tables = (proposed.tables ?? []).map((p): DBTable => {
-        const old = currentByName.get(key(p.name));
+        const candidate = currentByName.get(key(p.name));
+        // второй дубль по имени не получает id уже занятой текущей таблицы
+        const old =
+            candidate && !claimedTables.has(candidate.id)
+                ? candidate
+                : undefined;
+        if (old) claimedTables.add(old.id);
         tableIdMap.set(p.id, old ? old.id : p.id);
 
         const oldFields = new Map(
             (old?.fields ?? []).map((f) => [key(f.name), f])
         );
+        const claimedFields = new Set<string>();
         const fields = p.fields.map((pf): DBField => {
-            const match = oldFields.get(key(pf.name));
+            const candidateField = oldFields.get(key(pf.name));
+            const match =
+                candidateField && !claimedFields.has(candidateField.id)
+                    ? candidateField
+                    : undefined;
+            if (match) claimedFields.add(match.id);
             fieldIdMap.set(pf.id, match ? match.id : pf.id);
             return match
                 ? {
@@ -110,5 +123,16 @@ export function mergeAiDiagram(current: Diagram, proposed: Diagram): Diagram {
         relationships.push(currentRels.get(relKey(mapped)) ?? mapped);
     }
 
-    return { ...current, tables, relationships, updatedAt: new Date() };
+    const tableIds = new Set(tables.map((t) => t.id));
+    const dependencies = current.dependencies?.filter(
+        (d) => tableIds.has(d.tableId) && tableIds.has(d.dependentTableId)
+    );
+
+    return {
+        ...current,
+        tables,
+        relationships,
+        ...(dependencies ? { dependencies } : {}),
+        updatedAt: new Date(),
+    };
 }

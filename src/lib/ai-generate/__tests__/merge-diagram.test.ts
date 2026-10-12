@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { mergeAiDiagram } from '../merge-diagram';
+import { MIN_TABLE_SIZE } from '@/lib/domain/db-table';
+import {
+    mergeAiDiagram,
+    NEW_TABLE_GAP,
+    NEW_TABLE_ROWS,
+    NEW_TABLE_ROW_STEP,
+} from '../merge-diagram';
 import { diagram, field, relationship, table } from './fixtures';
 
 describe('mergeAiDiagram', () => {
@@ -167,6 +173,124 @@ describe('mergeAiDiagram', () => {
             name: 'Моя схема',
             databaseType: current.databaseType,
         });
-        expect(merged.updatedAt.getTime()).toBeGreaterThan(0);
+        expect(merged.updatedAt).toBeInstanceOf(Date);
+        expect(merged.updatedAt).not.toBe(current.updatedAt);
+        expect(merged.updatedAt.getTime()).toBeGreaterThan(
+            current.updatedAt.getTime()
+        );
+    });
+
+    it('does not give two proposed tables with the same name the same id', () => {
+        const current = diagram([
+            table('users', [field('id')], { id: 'old', x: 50, y: 60 }),
+        ]);
+        const proposed = diagram([
+            table('users', [field('id')], { id: 'p1' }),
+            table('Users ', [field('id')], { id: 'p2' }),
+        ]);
+        const merged = mergeAiDiagram(current, proposed);
+        const [first, second] = merged.tables!;
+        expect(new Set(merged.tables!.map((t) => t.id)).size).toBe(2);
+        expect(first).toMatchObject({ id: 'old', x: 50, y: 60 });
+        expect(second.id).toBe('p2');
+        expect(second.x).toBeGreaterThanOrEqual(50 + MIN_TABLE_SIZE);
+    });
+
+    it('does not give two same-named fields of a matched table the same id', () => {
+        const current = diagram([
+            table('t', [field('a', { id: 'old-a' })], { id: 'T' }),
+        ]);
+        const proposed = diagram([
+            table('t', [
+                field('a', { id: 'p-a1' }),
+                field('A', { id: 'p-a2' }),
+            ]),
+        ]);
+        const fields = mergeAiDiagram(current, proposed).tables![0].fields;
+        expect(fields.map((f) => f.id)).toEqual(['old-a', 'p-a2']);
+    });
+
+    it('drops dependencies of removed tables and keeps the rest', () => {
+        const dep = (
+            id: string,
+            tableId: string,
+            dependentTableId: string
+        ) => ({
+            id,
+            tableId,
+            dependentTableId,
+            createdAt: 1,
+        });
+        const current = diagram(
+            [
+                table('a', [field('id')], { id: 'A' }),
+                table('b', [field('id')], { id: 'B' }),
+                table('gone', [field('id')], { id: 'G' }),
+            ],
+            [],
+            {
+                dependencies: [
+                    dep('d1', 'A', 'B'),
+                    dep('d2', 'G', 'A'),
+                    dep('d3', 'B', 'G'),
+                ],
+            }
+        );
+        const merged = mergeAiDiagram(
+            current,
+            diagram([table('a', [field('id')]), table('b', [field('id')])])
+        );
+        expect(merged.dependencies!.map((d) => d.id)).toEqual(['d1']);
+    });
+
+    it('remaps index fieldIds when a matched field id changes', () => {
+        const current = diagram([
+            table('t', [field('a', { id: 'old-f' })], { id: 'T' }),
+        ]);
+        const proposed = diagram([
+            table('t', [field('a', { id: 'new-f' })], {
+                indexes: [
+                    {
+                        id: 'ix',
+                        name: 'i',
+                        unique: false,
+                        fieldIds: ['new-f'],
+                        createdAt: 1,
+                    },
+                ],
+            }),
+        ]);
+        const merged = mergeAiDiagram(current, proposed);
+        expect(merged.tables![0].indexes[0].fieldIds).toEqual(['old-f']);
+    });
+
+    it('drops a relationship whose endpoint cannot be mapped', () => {
+        const a = table('a', [field('id')]);
+        const b = table('b', [field('id')]);
+        const proposed = diagram([a, b], [relationship(a, 'id', b, 'id')]);
+        proposed.relationships![0].targetFieldId = 'missing';
+        const merged = mergeAiDiagram(diagram([]), proposed);
+        expect(merged.relationships).toEqual([]);
+    });
+
+    it('wraps new tables into a second column after NEW_TABLE_ROWS rows', () => {
+        const current = diagram([
+            table('base', [field('id')], { x: 10, y: 30, width: 200 }),
+        ]);
+        const names = ['base', 'n1', 'n2', 'n3', 'n4', 'n5'];
+        const merged = mergeAiDiagram(
+            current,
+            diagram(names.map((n) => table(n, [field('id')])))
+        );
+        const fresh = merged.tables!.slice(1);
+        const x0 = 10 + 200 + NEW_TABLE_GAP;
+        expect(fresh.map((t) => [t.x, t.y])).toEqual([
+            [x0, 30],
+            [x0, 30 + NEW_TABLE_ROW_STEP],
+            [x0, 30 + 2 * NEW_TABLE_ROW_STEP],
+            [x0, 30 + 3 * NEW_TABLE_ROW_STEP],
+            [x0 + MIN_TABLE_SIZE + NEW_TABLE_GAP, 30],
+        ]);
+        expect(NEW_TABLE_ROWS).toBe(4);
     });
 });

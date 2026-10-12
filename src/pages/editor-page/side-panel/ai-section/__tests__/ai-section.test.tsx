@@ -20,8 +20,9 @@ vi.mock('@/components/auth-blur-gate/auth-blur-gate', () => ({
         <>{children}</>
     ),
 }));
+const fitView = vi.hoisted(() => vi.fn());
 vi.mock('@xyflow/react', () => ({
-    useReactFlow: () => ({ fitView: vi.fn() }),
+    useReactFlow: () => ({ fitView }),
 }));
 
 import { AiSection } from '../ai-section';
@@ -95,7 +96,7 @@ describe('AiSection', () => {
         api.current = baseApi({ phase: 'running' });
         render(<AiSection />);
         fireEvent.click(screen.getByRole('tab', { name: 'Улучшить' }));
-        expect(screen.getByText(/Анализирую схему/)).toBeTruthy();
+        expect(screen.getByText(/Работаю над схемой/)).toBeTruthy();
         fireEvent.click(screen.getByRole('button', { name: 'Отмена' }));
         expect(api.current.cancel).toHaveBeenCalled();
     });
@@ -149,5 +150,82 @@ describe('AiSection', () => {
             screen.getByRole('button', { name: 'Отменить применение' })
         );
         expect(api.current.undo).toHaveBeenCalled();
+    });
+
+    const reviewProposal = (): AiRefineApi['proposal'] => {
+        const before = diagram([table('users', [field('id')])]);
+        const after = diagram([table('users', [field('id'), field('x')])]);
+        return {
+            mode: 'review',
+            generationId: 'g1',
+            diagramId: 'd1',
+            changes: ['добавлен x'],
+            diff: diffDiagrams(before, after),
+            proposed: after,
+        };
+    };
+
+    it('shows a proposal made on «Улучшить» also on «Доработать»', () => {
+        api.current = baseApi({ phase: 'review', proposal: reviewProposal() });
+        render(<AiSection />);
+        fireEvent.click(screen.getByRole('tab', { name: 'Доработать' }));
+        expect(
+            screen.getByRole('button', { name: 'Применить всё' })
+        ).toBeTruthy();
+    });
+
+    it('shows a notice on «Создать» while a proposal is pending', () => {
+        api.current = baseApi({ phase: 'review', proposal: reviewProposal() });
+        render(<AiSection />);
+        expect(
+            screen.getByText(/Есть неприменённое предложение ИИ/)
+        ).toBeTruthy();
+    });
+
+    it('shows the daily wall and the daily counter', () => {
+        api.current = baseApi({
+            error: 'limit_daily',
+            usage: {
+                tier: 'pro',
+                kind: 'daily',
+                limit: 30,
+                used: 30,
+                remaining: 0,
+            },
+        });
+        render(<AiSection />);
+        fireEvent.click(screen.getByRole('tab', { name: 'Улучшить' }));
+        expect(
+            screen.getByText(/Дневной лимит ИИ-запросов исчерпан/)
+        ).toBeTruthy();
+        expect(
+            screen.getByText('Осталось 0 из 30 запросов на сегодня')
+        ).toBeTruthy();
+    });
+
+    it('clears a stale error when switching tabs', () => {
+        render(<AiSection />);
+        fireEvent.click(screen.getByRole('tab', { name: 'Улучшить' }));
+        expect(api.current.clearError).toHaveBeenCalled();
+    });
+
+    it('fits the view when canUndo flips to true after apply', () => {
+        vi.useFakeTimers();
+        try {
+            api.current = baseApi({ canUndo: false });
+            const { rerender } = render(<AiSection />);
+            vi.advanceTimersByTime(1000);
+            expect(fitView).not.toHaveBeenCalled();
+            api.current = baseApi({ canUndo: true });
+            rerender(<AiSection />);
+            vi.advanceTimersByTime(1000);
+            expect(fitView).toHaveBeenCalledWith({
+                padding: 0.15,
+                duration: 200,
+                maxZoom: 1,
+            });
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });

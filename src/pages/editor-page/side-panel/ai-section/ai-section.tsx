@@ -23,20 +23,18 @@ export const AiSection: React.FC = () => {
     const { fitView } = useReactFlow();
     const fitTimer = useRef<ReturnType<typeof setTimeout>>();
 
-    // После применения возвращаем холст в кадр, чтобы новые таблицы были видны
-    const wasProposal = useRef(false);
+    // После применения (canUndo false -> true) возвращаем холст в кадр
+    const prevCanUndo = useRef(ai.canUndo);
     useEffect(() => {
-        const has = ai.proposal !== null;
-        if (wasProposal.current && !has && ai.canUndo) {
-            clearTimeout(fitTimer.current);
+        if (ai.canUndo && !prevCanUndo.current) {
             fitTimer.current = setTimeout(
                 () => fitView({ padding: 0.15, duration: 200, maxZoom: 1 }),
                 FIT_VIEW_DELAY_MS
             );
         }
-        wasProposal.current = has;
-        return () => clearTimeout(fitTimer.current);
-    }, [ai.proposal, ai.canUndo, fitView]);
+        prevCanUndo.current = ai.canUndo;
+    }, [ai.canUndo, fitView]);
+    useEffect(() => () => clearTimeout(fitTimer.current), []);
 
     const openGenerate = useCallback(() => {
         emitOpenAiGenerate({ source: 'sidebar', prompt: prompt.trim() });
@@ -56,7 +54,10 @@ export const AiSection: React.FC = () => {
                         id={`ai-tab-${key}`}
                         aria-selected={tab === key}
                         aria-controls="ai-tabpanel"
-                        onClick={() => setTab(key)}
+                        onClick={() => {
+                            ai.clearError();
+                            setTab(key);
+                        }}
                         className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${
                             tab === key
                                 ? 'border-pink-600 text-foreground'
@@ -97,6 +98,13 @@ export const AiSection: React.FC = () => {
                                 Описать схему
                             </Button>
                         </div>
+                        {ai.proposal ? (
+                            <p className="text-sm text-muted-foreground">
+                                Есть неприменённое предложение ИИ — откройте
+                                вкладку «Улучшить» или «Доработать», чтобы
+                                применить или отменить его.
+                            </p>
+                        ) : null}
                     </div>
                 ) : (
                     <AuthBlurGate>

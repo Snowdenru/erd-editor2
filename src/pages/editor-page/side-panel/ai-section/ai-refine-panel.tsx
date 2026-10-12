@@ -31,8 +31,7 @@ export const AiRefinePanel: React.FC<AiRefinePanelProps> = ({ mode, ai }) => {
     const [instruction, setInstruction] = useState('');
     const running = ai.phase === 'running';
     const busy = running || ai.phase === 'applying';
-    const proposal =
-        ai.proposal && ai.proposal.mode === mode ? ai.proposal : null;
+    const proposal = ai.proposal;
     const wall = ai.error === 'limit_free' || ai.error === 'limit_daily';
 
     return (
@@ -69,7 +68,7 @@ export const AiRefinePanel: React.FC<AiRefinePanelProps> = ({ mode, ai }) => {
                 <div className="flex items-center gap-2">
                     {running ? (
                         <>
-                            <p className="text-sm">Анализирую схему…</p>
+                            <p className="text-sm">Работаю над схемой…</p>
                             <Button
                                 type="button"
                                 size="sm"

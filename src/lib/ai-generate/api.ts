@@ -12,7 +12,7 @@ import type {
 const BASE = '/api/erd2/ai';
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
-async function errorFrom(res: Response): Promise<AiApiError> {
+export async function errorFrom(res: Response): Promise<AiApiError> {
     const body = (await res.json().catch(() => ({}))) as {
         code?: string;
         limit?: number;
@@ -120,6 +120,10 @@ export function aiErrorKind(e: unknown): AiErrorKind | 'aborted' {
         switch (e.code) {
             case 'prompt_too_short':
             case 'prompt_too_long':
+            case 'ddl_empty':
+            case 'instruction_too_short':
+            case 'instruction_too_long':
+            case 'invalid_mode':
                 return 'invalid_prompt';
             case 'cooldown':
                 return 'cooldown';

@@ -40,6 +40,19 @@ export type GenerateOutcome =
           remaining: number;
       };
 
+export type AiRefineMode = 'review' | 'edit';
+
+export type RefineOutcome =
+    | {
+          status: 'generated';
+          generationId: string;
+          ddl: string;
+          changes: string[];
+          remaining: number;
+      }
+    | { status: 'no_changes'; generationId: string; remaining: number }
+    | { status: 'provider_error'; generationId: string; remaining: number };
+
 export class AiApiError extends Error {
     status: number;
     code: string;

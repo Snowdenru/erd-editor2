@@ -4,6 +4,7 @@ export type AiOpenSource =
     | 'landing'
     | 'create_dialog'
     | 'empty_state'
+    | 'sidebar'
     | 'resume';
 
 export interface OpenAiGenerateDetail {

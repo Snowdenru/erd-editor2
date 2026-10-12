@@ -165,8 +165,25 @@ export const AiGenerateDialog: React.FC<AiGenerateDialogProps> = ({
                             key={key}
                             role="tab"
                             type="button"
+                            id={`ai-dialog-tab-${key}`}
                             aria-selected={tab === key}
+                            aria-controls="ai-dialog-tabpanel"
+                            tabIndex={tab === key ? 0 : -1}
                             onClick={() => setTab(key)}
+                            onKeyDown={(e) => {
+                                if (
+                                    e.key !== 'ArrowLeft' &&
+                                    e.key !== 'ArrowRight'
+                                )
+                                    return;
+                                e.preventDefault();
+                                const next: Tab =
+                                    key === 'new' ? 'history' : 'new';
+                                setTab(next);
+                                document
+                                    .getElementById(`ai-dialog-tab-${next}`)
+                                    ?.focus();
+                            }}
                             className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${
                                 tab === key
                                     ? 'border-pink-600 text-foreground'
@@ -178,77 +195,84 @@ export const AiGenerateDialog: React.FC<AiGenerateDialogProps> = ({
                     ))}
                 </div>
 
-                {tab === 'history' ? (
-                    <>
-                        <ErrorBlock error={ai.error} />
-                        <AiHistoryList
-                            items={ai.history}
-                            loaded={ai.historyLoaded}
-                            failed={ai.historyFailed}
-                            disabled={busy}
-                            onOpen={(id) => void ai.restore(id)}
-                            onRegenerate={regenerate}
-                            onDelete={(id) => void ai.remove(id)}
-                        />
-                    </>
-                ) : busy ? (
-                    <div className="flex flex-col items-center gap-3 py-6 text-center">
-                        <Spinner className="text-pink-600" />
-                        <p className="text-sm font-medium">
-                            {ai.phase === 'generating'
-                                ? `Проектирую… ${pluralTables(ai.tableCount)}`
-                                : 'Собираю диаграмму…'}
-                        </p>
-                        <button
-                            type="button"
-                            onClick={() => setShowSql((v) => !v)}
-                            className="text-xs text-muted-foreground underline"
-                        >
-                            {showSql ? 'Скрыть SQL' : 'Показать SQL'}
-                        </button>
-                        {showSql ? (
-                            <pre className="max-h-48 w-full overflow-auto rounded-lg bg-muted p-3 text-left font-mono text-xs">
-                                {ai.ddl}
-                            </pre>
-                        ) : null}
-                        {ai.phase === 'generating' ? (
-                            <Button
+                <div
+                    id="ai-dialog-tabpanel"
+                    role="tabpanel"
+                    aria-labelledby={`ai-dialog-tab-${tab}`}
+                    className="flex flex-col gap-4"
+                >
+                    {tab === 'history' ? (
+                        <>
+                            <ErrorBlock error={ai.error} />
+                            <AiHistoryList
+                                items={ai.history}
+                                loaded={ai.historyLoaded}
+                                failed={ai.historyFailed}
+                                disabled={busy}
+                                onOpen={(id) => void ai.restore(id)}
+                                onRegenerate={regenerate}
+                                onDelete={(id) => void ai.remove(id)}
+                            />
+                        </>
+                    ) : busy ? (
+                        <div className="flex flex-col items-center gap-3 py-6 text-center">
+                            <Spinner className="text-pink-600" />
+                            <p className="text-sm font-medium">
+                                {ai.phase === 'generating'
+                                    ? `Проектирую… ${pluralTables(ai.tableCount)}`
+                                    : 'Собираю диаграмму…'}
+                            </p>
+                            <button
                                 type="button"
-                                variant="outline"
-                                onClick={ai.cancel}
+                                onClick={() => setShowSql((v) => !v)}
+                                className="text-xs text-muted-foreground underline"
                             >
-                                Отмена
-                            </Button>
-                        ) : null}
-                    </div>
-                ) : (
-                    <>
-                        <AiPromptField
-                            prompt={prompt}
-                            onPromptChange={(value) => {
-                                ai.clearError();
-                                setPrompt(value.slice(0, AI_PROMPT_MAX));
-                            }}
-                            dialect={dialect}
-                            onDialectChange={setDialect}
-                        />
-
-                        <ErrorBlock error={ai.error} />
-
-                        <div className="flex items-center justify-between gap-3">
-                            <span className="text-xs text-muted-foreground">
-                                {counter}
-                            </span>
-                            <Button
-                                type="button"
-                                disabled={!canSubmit}
-                                onClick={() => onSubmit(trimmed, dialect)}
-                            >
-                                Сгенерировать
-                            </Button>
+                                {showSql ? 'Скрыть SQL' : 'Показать SQL'}
+                            </button>
+                            {showSql ? (
+                                <pre className="max-h-48 w-full overflow-auto rounded-lg bg-muted p-3 text-left font-mono text-xs">
+                                    {ai.ddl}
+                                </pre>
+                            ) : null}
+                            {ai.phase === 'generating' ? (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={ai.cancel}
+                                >
+                                    Отмена
+                                </Button>
+                            ) : null}
                         </div>
-                    </>
-                )}
+                    ) : (
+                        <>
+                            <AiPromptField
+                                prompt={prompt}
+                                onPromptChange={(value) => {
+                                    ai.clearError();
+                                    setPrompt(value.slice(0, AI_PROMPT_MAX));
+                                }}
+                                dialect={dialect}
+                                onDialectChange={setDialect}
+                            />
+
+                            <ErrorBlock error={ai.error} />
+
+                            <div className="flex items-center justify-between gap-3">
+                                <span className="text-xs text-muted-foreground">
+                                    {counter}
+                                </span>
+                                <Button
+                                    type="button"
+                                    disabled={!canSubmit}
+                                    onClick={() => onSubmit(trimmed, dialect)}
+                                >
+                                    Сгенерировать
+                                </Button>
+                            </div>
+                        </>
+                    )}
+                </div>
             </DialogContent>
         </Dialog>
     );

@@ -182,6 +182,12 @@ describe('AiGenerateDialog history', () => {
         expect(ai.restore).toHaveBeenCalledWith('g1');
     });
 
+    it('shows the dialect of each history item', () => {
+        renderDialog(makeAi({ history: [item] }));
+        fireEvent.click(screen.getByRole('tab', { name: /мои генерации/i }));
+        expect(screen.getByText(/· MySQL ·/)).toBeInTheDocument();
+    });
+
     it('regenerates with the saved prompt through the normal submit path', () => {
         const onSubmit = vi.fn();
         renderDialog(makeAi({ history: [item] }), onSubmit);
@@ -318,5 +324,26 @@ describe('AiGenerateDialog review fixes', () => {
         expect(
             screen.getByRole('button', { name: 'Удалить из списка' })
         ).toBeDisabled();
+    });
+});
+
+describe('AiGenerateDialog tabs accessibility', () => {
+    it('links tabs to the panel and switches with arrow keys', () => {
+        renderDialog(makeAi());
+        const [first, second] = screen.getAllByRole('tab');
+        expect(first).toHaveAttribute('aria-controls', 'ai-dialog-tabpanel');
+        expect(first).toHaveAttribute('aria-selected', 'true');
+        expect(first).toHaveAttribute('tabindex', '0');
+        expect(second).toHaveAttribute('tabindex', '-1');
+        fireEvent.keyDown(first, { key: 'ArrowRight' });
+        expect(second).toHaveAttribute('aria-selected', 'true');
+        expect(second).toHaveFocus();
+        fireEvent.keyDown(second, { key: 'ArrowLeft' });
+        expect(first).toHaveAttribute('aria-selected', 'true');
+        expect(first).toHaveFocus();
+        expect(screen.getByRole('tabpanel')).toHaveAttribute(
+            'aria-labelledby',
+            'ai-dialog-tab-new'
+        );
     });
 });

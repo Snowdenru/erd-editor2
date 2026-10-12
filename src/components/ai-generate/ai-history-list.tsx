@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/button/button';
+import { AI_DIALECT_OPTIONS } from '@/lib/ai-generate/dialect';
 import { pluralTables } from '@/lib/ai-generate/format';
 import type { AiHistoryItem } from '@/lib/ai-generate/types';
 
@@ -25,6 +26,9 @@ const formatDate = (iso: string): string => {
               minute: '2-digit',
           });
 };
+
+const dialectLabel = (value: string): string =>
+    AI_DIALECT_OPTIONS.find((o) => o.value === value)?.label ?? value;
 
 export const AiHistoryList: React.FC<AiHistoryListProps> = ({
     items,
@@ -79,6 +83,7 @@ export const AiHistoryList: React.FC<AiHistoryListProps> = ({
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
                         {formatDate(item.created_at)}
+                        {` · ${dialectLabel(item.dialect)}`}
                         {item.table_count != null
                             ? ` · ${pluralTables(item.table_count)}`
                             : ''}

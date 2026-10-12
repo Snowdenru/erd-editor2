@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import { Button } from '@/components/button/button';
 import { AuthBlurGate } from '@/components/auth-blur-gate/auth-blur-gate';
-import { useAiRefine } from '@/components/ai-generate/use-ai-refine';
+import { useAiRefineContext } from '@/components/ai-generate/ai-refine-context';
 import { emitOpenAiGenerate } from '@/lib/ai-generate/events';
 import { AiRefinePanel } from './ai-refine-panel';
 
@@ -19,7 +19,7 @@ const FIT_VIEW_DELAY_MS = 250;
 export const AiSection: React.FC = () => {
     const [tab, setTab] = useState<Tab>('create');
     const [prompt, setPrompt] = useState('');
-    const ai = useAiRefine();
+    const ai = useAiRefineContext();
     const { fitView } = useReactFlow();
     const fitTimer = useRef<ReturnType<typeof setTimeout>>();
 

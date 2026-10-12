@@ -1,5 +1,6 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { diffDiagrams } from '@/lib/ai-generate/diagram-diff';
 import { diagram, field, table } from '@/lib/ai-generate/__tests__/fixtures';
@@ -8,8 +9,8 @@ import type { AiRefineApi } from '@/components/ai-generate/use-ai-refine';
 const api = vi.hoisted(() => ({ current: null as unknown as AiRefineApi }));
 const emitOpenAiGenerate = vi.hoisted(() => vi.fn());
 
-vi.mock('@/components/ai-generate/use-ai-refine', () => ({
-    useAiRefine: () => api.current,
+vi.mock('@/components/ai-generate/ai-refine-context', () => ({
+    useAiRefineContext: () => api.current,
 }));
 vi.mock('@/lib/ai-generate/events', async () => {
     const actual = await vi.importActual('@/lib/ai-generate/events');
@@ -27,10 +28,14 @@ vi.mock('@xyflow/react', () => ({
 
 import { AiSection } from '../ai-section';
 
+const render = (ui: React.ReactElement) =>
+    rtlRender(ui, { wrapper: MemoryRouter });
+
 const baseApi = (extra: Partial<AiRefineApi> = {}): AiRefineApi => ({
     phase: 'idle',
     error: null,
-    refundDenied: false,
+    refundState: 'refunded',
+    errorLimit: null,
     notice: null,
     usage: { tier: 'free', kind: 'lifetime', limit: 3, used: 1, remaining: 2 },
     proposal: null,
@@ -39,7 +44,7 @@ const baseApi = (extra: Partial<AiRefineApi> = {}): AiRefineApi => ({
     run: vi.fn().mockResolvedValue(undefined),
     apply: vi.fn().mockResolvedValue(undefined),
     discard: vi.fn().mockResolvedValue(undefined),
-    undo: vi.fn().mockResolvedValue(undefined),
+    undo: vi.fn().mockResolvedValue('done'),
     cancel: vi.fn(),
     clearError: vi.fn(),
     ...extra,
@@ -119,6 +124,7 @@ describe('AiSection', () => {
                 diff: diffDiagrams(before, after),
                 proposed: after,
                 base: before,
+                importBase: before,
             },
         });
         render(<AiSection />);
@@ -141,7 +147,7 @@ describe('AiSection', () => {
             screen
                 .getByRole('link', { name: 'Открыть ERD Pro' })
                 .getAttribute('href')
-        ).toBe('/tools/erd/pricing');
+        ).toBe('/pricing');
     });
 
     it('shows «Схема уже в порядке» and the undo button after applying', () => {
@@ -166,6 +172,7 @@ describe('AiSection', () => {
             diff: diffDiagrams(before, after),
             proposed: after,
             base: before,
+            importBase: before,
         };
     };
 
@@ -249,6 +256,7 @@ describe('AiSection', () => {
                 diff: diffDiagrams(before, after),
                 proposed: after,
                 base: before,
+                importBase: before,
             },
         });
         render(<AiSection />);
@@ -290,7 +298,7 @@ describe('AiSection', () => {
                 'Попытка возвращена.'
             );
             unmount();
-            api.current = baseApi({ error, refundDenied: true });
+            api.current = baseApi({ error, refundState: 'denied' });
             render(<AiSection />);
             fireEvent.click(screen.getByRole('tab', { name: 'Улучшить' }));
             const text = screen.getByRole('alert').textContent;
@@ -300,6 +308,67 @@ describe('AiSection', () => {
             expect(text).not.toContain('Попытка возвращена');
         }
     );
+
+    it('says the refund is unknown instead of claiming the limit is spent', () => {
+        api.current = baseApi({ error: 'parse', refundState: 'unknown' });
+        render(<AiSection />);
+        fireEvent.click(screen.getByRole('tab', { name: 'Улучшить' }));
+        const text = screen.getByRole('alert').textContent;
+        expect(text).toContain('Не удалось подтвердить возврат попытки');
+        expect(text).not.toContain('лимит возвратов');
+    });
+
+    it('explains the table limit with the number and links to pricing', () => {
+        api.current = baseApi({ error: 'too_many_tables', errorLimit: 10 });
+        render(<AiSection />);
+        fireEvent.click(screen.getByRole('tab', { name: 'Улучшить' }));
+        expect(screen.getByRole('alert').textContent).toContain(
+            'больше 10 таблиц'
+        );
+        expect(
+            screen.getByRole('link', { name: 'Открыть ERD Pro' })
+        ).toBeTruthy();
+    });
+
+    it('explains the unsupported dialect', () => {
+        api.current = baseApi({ error: 'unsupported_dialect' });
+        render(<AiSection />);
+        fireEvent.click(screen.getByRole('tab', { name: 'Улучшить' }));
+        expect(screen.getByRole('alert').textContent).toContain(
+            'PostgreSQL, MySQL, MariaDB, SQL Server и SQLite'
+        );
+    });
+
+    it('asks for confirmation before an undo that would lose later edits', async () => {
+        const undo = vi
+            .fn()
+            .mockResolvedValueOnce('needs_confirm')
+            .mockResolvedValueOnce('done');
+        api.current = baseApi({ canUndo: true, undo });
+        render(<AiSection />);
+        fireEvent.click(screen.getByRole('tab', { name: 'Улучшить' }));
+        fireEvent.click(
+            screen.getByRole('button', { name: 'Отменить применение' })
+        );
+        expect(await screen.findByText(/эти правки пропадут/)).toBeTruthy();
+        expect(undo).toHaveBeenLastCalledWith(false);
+        fireEvent.click(
+            screen.getByRole('button', { name: 'Всё равно отменить' })
+        );
+        await vi.waitFor(() => expect(undo).toHaveBeenLastCalledWith(true));
+        await vi.waitFor(() =>
+            expect(screen.queryByText(/эти правки пропадут/)).toBeNull()
+        );
+    });
+
+    it('hides the undo button while a new request is running', () => {
+        api.current = baseApi({ canUndo: true, phase: 'running' });
+        render(<AiSection />);
+        fireEvent.click(screen.getByRole('tab', { name: 'Улучшить' }));
+        expect(
+            screen.queryByRole('button', { name: 'Отменить применение' })
+        ).toBeNull();
+    });
 
     it('shows the incomplete and too_large texts', () => {
         api.current = baseApi({ error: 'incomplete' });

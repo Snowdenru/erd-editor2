@@ -138,8 +138,7 @@ const buildDiagram = (dialect: AiDialect): Diagram => {
 };
 
 // Что импорт не умеет читать (индексы mysql/sqlite, комментарии, длины sqlite, поле после `-- ...` в mssql),
-// слияние берёт из текущей схемы: поэтому фикстура здесь полная, без исключений.
-// Остаётся одно: sqlite отдаёт DATETIME как timestamp, поэтому в фикстуре sqlite сразу timestamp.
+// в схеме остаётся: к ней применяется только разница между базовым импортом и ответом ИИ (здесь — пустая).
 const stripUpdated = (d: Diagram) => ({ ...d, updatedAt: undefined });
 
 describe.each(['postgresql', 'mysql', 'mssql', 'sqlite'] as AiDialect[])(
@@ -161,11 +160,14 @@ describe.each(['postgresql', 'mysql', 'mssql', 'sqlite'] as AiDialect[])(
 
         it('слияние с собственным экспортом не меняет схему: diff пуст', async () => {
             const d = buildDiagram(dialect);
-            const merged = mergeAiDiagram(d, await roundtrip(d));
+            const back = await roundtrip(d);
+            const merged = mergeAiDiagram(d, back, back);
             expect(diffDiagrams(d, merged)).toEqual({
                 tables: [],
                 addedRelationships: [],
                 removedRelationships: [],
+                addedTypes: [],
+                changedTypes: [],
                 isEmpty: true,
             });
         });
@@ -173,10 +175,10 @@ describe.each(['postgresql', 'mysql', 'mssql', 'sqlite'] as AiDialect[])(
         it('слияние с собственным экспортом равно исходной схеме (кроме updatedAt)', async () => {
             const d = buildDiagram(dialect);
             const back = await roundtrip(d);
-            const merged = mergeAiDiagram(d, back);
+            const merged = mergeAiDiagram(d, back, back);
             expect(stripUpdated(merged)).toEqual(stripUpdated(d));
             // и идемпотентно
-            expect(stripUpdated(mergeAiDiagram(merged, back))).toEqual(
+            expect(stripUpdated(mergeAiDiagram(merged, back, back))).toEqual(
                 stripUpdated(merged)
             );
         });

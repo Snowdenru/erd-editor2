@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MIN_TABLE_SIZE } from '@/lib/domain/db-table';
+import type { Diagram } from '@/lib/domain/diagram';
 import {
     mergeAiDiagram,
     NEW_TABLE_GAP,
@@ -7,6 +8,30 @@ import {
     NEW_TABLE_ROW_STEP,
 } from '../merge-diagram';
 import { diagram, field, relationship, table } from './fixtures';
+
+// Базовый импорт по умолчанию — то, что отдал бы импорт без потерь: копия текущей схемы без представлений
+const reimport = (current: Diagram): Diagram => ({
+    ...structuredClone(current),
+    tables: structuredClone(current.tables ?? []).filter((t) => !t.isView),
+    relationships: [],
+});
+const merge = (
+    current: Diagram,
+    proposed: Diagram,
+    baseline: Diagram = {
+        ...reimport(current),
+        relationships: structuredClone(current.relationships ?? []).filter(
+            (r) => {
+                const ids = new Set(
+                    (current.tables ?? [])
+                        .filter((t) => !t.isView)
+                        .map((t) => t.id)
+                );
+                return ids.has(r.sourceTableId) && ids.has(r.targetTableId);
+            }
+        ),
+    }
+): Diagram => mergeAiDiagram(current, proposed, baseline);
 
 describe('mergeAiDiagram', () => {
     it('keeps id, position, color and field ids of tables matched by name', () => {
@@ -37,7 +62,7 @@ describe('mergeAiDiagram', () => {
                 { id: 'new-users', x: 0, y: 0, color: '#8eb7ff' }
             ),
         ]);
-        const merged = mergeAiDiagram(current, proposed);
+        const merged = merge(current, proposed);
         const users = merged.tables![0];
         expect(users).toMatchObject({
             id: 'old-users',
@@ -72,7 +97,7 @@ describe('mergeAiDiagram', () => {
             table('b', [field('id')]),
             table('c', [field('id')]),
         ]);
-        const merged = mergeAiDiagram(current, proposed);
+        const merged = merge(current, proposed);
         expect(merged.tables!.map((t) => t.name)).toEqual(['a', 'b', 'c']);
         const [, b, c] = merged.tables!;
         // правый край существующих таблиц — 500 + 224 (ширина по умолчанию)
@@ -113,7 +138,7 @@ describe('mergeAiDiagram', () => {
             [pUsers, pOrders],
             [relationship(pOrders, 'user_id', pUsers, 'id')]
         );
-        const merged = mergeAiDiagram(current, proposed);
+        const merged = merge(current, proposed);
         const orders = merged.tables!.find((t) => t.name === 'orders')!;
         expect(orders.indexes[0].fieldIds).toEqual(['p-o-user']);
         const rel = merged.relationships![0];
@@ -146,7 +171,7 @@ describe('mergeAiDiagram', () => {
                 { id: 'fresh', name: 'fk_new' }
             ),
         ];
-        const merged = mergeAiDiagram(current, proposed);
+        const merged = merge(current, proposed);
         expect(merged.relationships).toHaveLength(1);
         expect(merged.relationships![0]).toMatchObject({
             id: 'keep-me',
@@ -161,7 +186,7 @@ describe('mergeAiDiagram', () => {
             notes: [],
             areas: [],
         });
-        const merged = mergeAiDiagram(
+        const merged = merge(
             current,
             diagram([table('a', [field('id')])], [], {
                 id: 'other',
@@ -188,7 +213,7 @@ describe('mergeAiDiagram', () => {
             table('users', [field('id')], { id: 'p1' }),
             table('Users ', [field('id')], { id: 'p2' }),
         ]);
-        const merged = mergeAiDiagram(current, proposed);
+        const merged = merge(current, proposed);
         const [first, second] = merged.tables!;
         expect(new Set(merged.tables!.map((t) => t.id)).size).toBe(2);
         expect(first).toMatchObject({ id: 'old', x: 50, y: 60 });
@@ -206,8 +231,8 @@ describe('mergeAiDiagram', () => {
                 field('A', { id: 'p-a2' }),
             ]),
         ]);
-        const fields = mergeAiDiagram(current, proposed).tables![0].fields;
-        expect(fields.map((f) => f.id)).toEqual(['old-a', 'p-a2']);
+        const fields = merge(current, proposed).tables![0].fields;
+        expect(fields.map((f) => f.id)).toEqual(['old-a']);
     });
 
     it('drops dependencies of removed tables and keeps the rest', () => {
@@ -236,7 +261,7 @@ describe('mergeAiDiagram', () => {
                 ],
             }
         );
-        const merged = mergeAiDiagram(
+        const merged = merge(
             current,
             diagram([table('a', [field('id')]), table('b', [field('id')])])
         );
@@ -260,7 +285,7 @@ describe('mergeAiDiagram', () => {
                 ],
             }),
         ]);
-        const merged = mergeAiDiagram(current, proposed);
+        const merged = merge(current, proposed);
         expect(merged.tables![0].indexes[0].fieldIds).toEqual(['old-f']);
     });
 
@@ -269,7 +294,7 @@ describe('mergeAiDiagram', () => {
         const b = table('b', [field('id')]);
         const proposed = diagram([a, b], [relationship(a, 'id', b, 'id')]);
         proposed.relationships![0].targetFieldId = 'missing';
-        const merged = mergeAiDiagram(diagram([]), proposed);
+        const merged = merge(diagram([]), proposed);
         expect(merged.relationships).toEqual([]);
     });
 
@@ -278,7 +303,7 @@ describe('mergeAiDiagram', () => {
             table('base', [field('id')], { x: 10, y: 30, width: 200 }),
         ]);
         const names = ['base', 'n1', 'n2', 'n3', 'n4', 'n5'];
-        const merged = mergeAiDiagram(
+        const merged = merge(
             current,
             diagram(names.map((n) => table(n, [field('id')])))
         );
@@ -324,7 +349,7 @@ describe('mergeAiDiagram', () => {
             ]);
 
         it('оставляет представления на месте, после предложенных таблиц', () => {
-            const merged = mergeAiDiagram(current, proposal());
+            const merged = merge(current, proposal());
             expect(merged.tables!.map((t) => t.name)).toEqual([
                 'users',
                 'tags',
@@ -336,7 +361,7 @@ describe('mergeAiDiagram', () => {
         it('не заменяет представление одноимённой таблицей из ответа', () => {
             const p = proposal();
             p.tables!.push(table('V_Users', [field('id')], { id: 'p-v' }));
-            const merged = mergeAiDiagram(current, p);
+            const merged = merge(current, p);
             expect(
                 merged.tables!.filter((t) => t.name.match(/v_users/i))
             ).toHaveLength(1);
@@ -344,7 +369,7 @@ describe('mergeAiDiagram', () => {
         });
 
         it('переносит m:n и связи с представлениями', () => {
-            const merged = mergeAiDiagram(current, proposal());
+            const merged = merge(current, proposal());
             expect(merged.relationships).toEqual([mn, viewRel]);
         });
 
@@ -356,7 +381,7 @@ describe('mergeAiDiagram', () => {
                     targetCardinality: 'many',
                 }),
             ];
-            const merged = mergeAiDiagram(current, p);
+            const merged = merge(current, p);
             expect(merged.relationships).toHaveLength(2);
             expect(
                 merged.relationships!.filter((r) => r.id === 'r-mn')
@@ -367,29 +392,24 @@ describe('mergeAiDiagram', () => {
             const noTags = diagram([
                 table('users', [field('id', { id: 'p-u' })]),
             ]);
-            expect(mergeAiDiagram(current, noTags).relationships).toEqual([
-                viewRel,
-            ]);
+            expect(merge(current, noTags).relationships).toEqual([viewRel]);
             const noViewField = diagram([
                 table('users', [field('other', { id: 'p-o' })]),
                 table('tags', [field('id', { id: 'p-t' })]),
             ]);
-            expect(mergeAiDiagram(current, noViewField).relationships).toEqual(
-                []
-            );
+            expect(merge(current, noViewField).relationships).toEqual([]);
         });
 
         it('сохраняет schema совпавшей таблицы, даже если модель её не указала', () => {
-            const merged = mergeAiDiagram(current, proposal());
+            const merged = merge(current, proposal());
             expect(merged.tables!.find((t) => t.name === 'users')!.schema).toBe(
                 'public'
             );
             const p = proposal();
             p.tables![0].schema = 'other';
             expect(
-                mergeAiDiagram(current, p).tables!.find(
-                    (t) => t.name === 'users'
-                )!.schema
+                merge(current, p).tables!.find((t) => t.name === 'users')!
+                    .schema
             ).toBe('public');
         });
     });
@@ -424,7 +444,8 @@ describe('mergeAiDiagram', () => {
                     check: undefined,
                 }),
             ]);
-            const f = mergeAiDiagram(current, proposed).tables![0].fields[0];
+            // импорт этих атрибутов не читает: и в базовом импорте, и в ответе их нет — ИИ их не трогал
+            const f = merge(current, proposed, proposed).tables![0].fields[0];
             expect(f).toMatchObject({
                 id: 'e',
                 characterMaximumLength: '255',
@@ -457,7 +478,7 @@ describe('mergeAiDiagram', () => {
                 }),
                 field('b', { id: 'pb', type: { id: 'int', name: 'int' } }),
             ]);
-            const [a, b] = mergeAiDiagram(current, proposed).tables![0].fields;
+            const [a, b] = merge(current, proposed).tables![0].fields;
             expect(a.type.name).toBe('text');
             expect(a.characterMaximumLength).toBeUndefined();
             expect(b.type).toEqual({ id: 'integer', name: 'integer' });
@@ -470,9 +491,9 @@ describe('mergeAiDiagram', () => {
             const proposed = proposalOf([
                 field('age', { id: 'p', nullable: false }),
             ]);
-            expect(
-                mergeAiDiagram(current, proposed).tables![0].fields[0].nullable
-            ).toBe(false);
+            expect(merge(current, proposed).tables![0].fields[0].nullable).toBe(
+                false
+            );
         });
 
         it('индексы: старые остаются, новый добавляется, дубль и PK-индекс игнорируются', () => {
@@ -530,7 +551,11 @@ describe('mergeAiDiagram', () => {
                     },
                 ],
             });
-            const merged = mergeAiDiagram(current, proposed).tables![0];
+            // базовый импорт то же самое «переименованное» не знал про idx_city
+            const baseline = proposalOf([pid, pemail, pcity], {
+                indexes: [proposed.tables![0].indexes[0]],
+            });
+            const merged = merge(current, proposed, baseline).tables![0];
             expect(merged.indexes.map((i) => i.name)).toEqual([
                 'idx_email',
                 'idx_city',
@@ -558,9 +583,7 @@ describe('mergeAiDiagram', () => {
                 ),
             ]);
             const proposed = proposalOf([field('a', { id: 'pa' })]);
-            expect(
-                mergeAiDiagram(current, proposed).tables![0].indexes
-            ).toEqual([]);
+            expect(merge(current, proposed).tables![0].indexes).toEqual([]);
         });
 
         it('комментарий таблицы и CHECK переживают пустое предложение, непустое берётся', () => {
@@ -571,27 +594,29 @@ describe('mergeAiDiagram', () => {
                     checkConstraints: checks,
                 }),
             ]);
-            const kept = mergeAiDiagram(
-                current,
-                proposalOf([field('age')], {
-                    comments: '',
-                    checkConstraints: [],
-                })
-            ).tables![0];
+            const empty = proposalOf([field('age')], {
+                comments: '',
+                checkConstraints: [],
+            });
+            const kept = merge(current, empty, empty).tables![0];
             expect(kept.comments).toBe('Пользователи');
             expect(kept.checkConstraints).toEqual(checks);
 
-            const changed = mergeAiDiagram(
+            const changed = merge(
                 current,
                 proposalOf([field('age')], {
                     comments: 'Новый',
                     checkConstraints: [
                         { id: 'n', expression: 'age > 18', createdAt: 2 },
                     ],
-                })
+                }),
+                empty
             ).tables![0];
             expect(changed.comments).toBe('Новый');
-            expect(changed.checkConstraints![0].expression).toBe('age > 18');
+            expect(changed.checkConstraints!.map((c) => c.expression)).toEqual([
+                'age >= 0',
+                'age > 18',
+            ]);
         });
 
         it('обратная запись связи 1:1 не создаёт дубль', () => {
@@ -622,10 +647,7 @@ describe('mergeAiDiagram', () => {
                 sourceCardinality: 'one',
                 targetCardinality: 'one',
             });
-            const merged = mergeAiDiagram(
-                current,
-                diagram([pu, pp], [reversed])
-            );
+            const merged = merge(current, diagram([pu, pp], [reversed]));
             expect(merged.relationships).toEqual([old]);
         });
     });

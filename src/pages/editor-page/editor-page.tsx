@@ -8,6 +8,7 @@ import { ExportHost } from '@/components/export-dialog/export-host';
 import { ShareHost } from '@/components/share-dialog/share-host';
 import { UpgradeWallHost } from '@/components/upgrade-wall/upgrade-wall-host';
 import { AiGenerateHost } from '@/components/ai-generate/ai-generate-host';
+import { AiRefineProvider } from '@/components/ai-generate/ai-refine-provider';
 import { ReviewHost } from '@/components/review/review-host';
 import { SaveToCloudPrompt } from '@/components/save-to-cloud-prompt/save-to-cloud-prompt';
 import { useBreakpoint } from '@/hooks/use-breakpoint';
@@ -199,7 +200,9 @@ export const EditorPage: React.FC = () => (
                                                             <AlertProvider>
                                                                 <DialogProvider>
                                                                     <KeyboardShortcutsProvider>
-                                                                        <EditorPageComponent />
+                                                                        <AiRefineProvider>
+                                                                            <EditorPageComponent />
+                                                                        </AiRefineProvider>
                                                                     </KeyboardShortcutsProvider>
                                                                 </DialogProvider>
                                                             </AlertProvider>

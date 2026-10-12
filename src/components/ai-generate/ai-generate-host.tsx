@@ -1,3 +1,4 @@
+import { currentPage } from '@/lib/ai-generate/format';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { LoginPromptDialog } from '@/components/login-prompt/login-prompt-dialog';
 import { onOpenAiGenerate } from '@/lib/ai-generate/events';
@@ -12,7 +13,6 @@ import { AiGenerateDialog } from './ai-generate-dialog';
 import { useAiGenerate } from './use-ai-generate';
 
 const MIN_PROMPT = 3;
-const page = () => window.location.pathname;
 
 interface Seed {
     prompt: string;
@@ -71,7 +71,9 @@ export const AiGenerateHost: React.FC = () => {
                     prompt: detail.prompt ?? '',
                     dialect: detail.dialect ?? 'postgresql',
                 };
-                trackEvent('erd2_ai_open', page(), { source: detail.source });
+                trackEvent('erd2_ai_open', currentPage(), {
+                    source: detail.source,
+                });
                 const canStart =
                     detail.autostart && next.prompt.trim().length >= MIN_PROMPT;
                 if (canStart && !isLoggedIn()) {
@@ -92,7 +94,7 @@ export const AiGenerateHost: React.FC = () => {
         if (!isLoggedIn()) return;
         const pending = consumePending();
         if (!pending) return;
-        trackEvent('erd2_ai_open', page(), { source: 'resume' });
+        trackEvent('erd2_ai_open', currentPage(), { source: 'resume' });
         openWith({ prompt: pending.prompt, dialect: pending.dialect });
         start(pending.prompt, pending.dialect, true);
     }, [start, openWith]);

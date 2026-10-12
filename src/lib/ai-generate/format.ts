@@ -17,3 +17,6 @@ export function pluralTables(n: number): string {
     if (mod10 >= 2 && mod10 <= 4) return `${n} таблицы`;
     return `${n} таблиц`;
 }
+
+// Страница для событий аналитики
+export const currentPage = (): string => window.location.pathname;

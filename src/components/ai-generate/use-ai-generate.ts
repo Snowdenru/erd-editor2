@@ -13,7 +13,7 @@ import {
     streamGenerate,
 } from '@/lib/ai-generate/api';
 import type { AiErrorKind } from '@/lib/ai-generate/api';
-import { countCreateTables } from '@/lib/ai-generate/format';
+import { countCreateTables, currentPage } from '@/lib/ai-generate/format';
 import { ddlToDiagram } from '@/lib/ai-generate/import-ddl';
 import type {
     AiDialect,
@@ -46,8 +46,6 @@ export interface AiGenerateApi {
     clearError: () => void;
 }
 
-const page = () => window.location.pathname;
-
 export function useAiGenerate(
     options: { onDone?: () => void } = {}
 ): AiGenerateApi {
@@ -79,9 +77,9 @@ export function useAiGenerate(
         setError(kind);
         setPhase('idle');
         if (kind === 'limit_free' || kind === 'limit_daily') {
-            trackEvent('erd2_ai_limit_wall', page(), { reason: kind });
+            trackEvent('erd2_ai_limit_wall', currentPage(), { reason: kind });
         } else {
-            trackEvent('erd2_ai_fail', page(), { reason: kind });
+            trackEvent('erd2_ai_fail', currentPage(), { reason: kind });
         }
     }, []);
 
@@ -127,7 +125,7 @@ export function useAiGenerate(
             setDdl('');
             setTableCount(0);
             setPhase('generating');
-            trackEvent('erd2_ai_start', page(), { dialect });
+            trackEvent('erd2_ai_start', currentPage(), { dialect });
 
             try {
                 let acc = '';
@@ -175,7 +173,7 @@ export function useAiGenerate(
                     table_count: diagram.tables?.length ?? 0,
                     diagram_id: diagram.id,
                 }).catch(() => undefined);
-                trackEvent('erd2_ai_success', page(), {
+                trackEvent('erd2_ai_success', currentPage(), {
                     dialect,
                     tables: diagram.tables?.length ?? 0,
                 });
@@ -223,7 +221,7 @@ export function useAiGenerate(
                     fail('save');
                     return;
                 }
-                trackEvent('erd2_ai_restore', page(), {});
+                trackEvent('erd2_ai_restore', currentPage(), {});
                 setPhase('idle');
                 openDiagram(diagram);
             } catch (e) {

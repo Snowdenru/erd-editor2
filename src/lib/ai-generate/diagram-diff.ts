@@ -1,6 +1,14 @@
 import type { Diagram } from '@/lib/domain/diagram';
+import type { DBCustomType } from '@/lib/domain/db-custom-type';
 import type { DBField } from '@/lib/domain/db-field';
 import type { DBTable } from '@/lib/domain/db-table';
+import {
+    indexSignature,
+    isPkIndex,
+    key,
+    matchTables,
+    tableLabel,
+} from './diagram-keys';
 
 export interface FieldChange {
     name: string;
@@ -16,16 +24,18 @@ export interface TableDiff {
     changedFields: FieldChange[];
     addedIndexes: string[];
     removedIndexes: string[];
+    // комментарий таблицы и CHECK-ограничения
+    otherChanges: string[];
 }
 
 export interface DiagramDiff {
     tables: TableDiff[];
     addedRelationships: string[];
     removedRelationships: string[];
+    addedTypes: string[];
+    changedTypes: string[];
     isEmpty: boolean;
 }
-
-const key = (name: string): string => name.trim().toLowerCase();
 
 // Один и тот же тип в разных написаниях: импорт возвращает int там, где в схеме integer
 const TYPE_ALIASES: Record<string, string> = {
@@ -69,20 +79,33 @@ const describeFieldChanges = (a: DBField, b: DBField): string[] => {
     if ((a.default ?? '') !== (b.default ?? '')) {
         changes.push(`по умолчанию: ${a.default || '—'} → ${b.default || '—'}`);
     }
+    const precisionA = `${a.precision ?? ''}/${a.scale ?? ''}`;
+    const precisionB = `${b.precision ?? ''}/${b.scale ?? ''}`;
+    if (precisionA !== precisionB) {
+        changes.push(
+            `точность: ${precisionA.replace(/^\/$/, '—')} → ${precisionB.replace(/^\/$/, '—')}`
+        );
+    }
+    if (Boolean(a.increment) !== Boolean(b.increment)) {
+        changes.push(
+            a.increment ? 'снят AUTO_INCREMENT' : 'добавлен AUTO_INCREMENT'
+        );
+    }
+    if (Boolean(a.isArray) !== Boolean(b.isArray)) {
+        changes.push(a.isArray ? 'не массив' : 'массив');
+    }
+    if ((a.check ?? '') !== (b.check ?? '')) {
+        changes.push(`CHECK: ${a.check || '—'} → ${b.check || '—'}`);
+    }
+    if ((a.collation ?? '') !== (b.collation ?? '')) {
+        changes.push(
+            `collation: ${a.collation || '—'} → ${b.collation || '—'}`
+        );
+    }
+    if ((a.comments ?? '') !== (b.comments ?? '')) {
+        changes.push('изменён комментарий');
+    }
     return changes;
-};
-
-// Индекс определяется набором колонок и уникальностью, а не именем: модель часто лишь переименовывает индекс
-const indexSignature = (
-    table: DBTable,
-    fieldIds: string[],
-    unique: boolean
-): string => {
-    const names = fieldIds
-        .map((id) => table.fields.find((f) => f.id === id)?.name ?? id)
-        .map(key)
-        .sort();
-    return `${unique ? 'u' : 'n'}:${names.join(',')}`;
 };
 
 const diffTable = (before: DBTable, after: DBTable): TableDiff => {
@@ -103,26 +126,17 @@ const diffTable = (before: DBTable, after: DBTable): TableDiff => {
         if (changes.length) changedFields.push({ name: f.name, changes });
     }
 
-    // Импорт добавляет безымянный уникальный индекс по PRIMARY KEY: это та же сущность, что и сам ключ
-    const withoutPkIndex = (t: DBTable) => {
-        const pk = t.fields
-            .filter((f) => f.primaryKey)
-            .map((f) => f.id)
-            .sort()
-            .join(',');
-        return t.indexes.filter(
-            (i) => !(i.unique && pk && [...i.fieldIds].sort().join(',') === pk)
-        );
-    };
+    const withoutPkIndex = (t: DBTable) =>
+        t.indexes.filter((i) => !isPkIndex(t.fields, i));
     const beforeIdx = new Map(
         withoutPkIndex(before).map((i) => [
-            indexSignature(before, i.fieldIds, i.unique),
+            indexSignature(before.fields, i.fieldIds, i.unique),
             i,
         ])
     );
     const afterIdx = new Map(
         withoutPkIndex(after).map((i) => [
-            indexSignature(after, i.fieldIds, i.unique),
+            indexSignature(after.fields, i.fieldIds, i.unique),
             i,
         ])
     );
@@ -132,6 +146,29 @@ const diffTable = (before: DBTable, after: DBTable): TableDiff => {
     const removedIndexes = [...beforeIdx]
         .filter(([s]) => !afterIdx.has(s))
         .map(([, i]) => i.name);
+    const renamedIndexes = [...afterIdx]
+        .filter(
+            ([s, i]) => beforeIdx.has(s) && beforeIdx.get(s)!.name !== i.name
+        )
+        .map(([s, i]) => `индекс ${beforeIdx.get(s)!.name} → ${i.name}`);
+
+    const otherChanges: string[] = [...renamedIndexes];
+    if ((before.comments ?? '') !== (after.comments ?? '')) {
+        otherChanges.push('изменён комментарий таблицы');
+    }
+    const norm = (e: string): string => e.replace(/\s+/g, ' ').trim();
+    const beforeChecks = new Set(
+        (before.checkConstraints ?? []).map((c) => norm(c.expression))
+    );
+    const afterChecks = new Set(
+        (after.checkConstraints ?? []).map((c) => norm(c.expression))
+    );
+    for (const e of afterChecks) {
+        if (!beforeChecks.has(e)) otherChanges.push(`+ CHECK (${e})`);
+    }
+    for (const e of beforeChecks) {
+        if (!afterChecks.has(e)) otherChanges.push(`− CHECK (${e})`);
+    }
 
     return {
         name: after.name,
@@ -142,6 +179,7 @@ const diffTable = (before: DBTable, after: DBTable): TableDiff => {
         changedFields,
         addedIndexes,
         removedIndexes,
+        otherChanges,
     };
 };
 
@@ -178,27 +216,36 @@ const relationshipLabels = (diagram: Diagram): Map<string, string> => {
     return result;
 };
 
+const emptyDetails = {
+    addedFields: [],
+    removedFields: [],
+    changedFields: [],
+    addedIndexes: [],
+    removedIndexes: [],
+    otherChanges: [],
+};
+
+const customTypeKey = (t: DBCustomType): string =>
+    `${key(t.schema ?? '')}.${key(t.name)}`;
+const customTypeBody = (t: DBCustomType): string =>
+    JSON.stringify([t.kind, t.values ?? [], t.fields ?? []]);
+
 export function diffDiagrams(before: Diagram, after: Diagram): DiagramDiff {
-    const beforeTables = new Map(
-        comparableTables(before).map((t) => [key(t.name), t])
-    );
-    const afterTables = new Map(
-        comparableTables(after).map((t) => [key(t.name), t])
-    );
+    const beforeList = comparableTables(before);
+    const afterList = comparableTables(after);
+    const all = [...beforeList, ...afterList];
+    const afterToBefore = matchTables(afterList, beforeList, { byId: true });
+    const matchedBefore = new Set([...afterToBefore.values()].map((t) => t.id));
 
     const tables: TableDiff[] = [];
-    for (const [k, t] of afterTables) {
-        const old = beforeTables.get(k);
+    for (const t of afterList) {
+        const old = afterToBefore.get(t.id);
         if (!old) {
             tables.push({
-                name: t.name,
+                ...emptyDetails,
+                name: tableLabel(t, all),
                 status: 'added',
                 fieldCount: t.fields.length,
-                addedFields: [],
-                removedFields: [],
-                changedFields: [],
-                addedIndexes: [],
-                removedIndexes: [],
             });
             continue;
         }
@@ -208,22 +255,19 @@ export function diffDiagrams(before: Diagram, after: Diagram): DiagramDiff {
             d.removedFields.length ||
             d.changedFields.length ||
             d.addedIndexes.length ||
-            d.removedIndexes.length
+            d.removedIndexes.length ||
+            d.otherChanges.length
         ) {
-            tables.push(d);
+            tables.push({ ...d, name: tableLabel(t, all) });
         }
     }
-    for (const [k, t] of beforeTables) {
-        if (!afterTables.has(k)) {
+    for (const t of beforeList) {
+        if (!matchedBefore.has(t.id)) {
             tables.push({
-                name: t.name,
+                ...emptyDetails,
+                name: tableLabel(t, all),
                 status: 'removed',
                 fieldCount: t.fields.length,
-                addedFields: [],
-                removedFields: [],
-                changedFields: [],
-                addedIndexes: [],
-                removedIndexes: [],
             });
         }
     }
@@ -237,13 +281,29 @@ export function diffDiagrams(before: Diagram, after: Diagram): DiagramDiff {
         .filter(([k]) => !afterRels.has(k))
         .map(([, v]) => v);
 
+    const beforeTypes = new Map(
+        (before.customTypes ?? []).map((t) => [customTypeKey(t), t])
+    );
+    const addedTypes: string[] = [];
+    const changedTypes: string[] = [];
+    for (const t of after.customTypes ?? []) {
+        const old = beforeTypes.get(customTypeKey(t));
+        if (!old) addedTypes.push(t.name);
+        else if (customTypeBody(old) !== customTypeBody(t))
+            changedTypes.push(t.name);
+    }
+
     return {
         tables,
         addedRelationships,
         removedRelationships,
+        addedTypes,
+        changedTypes,
         isEmpty:
             tables.length === 0 &&
             addedRelationships.length === 0 &&
-            removedRelationships.length === 0,
+            removedRelationships.length === 0 &&
+            addedTypes.length === 0 &&
+            changedTypes.length === 0,
     };
 }

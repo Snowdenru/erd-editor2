@@ -76,8 +76,24 @@ export const AiRefineResult: React.FC<AiRefineResultProps> = ({
                                     {t.removedIndexes.map((i) => (
                                         <li key={`-i${i}`}>− индекс {i}</li>
                                     ))}
+                                    {t.otherChanges.map((c) => (
+                                        <li key={`o${c}`}>{c}</li>
+                                    ))}
                                 </ul>
                             ) : null}
+                        </li>
+                    ))}
+                    {diff.addedTypes.map((n) => (
+                        <li
+                            key={`+ty${n}`}
+                            className="font-mono text-green-600 dark:text-green-400"
+                        >
+                            + тип {n}
+                        </li>
+                    ))}
+                    {diff.changedTypes.map((n) => (
+                        <li key={`~ty${n}`} className="font-mono">
+                            ~ тип {n}
                         </li>
                     ))}
                     {diff.addedRelationships.map((r) => (

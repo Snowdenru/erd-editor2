@@ -27,7 +27,10 @@ vi.mock('@/lib/ai-generate/merge-diagram', async () => {
     return { ...actual, mergeAiDiagram: vi.fn(actual.mergeAiDiagram) };
 });
 vi.mock('@/lib/ai-generate/import-ddl', () => ({ ddlToDiagram }));
-vi.mock('@/lib/sqllab-account', () => ({ trackEvent }));
+vi.mock('@/lib/sqllab-account', () => ({
+    trackEvent,
+    isLoggedIn: () => true,
+}));
 const exportBaseSQL = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/data/sql-export/export-sql-script', () => ({ exportBaseSQL }));
 vi.mock('@/hooks/use-chartdb', () => ({
@@ -46,6 +49,7 @@ const proposed = diagram([
 
 beforeEach(() => {
     vi.clearAllMocks();
+    ddlToDiagram.mockReset();
     exportBaseSQL.mockReturnValue('CREATE TABLE users (id int);');
     state.current = current;
     listGenerations.mockResolvedValue({
@@ -61,6 +65,24 @@ beforeEach(() => {
     finalizeGeneration.mockResolvedValue({ refunded: false, remaining: 2 });
     updateDiagramData.mockResolvedValue(undefined);
 });
+
+// Хук импортирует DDL дважды: сначала базовый (то, что отправили ИИ), потом ответ
+const mockImports = (
+    answer: unknown,
+    base: () => unknown = () => structuredClone(state.current)
+) => {
+    let n = 0;
+    ddlToDiagram.mockImplementation(async () =>
+        n++ % 2 === 0 ? base() : answer
+    );
+};
+
+const mockImportsOnce = (answer: unknown, base?: unknown) => {
+    ddlToDiagram.mockReturnValueOnce(
+        Promise.resolve(base ?? structuredClone(state.current))
+    );
+    ddlToDiagram.mockReturnValueOnce(answer);
+};
 
 const generated = {
     status: 'generated',
@@ -78,7 +100,7 @@ describe('useAiRefine', () => {
 
     it('runs a review and ends in the review phase with a diff', async () => {
         streamRefine.mockResolvedValue(generated);
-        ddlToDiagram.mockResolvedValue(proposed);
+        mockImports(proposed);
         const { result } = renderHook(() => useAiRefine());
         await act(async () => {
             await result.current.run('review');
@@ -104,8 +126,8 @@ describe('useAiRefine', () => {
 
     it('applies the proposal in place, finalizes success and allows undo', async () => {
         streamRefine.mockResolvedValue(generated);
-        ddlToDiagram.mockResolvedValue(proposed);
-        const { result } = renderHook(() => useAiRefine());
+        mockImports(proposed);
+        const { result, rerender } = renderHook(() => useAiRefine());
         await act(async () => {
             await result.current.run('edit', 'добавь email');
         });
@@ -125,16 +147,120 @@ describe('useAiRefine', () => {
         expect(result.current.proposal).toBeNull();
         expect(result.current.canUndo).toBe(true);
 
+        // схема в сторе стала такой, как записали
+        state.current = applied;
+        rerender();
+        let outcome: string | undefined;
         await act(async () => {
-            await result.current.undo();
+            outcome = await result.current.undo();
         });
+        expect(outcome).toBe('done');
         expect(updateDiagramData).toHaveBeenLastCalledWith(current);
         expect(result.current.canUndo).toBe(false);
     });
 
+    it('asks to confirm the undo when the schema was edited after applying', async () => {
+        streamRefine.mockResolvedValue(generated);
+        mockImports(proposed);
+        const { result, rerender } = renderHook(() => useAiRefine());
+        await act(async () => {
+            await result.current.run('edit', 'добавь email');
+        });
+        await act(async () => {
+            await result.current.apply();
+        });
+        const applied = updateDiagramData.mock.calls[0][0];
+        state.current = diagram(
+            [
+                {
+                    ...applied.tables[0],
+                    fields: [...applied.tables[0].fields, field('manual')],
+                },
+            ],
+            []
+        );
+        rerender();
+        updateDiagramData.mockClear();
+        let first: string | undefined;
+        await act(async () => {
+            first = await result.current.undo();
+        });
+        expect(first).toBe('needs_confirm');
+        expect(updateDiagramData).not.toHaveBeenCalled();
+        expect(result.current.canUndo).toBe(true);
+        let second: string | undefined;
+        await act(async () => {
+            second = await result.current.undo(true);
+        });
+        expect(second).toBe('done');
+        expect(updateDiagramData).toHaveBeenCalledWith(current);
+    });
+
+    it('keeps the undo snapshot when a new run starts', async () => {
+        streamRefine.mockResolvedValue(generated);
+        mockImports(proposed);
+        const { result } = renderHook(() => useAiRefine());
+        await act(async () => {
+            await result.current.run('edit', 'добавь email');
+        });
+        await act(async () => {
+            await result.current.apply();
+        });
+        expect(result.current.canUndo).toBe(true);
+        streamRefine.mockRejectedValueOnce(new AiApiError(429, 'cooldown'));
+        await act(async () => {
+            await result.current.run('review');
+        });
+        expect(result.current.error).toBe('cooldown');
+        expect(result.current.canUndo).toBe(true);
+    });
+
+    it('refuses to run on an unsupported dialect without calling the API', async () => {
+        state.current = diagram([table('t', [field('id')])], [], {
+            databaseType: DatabaseType.CLICKHOUSE,
+        });
+        const { result } = renderHook(() => useAiRefine());
+        await act(async () => {
+            await result.current.run('review');
+        });
+        expect(result.current.error).toBe('unsupported_dialect');
+        expect(streamRefine).not.toHaveBeenCalled();
+    });
+
+    it('maps a too_large answer with a table limit to too_many_tables', async () => {
+        streamRefine.mockRejectedValueOnce(
+            new AiApiError(400, 'too_large', 10)
+        );
+        const { result } = renderHook(() => useAiRefine());
+        await act(async () => {
+            await result.current.run('review');
+        });
+        expect(result.current.error).toBe('too_many_tables');
+        expect(result.current.errorLimit).toBe(10);
+    });
+
+    it('sanitizes the answer of the model for mssql before importing', async () => {
+        state.current = diagram(
+            [table('users', [field('id')], { id: 'u' })],
+            [],
+            { databaseType: DatabaseType.SQL_SERVER }
+        );
+        streamRefine.mockResolvedValueOnce({
+            ...generated,
+            ddl: 'CREATE TABLE users (\n  -- ид\n  id int,\n  email nvarchar(10)\n);',
+        });
+        mockImports(proposed);
+        const { result } = renderHook(() => useAiRefine());
+        await act(async () => {
+            await result.current.run('review');
+        });
+        const answerCall = ddlToDiagram.mock.calls[1][0].ddl as string;
+        expect(answerCall).not.toContain('--');
+    });
+
     it('discard keeps the schema untouched but still finalizes success', async () => {
         streamRefine.mockResolvedValue(generated);
-        ddlToDiagram.mockResolvedValue(proposed);
+        mockImports(proposed);
         const { result } = renderHook(() => useAiRefine());
         await act(async () => {
             await result.current.run('review');
@@ -164,7 +290,7 @@ describe('useAiRefine', () => {
         expect(result.current.phase).toBe('idle');
 
         streamRefine.mockResolvedValueOnce(generated);
-        ddlToDiagram.mockResolvedValueOnce(current);
+        mockImportsOnce(current);
         await act(async () => {
             await result.current.run('review');
         });
@@ -191,7 +317,7 @@ describe('useAiRefine', () => {
 
     it('rolls back and refunds when writing the merged diagram fails', async () => {
         streamRefine.mockResolvedValue(generated);
-        ddlToDiagram.mockResolvedValue(proposed);
+        mockImports(proposed);
         updateDiagramData
             .mockRejectedValueOnce(new Error('db'))
             .mockResolvedValueOnce(undefined);
@@ -256,7 +382,7 @@ const toReview = async (result: {
     current: ReturnType<typeof useAiRefine>;
 }) => {
     streamRefine.mockResolvedValueOnce(generated);
-    ddlToDiagram.mockResolvedValueOnce(proposed);
+    mockImportsOnce(proposed);
     await act(async () => {
         await result.current.run('review');
     });
@@ -284,7 +410,7 @@ describe('useAiRefine state machine', () => {
             ...generated,
             generationId: 'g2',
         });
-        ddlToDiagram.mockResolvedValueOnce(proposed);
+        mockImportsOnce(proposed);
         await act(async () => {
             await result.current.run('review');
         });
@@ -497,7 +623,7 @@ describe('useAiRefine state machine', () => {
     it('unmount while ddlToDiagram is pending settles once', async () => {
         const d = deferred<typeof proposed>();
         streamRefine.mockResolvedValueOnce(generated);
-        ddlToDiagram.mockReturnValueOnce(d.promise);
+        mockImportsOnce(d.promise);
         const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
         const { result, unmount } = renderHook(() => useAiRefine());
         let running!: Promise<void>;
@@ -545,7 +671,7 @@ describe('useAiRefine state machine', () => {
     it('parse failure after a diagram switch refunds once without an error', async () => {
         const d = deferred<typeof proposed>();
         streamRefine.mockResolvedValueOnce(generated);
-        ddlToDiagram.mockReturnValueOnce(d.promise);
+        mockImportsOnce(d.promise);
         const { result, rerender } = renderHook(() => useAiRefine());
         let running!: Promise<void>;
         act(() => {
@@ -590,8 +716,12 @@ describe('useAiRefine final wave', () => {
         const prop = diagram([
             table('users', [field('id'), field('email')], { id: 'p-u' }),
         ]);
+        // импорт индексов и комментариев не читает: в базовом импорте их нет, значит ИИ их не трогал
+        const importBase = diagram([
+            table('users', [field('id')], { id: 'b-u' }),
+        ]);
         streamRefine.mockResolvedValueOnce(generated);
-        ddlToDiagram.mockResolvedValueOnce(prop);
+        mockImportsOnce(prop, importBase);
         const { result } = renderHook(() => useAiRefine());
         await act(async () => {
             await result.current.run('review');
@@ -603,8 +733,9 @@ describe('useAiRefine final wave', () => {
         await act(async () => {
             await result.current.apply();
         });
-        expect(updateDiagramData.mock.calls[0][0]).toEqual(
-            mergeAiDiagram(cur, prop)
+        const noStamp = (d: object) => ({ ...d, updatedAt: undefined });
+        expect(noStamp(updateDiagramData.mock.calls[0][0])).toEqual(
+            noStamp(mergeAiDiagram(cur, prop, importBase))
         );
     });
 
@@ -654,9 +785,12 @@ describe('useAiRefine final wave', () => {
         expect(result.current.phase).toBe('review');
         expect(result.current.proposal?.generationId).toBe('g1');
         expect(result.current.proposal?.base).toBe(edited);
-        // новая правка пользователя теперь видна в диффе как удаляемая
-        expect(result.current.proposal?.diff.tables[0].removedFields).toEqual([
-            'age',
+        // поле, добавленное пользователем после запуска, ИИ не видел — оно не удаляется
+        expect(result.current.proposal?.diff.tables[0].removedFields).toEqual(
+            []
+        );
+        expect(result.current.proposal?.diff.tables[0].addedFields).toEqual([
+            'email',
         ]);
         await act(async () => {
             await result.current.apply();
@@ -665,7 +799,7 @@ describe('useAiRefine final wave', () => {
         const written = updateDiagramData.mock.calls[0][0];
         expect(
             written.tables[0].fields.map((f: { name: string }) => f.name)
-        ).toEqual(['id', 'email']);
+        ).toEqual(['id', 'age', 'email']);
         expect(finalizeGeneration).toHaveBeenCalledTimes(1);
         expect(successCalls()).toHaveLength(1);
         expect(result.current.notice).toBeNull();
@@ -695,9 +829,7 @@ describe('useAiRefine final wave', () => {
         );
         state.current = four;
         streamRefine.mockResolvedValueOnce(generated);
-        ddlToDiagram.mockResolvedValueOnce(
-            diagram([table('a', [field('id')])])
-        );
+        mockImportsOnce(diagram([table('a', [field('id')])]));
         const { result } = renderHook(() => useAiRefine());
         await act(async () => {
             await result.current.run('review');
@@ -715,7 +847,7 @@ describe('useAiRefine final wave', () => {
         const names = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'];
         state.current = diagram(names.map((n) => table(n, [field('id')])));
         streamRefine.mockResolvedValueOnce(generated);
-        ddlToDiagram.mockResolvedValueOnce(
+        mockImportsOnce(
             diagram(names.slice(1).map((n) => table(n, [field('id')])))
         );
         const { result } = renderHook(() => useAiRefine());
@@ -730,7 +862,7 @@ describe('useAiRefine final wave', () => {
         ).toHaveLength(1);
     });
 
-    it('records refundDenied when the daily refund budget is spent', async () => {
+    it('reports denied when the daily refund budget is spent', async () => {
         streamRefine.mockResolvedValueOnce(generated);
         ddlToDiagram.mockRejectedValueOnce(new Error('sanity'));
         finalizeGeneration.mockResolvedValueOnce({
@@ -742,12 +874,12 @@ describe('useAiRefine final wave', () => {
             await result.current.run('review');
         });
         expect(result.current.error).toBe('parse');
-        expect(result.current.refundDenied).toBe(true);
+        expect(result.current.refundState).toBe('denied');
         act(() => result.current.clearError());
-        expect(result.current.refundDenied).toBe(false);
+        expect(result.current.refundState).toBe('refunded');
     });
 
-    it('keeps refundDenied false when the refund is granted', async () => {
+    it('reports refunded when the refund is granted', async () => {
         streamRefine.mockResolvedValueOnce(generated);
         ddlToDiagram.mockRejectedValueOnce(new Error('sanity'));
         finalizeGeneration.mockResolvedValueOnce({
@@ -759,6 +891,18 @@ describe('useAiRefine final wave', () => {
             await result.current.run('review');
         });
         expect(result.current.error).toBe('parse');
-        expect(result.current.refundDenied).toBe(false);
+        expect(result.current.refundState).toBe('refunded');
+    });
+
+    it('reports unknown (not «limit spent») when the refund call itself fails', async () => {
+        streamRefine.mockResolvedValueOnce(generated);
+        ddlToDiagram.mockRejectedValueOnce(new Error('sanity'));
+        finalizeGeneration.mockRejectedValueOnce(new Error('offline'));
+        const { result } = renderHook(() => useAiRefine());
+        await act(async () => {
+            await result.current.run('review');
+        });
+        expect(result.current.error).toBe('parse');
+        expect(result.current.refundState).toBe('unknown');
     });
 });

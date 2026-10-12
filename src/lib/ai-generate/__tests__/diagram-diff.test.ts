@@ -87,12 +87,16 @@ describe('diffDiagrams', () => {
         );
         expect(diff.tables[0].addedIndexes).toEqual(['idx_b']);
         expect(diff.tables[0].removedIndexes).toEqual(['idx_a']);
-        // то же имя колонок — тот же индекс, даже если имя индекса другое
-        const same = diffDiagrams(
+        // то же имя колонок — тот же индекс, но переименование видно
+        const renamed = diffDiagrams(
             diagram([withIdx('idx_a', [a.id])]),
             diagram([withIdx('renamed', [a.id])])
         );
-        expect(same.isEmpty).toBe(true);
+        expect(renamed.tables[0].addedIndexes).toEqual([]);
+        expect(renamed.tables[0].removedIndexes).toEqual([]);
+        expect(renamed.tables[0].otherChanges).toEqual([
+            'индекс idx_a → renamed',
+        ]);
     });
 
     it('reports added and removed relationships with readable labels', () => {

@@ -1,14 +1,23 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/button/button';
 import type {
     AiRefineApi,
     RefineUiError,
+    RefundState,
 } from '@/components/ai-generate/use-ai-refine';
 import type { AiRefineMode } from '@/lib/ai-generate/types';
 import { AiRefineResult } from './ai-refine-result';
 
 const REFUNDED = 'Попытка возвращена.';
 const DENIED = 'Попытка списана: лимит возвратов на сегодня исчерпан.';
+const UNKNOWN =
+    'Не удалось подтвердить возврат попытки — проверьте остаток запросов.';
+const REFUND_TEXT: Record<RefundState, string> = {
+    refunded: REFUNDED,
+    denied: DENIED,
+    unknown: UNKNOWN,
+};
 
 const ERROR_TEXT: Record<RefineUiError, string> = {
     invalid_prompt: 'Проверьте инструкцию: от 3 до 1000 символов.',
@@ -19,6 +28,10 @@ const ERROR_TEXT: Record<RefineUiError, string> = {
     network: 'Не удалось связаться с сервером. Попробуйте ещё раз.',
     too_large:
         'Схема слишком большая для проверки (примерно до 12 тыс. символов DDL). Уберите лишние таблицы и повторите.',
+    too_many_tables:
+        'В схеме больше таблиц, чем доступно на вашем тарифе для проверки ИИ.',
+    unsupported_dialect:
+        'ИИ-проверка работает со схемами PostgreSQL, MySQL, MariaDB, SQL Server и SQLite. Для этого диалекта она пока недоступна.',
     empty_diagram: 'Сначала добавьте таблицы или создайте схему с ИИ.',
     provider: 'ИИ не ответил. Попытка не потрачена, повторите запрос.',
     parse: 'ИИ вернул схему, которую не удалось разобрать.',
@@ -33,10 +46,19 @@ const REFUND_ERRORS: ReadonlySet<RefineUiError> = new Set([
     'incomplete',
 ]);
 
-const errorText = (error: RefineUiError, refundDenied: boolean): string =>
-    REFUND_ERRORS.has(error)
-        ? `${ERROR_TEXT[error]} ${refundDenied ? DENIED : REFUNDED}`
-        : ERROR_TEXT[error];
+const errorText = (
+    error: RefineUiError,
+    refundState: RefundState,
+    limit: number | null
+): string => {
+    const base =
+        error === 'too_many_tables' && limit != null
+            ? `В схеме больше ${limit} таблиц — это максимум для проверки ИИ на вашем тарифе.`
+            : ERROR_TEXT[error];
+    return REFUND_ERRORS.has(error)
+        ? `${base} ${REFUND_TEXT[refundState]}`
+        : base;
+};
 
 export interface AiRefinePanelProps {
     mode: AiRefineMode;
@@ -48,7 +70,15 @@ export const AiRefinePanel: React.FC<AiRefinePanelProps> = ({ mode, ai }) => {
     const running = ai.phase === 'running';
     const busy = running || ai.phase === 'applying';
     const proposal = ai.proposal;
-    const wall = ai.error === 'limit_free' || ai.error === 'limit_daily';
+    const wall =
+        ai.error === 'limit_free' ||
+        ai.error === 'limit_daily' ||
+        ai.error === 'too_many_tables';
+    const [confirmUndo, setConfirmUndo] = useState(false);
+    const undo = async (force: boolean) => {
+        const result = await ai.undo(force);
+        setConfirmUndo(result === 'needs_confirm');
+    };
 
     return (
         <div className="flex flex-1 flex-col gap-3 overflow-hidden">
@@ -131,17 +161,19 @@ export const AiRefinePanel: React.FC<AiRefinePanelProps> = ({ mode, ai }) => {
                     role="alert"
                     className="rounded-md border border-destructive/40 p-2 text-sm text-destructive"
                 >
-                    {errorText(ai.error, ai.refundDenied)}
+                    {errorText(ai.error, ai.refundState, ai.errorLimit)}
                     {wall ? (
                         <>
                             {' '}
-                            С ERD Pro — до 30 запросов в день.{' '}
-                            <a
+                            {ai.error === 'too_many_tables'
+                                ? 'С ERD Pro ограничения мягче.'
+                                : 'С ERD Pro — до 30 запросов в день.'}{' '}
+                            <Link
                                 className="font-medium underline"
-                                href="/tools/erd/pricing"
+                                to="/pricing"
                             >
                                 Открыть ERD Pro
-                            </a>
+                            </Link>
                         </>
                     ) : null}
                 </div>
@@ -153,17 +185,47 @@ export const AiRefinePanel: React.FC<AiRefinePanelProps> = ({ mode, ai }) => {
                 </p>
             ) : null}
 
-            {ai.canUndo && !proposal ? (
-                <div className="flex items-center gap-2 rounded-md border p-2 text-sm">
-                    <span>Изменения применены.</span>
-                    <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => void ai.undo()}
-                    >
-                        Отменить применение
-                    </Button>
+            {ai.canUndo && !proposal && ai.phase === 'idle' ? (
+                <div className="flex flex-col gap-2 rounded-md border p-2 text-sm">
+                    <div className="flex items-center gap-2">
+                        <span>Изменения применены.</span>
+                        {!confirmUndo ? (
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => void undo(false)}
+                            >
+                                Отменить применение
+                            </Button>
+                        ) : null}
+                    </div>
+                    {confirmUndo ? (
+                        <>
+                            <p role="alert">
+                                После применения вы меняли схему. Отмена вернёт
+                                её к состоянию до ИИ, и эти правки пропадут.
+                            </p>
+                            <div className="flex gap-2">
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => void undo(true)}
+                                >
+                                    Всё равно отменить
+                                </Button>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setConfirmUndo(false)}
+                                >
+                                    Оставить как есть
+                                </Button>
+                            </div>
+                        </>
+                    ) : null}
                 </div>
             ) : null}
 

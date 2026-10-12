@@ -23,6 +23,17 @@ export function toApiDialect(type: DatabaseType): AiDialect {
     }
 }
 
+// Диалекты, которые ИИ-проверка схемы понимает: у остальных экспорт пишет типы, чуждые PostgreSQL
+export function isRefineDialectSupported(type: DatabaseType): boolean {
+    return (
+        type === DatabaseType.POSTGRESQL ||
+        type === DatabaseType.MYSQL ||
+        type === DatabaseType.MARIADB ||
+        type === DatabaseType.SQL_SERVER ||
+        type === DatabaseType.SQLITE
+    );
+}
+
 export function toDatabaseType(dialect: AiDialect): DatabaseType {
     switch (dialect) {
         case 'mysql':

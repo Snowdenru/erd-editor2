@@ -17,6 +17,7 @@ import {
     FolderOpen,
     CodeXml,
     FileCode,
+    Sparkles,
     Star,
     FileOutput,
 } from 'lucide-react';
@@ -110,6 +111,15 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
                     selectSidebarSection('ddl');
                 },
                 active: selectedSidebarSection === 'ddl',
+            },
+            {
+                title: 'ИИ',
+                icon: Sparkles,
+                onClick: () => {
+                    showSidePanel();
+                    selectSidebarSection('ai');
+                },
+                active: selectedSidebarSection === 'ai',
             },
             {
                 title: t('editor_sidebar.refs'),

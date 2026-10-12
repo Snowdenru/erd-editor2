@@ -4,6 +4,7 @@ import { createContext } from 'react';
 export type SidebarSection =
     | 'dbml'
     | 'ddl'
+    | 'ai'
     | 'tables'
     | 'refs'
     | 'customTypes'

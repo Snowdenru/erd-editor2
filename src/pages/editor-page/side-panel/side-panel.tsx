@@ -17,6 +17,7 @@ import { CustomTypesSection } from './custom-types-section/custom-types-section'
 import { supportsCustomTypes } from '@/lib/domain/database-capabilities';
 import { DBMLSection } from './dbml-section/dbml-section';
 import { DDLSection } from './ddl-section/ddl-section';
+import { AiSection } from './ai-section/ai-section';
 import { RefsSection } from './refs-section/refs-section';
 import { VisualsSection } from './visuals-section/visuals-section';
 
@@ -49,6 +50,7 @@ export const SidePanel: React.FC<SidePanelProps> = () => {
                                 <SelectItem value="tables">
                                     {t('side_panel.tables_section.tables')}
                                 </SelectItem>
+                                <SelectItem value="ai">ИИ</SelectItem>
                                 <SelectItem value="refs">
                                     {t('side_panel.refs_section.refs')}
                                 </SelectItem>
@@ -76,6 +78,8 @@ export const SidePanel: React.FC<SidePanelProps> = () => {
                 <DBMLSection />
             ) : selectedSidebarSection === 'ddl' ? (
                 <DDLSection />
+            ) : selectedSidebarSection === 'ai' ? (
+                <AiSection />
             ) : selectedSidebarSection === 'refs' ? (
                 <RefsSection />
             ) : selectedSidebarSection === 'visuals' ? (

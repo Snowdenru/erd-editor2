@@ -243,8 +243,12 @@ const successCalls = () =>
 
 const deferred = <T,>() => {
     let resolve!: (v: T) => void;
-    const promise = new Promise<T>((r) => (resolve = r));
-    return { promise, resolve };
+    let reject!: (e: unknown) => void;
+    const promise = new Promise<T>((res, rej) => {
+        resolve = res;
+        reject = rej;
+    });
+    return { promise, resolve, reject };
 };
 
 const toReview = async (result: {
@@ -457,5 +461,109 @@ describe('useAiRefine state machine', () => {
                 changes: 1,
             }
         );
+    });
+
+    it('unmount during review settles the proposal with one success', async () => {
+        const { result, unmount } = renderHook(() => useAiRefine());
+        await toReview(result);
+        unmount();
+        await waitFor(() => expect(successCalls()).toHaveLength(1));
+        expect(finalizeGeneration).toHaveBeenCalledTimes(1);
+    });
+
+    it('unmount while streaming settles a late generated outcome once', async () => {
+        const d = deferred<typeof generated>();
+        streamRefine.mockReturnValueOnce(d.promise);
+        const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const { result, unmount } = renderHook(() => useAiRefine());
+        let running!: Promise<void>;
+        act(() => {
+            running = result.current.run('review');
+        });
+        unmount();
+        expect(finalizeGeneration).not.toHaveBeenCalled();
+        await act(async () => {
+            d.resolve(generated);
+            await running;
+        });
+        expect(finalizeGeneration).toHaveBeenCalledTimes(1);
+        expect(successCalls()).toHaveLength(1);
+        expect(ddlToDiagram).not.toHaveBeenCalled();
+        expect(errors).not.toHaveBeenCalled();
+        errors.mockRestore();
+    });
+
+    it('unmount while ddlToDiagram is pending settles once', async () => {
+        const d = deferred<typeof proposed>();
+        streamRefine.mockResolvedValueOnce(generated);
+        ddlToDiagram.mockReturnValueOnce(d.promise);
+        const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const { result, unmount } = renderHook(() => useAiRefine());
+        let running!: Promise<void>;
+        act(() => {
+            running = result.current.run('review');
+        });
+        await waitFor(() => expect(ddlToDiagram).toHaveBeenCalled());
+        unmount();
+        await act(async () => {
+            d.resolve(proposed);
+            await running;
+        });
+        expect(finalizeGeneration).toHaveBeenCalledTimes(1);
+        expect(successCalls()).toHaveLength(1);
+        expect(errors).not.toHaveBeenCalled();
+        errors.mockRestore();
+    });
+
+    it('diagram switch during applying finalizes once and keeps no undo', async () => {
+        const w = deferred<void>();
+        updateDiagramData.mockReturnValueOnce(w.promise);
+        const { result, rerender } = renderHook(() => useAiRefine());
+        await toReview(result);
+        let applying!: Promise<void>;
+        act(() => {
+            applying = result.current.apply();
+        });
+        state.current = diagram([table('orders', [field('id')])], [], {
+            id: 'd2',
+        });
+        rerender();
+        await act(async () => {
+            w.resolve();
+            await applying;
+        });
+        expect(finalizeGeneration).toHaveBeenCalledTimes(1);
+        expect(successCalls()).toHaveLength(1);
+        expect(result.current.canUndo).toBe(false);
+        await act(async () => {
+            await result.current.undo();
+        });
+        expect(updateDiagramData).toHaveBeenCalledTimes(1);
+    });
+
+    it('parse failure after a diagram switch refunds once without an error', async () => {
+        const d = deferred<typeof proposed>();
+        streamRefine.mockResolvedValueOnce(generated);
+        ddlToDiagram.mockReturnValueOnce(d.promise);
+        const { result, rerender } = renderHook(() => useAiRefine());
+        let running!: Promise<void>;
+        act(() => {
+            running = result.current.run('review');
+        });
+        await waitFor(() => expect(ddlToDiagram).toHaveBeenCalled());
+        state.current = diagram([table('orders', [field('id')])], [], {
+            id: 'd2',
+        });
+        rerender();
+        await act(async () => {
+            d.reject(new Error('sanity'));
+            await running;
+        });
+        expect(finalizeGeneration).toHaveBeenCalledTimes(1);
+        expect(finalizeGeneration).toHaveBeenCalledWith('g1', {
+            status: 'parse_failed',
+        });
+        expect(result.current.error).toBeNull();
+        expect(result.current.phase).toBe('idle');
     });
 });

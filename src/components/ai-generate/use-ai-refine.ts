@@ -75,8 +75,6 @@ export function useAiRefine(): AiRefineApi {
             .catch(() => undefined);
     }, []);
 
-    useEffect(() => () => abortRef.current?.abort(), []);
-
     const setRemaining = useCallback((remaining: number) => {
         setUsage((u) =>
             u ? { ...u, remaining, used: Math.max(0, u.limit - remaining) } : u
@@ -128,6 +126,21 @@ export function useAiRefine(): AiRefineApi {
         [finishCharged]
     );
 
+    // Панель размонтируется при смене раздела сайдбара: незакрытая попытка списывается
+    const unmountedRef = useRef(false);
+    useEffect(() => {
+        unmountedRef.current = false;
+        return () => {
+            unmountedRef.current = true;
+            abortRef.current?.abort();
+            const dropped = proposalRef.current;
+            if (dropped) {
+                proposalRef.current = null;
+                void settleDropped(dropped);
+            }
+        };
+    }, [settleDropped]);
+
     // Предложение, откат и запрос относятся к конкретной схеме: при переключении сбрасываем
     useEffect(() => {
         abortRef.current?.abort();
@@ -172,6 +185,20 @@ export function useAiRefine(): AiRefineApi {
                     signal: controller.signal,
                     onDelta: () => undefined,
                 });
+                if (unmountedRef.current) {
+                    if (outcome.status === 'generated') {
+                        await finishCharged(
+                            outcome.generationId,
+                            current.tables.length
+                        );
+                        trackEvent('erd2_ai_success', page(), {
+                            kind: mode,
+                            applied: false,
+                            changes: outcome.changes.length,
+                        });
+                    }
+                    return;
+                }
                 setRemaining(outcome.remaining);
                 if (diagramRef.current.id !== startId) {
                     // Схему сменили, пока шёл запрос: результат показать некому
@@ -210,7 +237,24 @@ export function useAiRefine(): AiRefineApi {
                     diff = diffDiagrams(current, next);
                 } catch {
                     await refund(outcome.generationId);
+                    if (unmountedRef.current) return;
+                    if (diagramRef.current.id !== startId) {
+                        setPhase('idle');
+                        return;
+                    }
                     fail('parse', mode);
+                    return;
+                }
+                if (unmountedRef.current) {
+                    await finishCharged(
+                        outcome.generationId,
+                        current.tables.length
+                    );
+                    trackEvent('erd2_ai_success', page(), {
+                        kind: mode,
+                        applied: false,
+                        changes: outcome.changes.length,
+                    });
                     return;
                 }
                 if (diagramRef.current.id !== startId) {
@@ -245,6 +289,7 @@ export function useAiRefine(): AiRefineApi {
                 });
                 setPhase('review');
             } catch (e) {
+                if (unmountedRef.current) return;
                 const kind = refineErrorKind(e);
                 if (kind === 'aborted') {
                     setPhase('idle');
@@ -290,7 +335,9 @@ export function useAiRefine(): AiRefineApi {
                 applied: true,
                 changes: p.changes.length,
             });
-            setUndoSnapshot(snapshot);
+            if (diagramRef.current.id === snapshot.id) {
+                setUndoSnapshot(snapshot);
+            }
             setPhase('idle');
         } finally {
             busyRef.current = false;
@@ -317,6 +364,10 @@ export function useAiRefine(): AiRefineApi {
     // (при смене схемы снимок сбрасывается эффектом по id схемы).
     const undo = useCallback(async () => {
         if (!undoSnapshot) return;
+        if (diagramRef.current.id !== undoSnapshot.id) {
+            setUndoSnapshot(null);
+            return;
+        }
         try {
             await updateDiagramData(undoSnapshot);
             setUndoSnapshot(null);

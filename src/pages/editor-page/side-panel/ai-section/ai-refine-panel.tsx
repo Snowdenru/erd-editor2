@@ -7,6 +7,9 @@ import type {
 import type { AiRefineMode } from '@/lib/ai-generate/types';
 import { AiRefineResult } from './ai-refine-result';
 
+const REFUNDED = 'Попытка возвращена.';
+const DENIED = 'Попытка списана: лимит возвратов на сегодня исчерпан.';
+
 const ERROR_TEXT: Record<RefineUiError, string> = {
     invalid_prompt: 'Проверьте инструкцию: от 3 до 1000 символов.',
     cooldown: 'Подождите несколько секунд перед следующим запросом.',
@@ -15,12 +18,25 @@ const ERROR_TEXT: Record<RefineUiError, string> = {
     auth: 'Войдите в аккаунт, чтобы пользоваться ИИ.',
     network: 'Не удалось связаться с сервером. Попробуйте ещё раз.',
     too_large:
-        'Схема слишком большая для проверки. Уберите лишние таблицы и повторите.',
+        'Схема слишком большая для проверки (примерно до 12 тыс. символов DDL). Уберите лишние таблицы и повторите.',
     empty_diagram: 'Сначала добавьте таблицы или создайте схему с ИИ.',
     provider: 'ИИ не ответил. Попытка не потрачена, повторите запрос.',
-    parse: 'ИИ вернул схему, которую не удалось разобрать. Попытка возвращена.',
-    apply: 'Не удалось применить изменения. Схема осталась прежней, попытка возвращена.',
+    parse: 'ИИ вернул схему, которую не удалось разобрать.',
+    apply: 'Не удалось применить изменения. Схема осталась прежней.',
+    incomplete:
+        'ИИ вернул неполную схему (часть таблиц пропала). Повторите запрос.',
 };
+
+const REFUND_ERRORS: ReadonlySet<RefineUiError> = new Set([
+    'parse',
+    'apply',
+    'incomplete',
+]);
+
+const errorText = (error: RefineUiError, refundDenied: boolean): string =>
+    REFUND_ERRORS.has(error)
+        ? `${ERROR_TEXT[error]} ${refundDenied ? DENIED : REFUNDED}`
+        : ERROR_TEXT[error];
 
 export interface AiRefinePanelProps {
     mode: AiRefineMode;
@@ -115,7 +131,7 @@ export const AiRefinePanel: React.FC<AiRefinePanelProps> = ({ mode, ai }) => {
                     role="alert"
                     className="rounded-md border border-destructive/40 p-2 text-sm text-destructive"
                 >
-                    {ERROR_TEXT[ai.error]}
+                    {errorText(ai.error, ai.refundDenied)}
                     {wall ? (
                         <>
                             {' '}
@@ -149,6 +165,13 @@ export const AiRefinePanel: React.FC<AiRefinePanelProps> = ({ mode, ai }) => {
                         Отменить применение
                     </Button>
                 </div>
+            ) : null}
+
+            {ai.notice === 'schema_changed' && proposal ? (
+                <p role="status" className="rounded-md border p-2 text-sm">
+                    Схема изменилась, пока вы смотрели предложение — проверьте
+                    обновлённые изменения и примените ещё раз.
+                </p>
             ) : null}
 
             {proposal ? (

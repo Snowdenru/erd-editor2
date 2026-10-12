@@ -174,7 +174,7 @@ describe('refineErrorKind', () => {
             'cooldown'
         );
         expect(refineErrorKind(new AiApiError(400, 'ddl_empty'))).toBe(
-            'invalid_prompt'
+            'empty_diagram'
         );
         expect(
             refineErrorKind(new AiApiError(400, 'instruction_too_short'))

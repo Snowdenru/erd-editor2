@@ -65,7 +65,10 @@ export async function streamRefine(args: {
 
 export function refineErrorKind(
     e: unknown
-): AiErrorKind | 'aborted' | 'too_large' {
+): AiErrorKind | 'aborted' | 'too_large' | 'empty_diagram' {
     if (e instanceof AiApiError && e.code === 'too_large') return 'too_large';
+    if (e instanceof AiApiError && e.code === 'ddl_empty') {
+        return 'empty_diagram';
+    }
     return aiErrorKind(e);
 }

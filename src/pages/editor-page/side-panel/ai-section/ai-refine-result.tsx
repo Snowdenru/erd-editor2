@@ -16,6 +16,9 @@ export const AiRefineResult: React.FC<AiRefineResultProps> = ({
     onDiscard,
 }) => {
     const { changes, diff } = proposal;
+    const removedTables = diff.tables
+        .filter((t) => t.status === 'removed')
+        .map((t) => t.name);
     return (
         <div className="flex flex-1 flex-col gap-3 overflow-y-auto pb-2">
             {changes.length > 0 ? (
@@ -95,6 +98,17 @@ export const AiRefineResult: React.FC<AiRefineResultProps> = ({
                     ))}
                 </ul>
             </section>
+
+            {removedTables.length > 0 ? (
+                <div
+                    role="alert"
+                    className="rounded-md border border-red-300 bg-red-50 p-2 text-sm font-medium text-red-700 dark:border-red-500/50 dark:bg-red-950/40 dark:text-red-300"
+                >
+                    ИИ предлагает удалить таблиц: {removedTables.length} —{' '}
+                    {removedTables.join(', ')}. Убедитесь, что это нужно, прежде
+                    чем применять.
+                </div>
+            ) : null}
 
             <div className="sticky bottom-0 flex gap-2 bg-background pt-2">
                 <Button

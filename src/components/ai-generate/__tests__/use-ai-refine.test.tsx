@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { diagram, field, table } from '@/lib/ai-generate/__tests__/fixtures';
+import { DatabaseType } from '@/lib/domain/database-type';
 import { AiApiError } from '@/lib/ai-generate/types';
 
 const streamRefine = vi.hoisted(() => vi.fn());
@@ -27,9 +28,8 @@ vi.mock('@/lib/ai-generate/merge-diagram', async () => {
 });
 vi.mock('@/lib/ai-generate/import-ddl', () => ({ ddlToDiagram }));
 vi.mock('@/lib/sqllab-account', () => ({ trackEvent }));
-vi.mock('@/lib/data/sql-export/export-sql-script', () => ({
-    exportBaseSQL: () => 'CREATE TABLE users (id int);',
-}));
+const exportBaseSQL = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/data/sql-export/export-sql-script', () => ({ exportBaseSQL }));
 vi.mock('@/hooks/use-chartdb', () => ({
     useChartDB: () => ({ currentDiagram: state.current, updateDiagramData }),
 }));
@@ -46,6 +46,7 @@ const proposed = diagram([
 
 beforeEach(() => {
     vi.clearAllMocks();
+    exportBaseSQL.mockReturnValue('CREATE TABLE users (id int);');
     state.current = current;
     listGenerations.mockResolvedValue({
         usage: {
@@ -565,5 +566,199 @@ describe('useAiRefine state machine', () => {
         });
         expect(result.current.error).toBeNull();
         expect(result.current.phase).toBe('idle');
+    });
+});
+
+describe('useAiRefine final wave', () => {
+    const idx = (name: string) => ({
+        id: `i-${name}`,
+        name,
+        unique: false,
+        fieldIds: ['f-id'],
+        createdAt: 1,
+    });
+
+    it('shows the diff of the merge result and applies exactly that', async () => {
+        const cur = diagram([
+            table('users', [field('id')], {
+                id: 'u',
+                indexes: [idx('ix_users')],
+                comments: 'Пользователи',
+            }),
+        ]);
+        state.current = cur;
+        const prop = diagram([
+            table('users', [field('id'), field('email')], { id: 'p-u' }),
+        ]);
+        streamRefine.mockResolvedValueOnce(generated);
+        ddlToDiagram.mockResolvedValueOnce(prop);
+        const { result } = renderHook(() => useAiRefine());
+        await act(async () => {
+            await result.current.run('review');
+        });
+        const d = result.current.proposal!.diff;
+        expect(d.tables).toHaveLength(1);
+        expect(d.tables[0].removedIndexes).toEqual([]);
+        expect(d.tables[0].addedFields).toEqual(['email']);
+        await act(async () => {
+            await result.current.apply();
+        });
+        expect(updateDiagramData.mock.calls[0][0]).toEqual(
+            mergeAiDiagram(cur, prop)
+        );
+    });
+
+    it('sanitizes the ddl for mssql before sending', async () => {
+        state.current = diagram(
+            [table('users', [field('id')], { id: 'u' })],
+            [],
+            { databaseType: DatabaseType.SQL_SERVER }
+        );
+        exportBaseSQL.mockReturnValue(
+            'CREATE TABLE users (\n  -- ид\n  id int,\n  name nvarchar(10)\n);'
+        );
+        streamRefine.mockResolvedValueOnce({
+            status: 'no_changes',
+            generationId: 'g1',
+            remaining: 1,
+        });
+        const { result } = renderHook(() => useAiRefine());
+        await act(async () => {
+            await result.current.run('review');
+        });
+        const sent = streamRefine.mock.calls[0][0].ddl as string;
+        expect(sent).toBe(
+            'CREATE TABLE users (\n  id int,\n  name nvarchar(10)\n);'
+        );
+        expect(streamRefine.mock.calls[0][0].dialect).toBe('mssql');
+    });
+
+    it('stale base: apply does not write, replaces proposal, notice, then succeeds once', async () => {
+        const { result, rerender } = renderHook(() => useAiRefine());
+        await toReview(result);
+        const edited = diagram([
+            table('users', [field('id'), field('age')], {
+                id: 'u',
+                x: 10,
+                y: 20,
+            }),
+        ]);
+        state.current = edited;
+        rerender();
+        await act(async () => {
+            await result.current.apply();
+        });
+        expect(updateDiagramData).not.toHaveBeenCalled();
+        expect(finalizeGeneration).not.toHaveBeenCalled();
+        expect(result.current.notice).toBe('schema_changed');
+        expect(result.current.phase).toBe('review');
+        expect(result.current.proposal?.generationId).toBe('g1');
+        expect(result.current.proposal?.base).toBe(edited);
+        // новая правка пользователя теперь видна в диффе как удаляемая
+        expect(result.current.proposal?.diff.tables[0].removedFields).toEqual([
+            'age',
+        ]);
+        await act(async () => {
+            await result.current.apply();
+        });
+        expect(updateDiagramData).toHaveBeenCalledTimes(1);
+        const written = updateDiagramData.mock.calls[0][0];
+        expect(
+            written.tables[0].fields.map((f: { name: string }) => f.name)
+        ).toEqual(['id', 'email']);
+        expect(finalizeGeneration).toHaveBeenCalledTimes(1);
+        expect(successCalls()).toHaveLength(1);
+        expect(result.current.notice).toBeNull();
+    });
+
+    it('stale base whose new diff is empty settles once as charged with noChanges', async () => {
+        const { result, rerender } = renderHook(() => useAiRefine());
+        await toReview(result);
+        state.current = diagram([
+            table('users', [field('id'), field('email')], { id: 'u' }),
+        ]);
+        rerender();
+        await act(async () => {
+            await result.current.apply();
+        });
+        expect(updateDiagramData).not.toHaveBeenCalled();
+        expect(finalizeGeneration).toHaveBeenCalledTimes(1);
+        expect(successCalls()).toHaveLength(1);
+        expect(result.current.noChanges).toBe(true);
+        expect(result.current.proposal).toBeNull();
+        expect(result.current.phase).toBe('idle');
+    });
+
+    it('treats removing 3 of 4 tables as an incomplete answer and refunds once', async () => {
+        const four = diagram(
+            ['a', 'b', 'c', 'd'].map((n) => table(n, [field('id')]))
+        );
+        state.current = four;
+        streamRefine.mockResolvedValueOnce(generated);
+        ddlToDiagram.mockResolvedValueOnce(
+            diagram([table('a', [field('id')])])
+        );
+        const { result } = renderHook(() => useAiRefine());
+        await act(async () => {
+            await result.current.run('review');
+        });
+        expect(result.current.error).toBe('incomplete');
+        expect(result.current.phase).toBe('idle');
+        expect(result.current.proposal).toBeNull();
+        expect(finalizeGeneration).toHaveBeenCalledTimes(1);
+        expect(finalizeGeneration).toHaveBeenCalledWith('g1', {
+            status: 'parse_failed',
+        });
+    });
+
+    it('allows removing 1 of 10 tables', async () => {
+        const names = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'];
+        state.current = diagram(names.map((n) => table(n, [field('id')])));
+        streamRefine.mockResolvedValueOnce(generated);
+        ddlToDiagram.mockResolvedValueOnce(
+            diagram(names.slice(1).map((n) => table(n, [field('id')])))
+        );
+        const { result } = renderHook(() => useAiRefine());
+        await act(async () => {
+            await result.current.run('review');
+        });
+        expect(result.current.phase).toBe('review');
+        expect(
+            result.current.proposal?.diff.tables.filter(
+                (t) => t.status === 'removed'
+            )
+        ).toHaveLength(1);
+    });
+
+    it('records refundDenied when the daily refund budget is spent', async () => {
+        streamRefine.mockResolvedValueOnce(generated);
+        ddlToDiagram.mockRejectedValueOnce(new Error('sanity'));
+        finalizeGeneration.mockResolvedValueOnce({
+            refunded: false,
+            remaining: 1,
+        });
+        const { result } = renderHook(() => useAiRefine());
+        await act(async () => {
+            await result.current.run('review');
+        });
+        expect(result.current.error).toBe('parse');
+        expect(result.current.refundDenied).toBe(true);
+        act(() => result.current.clearError());
+        expect(result.current.refundDenied).toBe(false);
+    });
+
+    it('keeps refundDenied false when the refund is granted', async () => {
+        streamRefine.mockResolvedValueOnce(generated);
+        ddlToDiagram.mockRejectedValueOnce(new Error('sanity'));
+        finalizeGeneration.mockResolvedValueOnce({
+            refunded: true,
+            remaining: 2,
+        });
+        const { result } = renderHook(() => useAiRefine());
+        await act(async () => {
+            await result.current.run('review');
+        });
+        expect(result.current.error).toBe('parse');
+        expect(result.current.refundDenied).toBe(false);
     });
 });

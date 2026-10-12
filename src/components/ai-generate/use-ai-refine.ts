@@ -5,6 +5,7 @@ import { exportBaseSQL } from '@/lib/data/sql-export/export-sql-script';
 import { finalizeGeneration, listGenerations } from '@/lib/ai-generate/api';
 import type { AiErrorKind } from '@/lib/ai-generate/api';
 import { toApiDialect } from '@/lib/ai-generate/dialect';
+import { sanitizeDdlForAi } from '@/lib/ai-generate/sanitize-ddl';
 import { diffDiagrams } from '@/lib/ai-generate/diagram-diff';
 import type { DiagramDiff } from '@/lib/ai-generate/diagram-diff';
 import { ddlToDiagram } from '@/lib/ai-generate/import-ddl';
@@ -20,7 +21,9 @@ export type RefineUiError =
     | 'empty_diagram'
     | 'provider'
     | 'parse'
-    | 'apply';
+    | 'apply'
+    | 'incomplete';
+export type RefineNotice = 'schema_changed';
 
 export interface RefineProposal {
     mode: AiRefineMode;
@@ -29,11 +32,15 @@ export interface RefineProposal {
     changes: string[];
     diff: DiagramDiff;
     proposed: Diagram;
+    // Схема на момент запуска: если к применению она изменилась, предложение пересчитывается
+    base: Diagram;
 }
 
 export interface AiRefineApi {
     phase: RefinePhase;
     error: RefineUiError | null;
+    refundDenied: boolean;
+    notice: RefineNotice | null;
     usage: AiUsage | null;
     proposal: RefineProposal | null;
     noChanges: boolean;
@@ -55,6 +62,8 @@ export function useAiRefine(): AiRefineApi {
 
     const [phase, setPhase] = useState<RefinePhase>('idle');
     const [error, setError] = useState<RefineUiError | null>(null);
+    const [refundDenied, setRefundDenied] = useState(false);
+    const [notice, setNotice] = useState<RefineNotice | null>(null);
     const [usage, setUsage] = useState<AiUsage | null>(null);
     const [proposal, setProposal] = useState<RefineProposal | null>(null);
     const [noChanges, setNoChanges] = useState(false);
@@ -81,24 +90,35 @@ export function useAiRefine(): AiRefineApi {
         );
     }, []);
 
-    const fail = useCallback((kind: RefineUiError, mode: AiRefineMode) => {
-        setError(kind);
-        setPhase('idle');
-        if (kind === 'limit_free' || kind === 'limit_daily') {
-            trackEvent('erd2_ai_limit_wall', page(), {
-                reason: kind,
-                kind: mode,
-            });
-        } else {
-            trackEvent('erd2_ai_fail', page(), { reason: kind, kind: mode });
-        }
-    }, []);
+    const fail = useCallback(
+        (kind: RefineUiError, mode: AiRefineMode, refunded?: boolean) => {
+            setError(kind);
+            setRefundDenied(refunded === false);
+            setPhase('idle');
+            if (kind === 'limit_free' || kind === 'limit_daily') {
+                trackEvent('erd2_ai_limit_wall', page(), {
+                    reason: kind,
+                    kind: mode,
+                });
+            } else {
+                trackEvent('erd2_ai_fail', page(), {
+                    reason: kind,
+                    kind: mode,
+                });
+            }
+        },
+        []
+    );
 
     const refund = useCallback(
-        async (generationId: string) => {
-            await finalizeGeneration(generationId, { status: 'parse_failed' })
-                .then((r) => setRemaining(r.remaining))
-                .catch(() => undefined);
+        async (generationId: string): Promise<boolean> => {
+            // Сбой сети — исход неизвестен, считаем, что возврата нет
+            return finalizeGeneration(generationId, { status: 'parse_failed' })
+                .then((r) => {
+                    setRemaining(r.remaining);
+                    return r.refunded;
+                })
+                .catch(() => false);
         },
         [setRemaining]
     );
@@ -150,6 +170,8 @@ export function useAiRefine(): AiRefineApi {
         setUndoSnapshot(null);
         setNoChanges(false);
         setError(null);
+        setRefundDenied(false);
+        setNotice(null);
         setPhase((p) => (p === 'review' ? 'idle' : p));
     }, [currentDiagram.id, putProposal, settleDropped]);
 
@@ -159,6 +181,8 @@ export function useAiRefine(): AiRefineApi {
             const current = diagramRef.current;
             const startId = current.id;
             setError(null);
+            setRefundDenied(false);
+            setNotice(null);
             setNoChanges(false);
             setUndoSnapshot(null);
             if (!current.tables?.length) {
@@ -173,10 +197,13 @@ export function useAiRefine(): AiRefineApi {
             const dialect = toApiDialect(current.databaseType);
             trackEvent('erd2_ai_start', page(), { dialect, kind: mode });
             try {
-                const ddl = exportBaseSQL({
-                    diagram: current,
-                    targetDatabaseType: current.databaseType,
-                });
+                const ddl = sanitizeDdlForAi(
+                    exportBaseSQL({
+                        diagram: current,
+                        targetDatabaseType: current.databaseType,
+                    }),
+                    dialect
+                );
                 const outcome = await streamRefine({
                     mode,
                     ddl,
@@ -228,21 +255,41 @@ export function useAiRefine(): AiRefineApi {
 
                 let next: Diagram;
                 let diff: DiagramDiff;
+                let incomplete = false;
                 try {
                     next = await ddlToDiagram({
                         ddl: outcome.ddl,
                         dialect,
                         prompt: current.name,
                     });
-                    diff = diffDiagrams(current, next);
+                    // Показываем ровно то, что будет применено: дифф от результата слияния
+                    diff = diffDiagrams(current, mergeAiDiagram(current, next));
+                    const removed = diff.tables.filter(
+                        (t) => t.status === 'removed'
+                    ).length;
+                    const total = (current.tables ?? []).filter(
+                        (t) => !t.isView
+                    ).length;
+                    incomplete =
+                        removed > Math.max(2, Math.floor(total * 0.25));
                 } catch {
-                    await refund(outcome.generationId);
+                    const refunded = await refund(outcome.generationId);
                     if (unmountedRef.current) return;
                     if (diagramRef.current.id !== startId) {
                         setPhase('idle');
                         return;
                     }
-                    fail('parse', mode);
+                    fail('parse', mode, refunded);
+                    return;
+                }
+                if (incomplete) {
+                    const refunded = await refund(outcome.generationId);
+                    if (unmountedRef.current) return;
+                    if (diagramRef.current.id !== startId) {
+                        setPhase('idle');
+                        return;
+                    }
+                    fail('incomplete', mode, refunded);
                     return;
                 }
                 if (unmountedRef.current) {
@@ -286,6 +333,7 @@ export function useAiRefine(): AiRefineApi {
                     changes: outcome.changes,
                     diff,
                     proposed: next,
+                    base: current,
                 });
                 setPhase('review');
             } catch (e) {
@@ -308,13 +356,54 @@ export function useAiRefine(): AiRefineApi {
         if (busyRef.current) return;
         const p = proposalRef.current;
         if (!p) return;
-        putProposal(null);
         const snapshot = diagramRef.current;
         if (snapshot.id !== p.diagramId) {
+            putProposal(null);
             await settleDropped(p);
             setPhase('idle');
             return;
         }
+        if (!diffDiagrams(p.base, snapshot).isEmpty) {
+            // Схему правили, пока открыто предложение: пересчитываем и просим подтвердить заново
+            let fresh: DiagramDiff;
+            try {
+                fresh = diffDiagrams(
+                    snapshot,
+                    mergeAiDiagram(snapshot, p.proposed)
+                );
+            } catch {
+                putProposal(null);
+                busyRef.current = true;
+                try {
+                    const refunded = await refund(p.generationId);
+                    fail('apply', p.mode, refunded);
+                } finally {
+                    busyRef.current = false;
+                }
+                return;
+            }
+            if (fresh.isEmpty) {
+                putProposal(null);
+                await finishCharged(
+                    p.generationId,
+                    p.proposed.tables?.length ?? 0
+                );
+                setNotice(null);
+                setNoChanges(true);
+                setPhase('idle');
+                trackEvent('erd2_ai_success', page(), {
+                    kind: p.mode,
+                    applied: false,
+                    changes: 0,
+                });
+                return;
+            }
+            putProposal({ ...p, base: snapshot, diff: fresh });
+            setNotice('schema_changed');
+            return;
+        }
+        putProposal(null);
+        setNotice(null);
         busyRef.current = true;
         setPhase('applying');
         try {
@@ -325,8 +414,8 @@ export function useAiRefine(): AiRefineApi {
             } catch {
                 // Запись могла пройти частично: возвращаем прежнее состояние
                 await updateDiagramData(snapshot).catch(() => undefined);
-                await refund(p.generationId);
-                fail('apply', p.mode);
+                const refunded = await refund(p.generationId);
+                fail('apply', p.mode, refunded);
                 return;
             }
             await finishCharged(p.generationId, merged.tables?.length ?? 0);
@@ -356,6 +445,7 @@ export function useAiRefine(): AiRefineApi {
         const p = proposalRef.current;
         if (!p) return;
         putProposal(null);
+        setNotice(null);
         setPhase('idle');
         await settleDropped(p);
     }, [putProposal, settleDropped]);
@@ -377,11 +467,16 @@ export function useAiRefine(): AiRefineApi {
     }, [undoSnapshot, updateDiagramData]);
 
     const cancel = useCallback(() => abortRef.current?.abort(), []);
-    const clearError = useCallback(() => setError(null), []);
+    const clearError = useCallback(() => {
+        setError(null);
+        setRefundDenied(false);
+    }, []);
 
     return {
         phase,
         error,
+        refundDenied,
+        notice,
         usage,
         proposal,
         noChanges,

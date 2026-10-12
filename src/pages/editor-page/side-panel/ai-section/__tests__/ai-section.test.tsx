@@ -30,6 +30,8 @@ import { AiSection } from '../ai-section';
 const baseApi = (extra: Partial<AiRefineApi> = {}): AiRefineApi => ({
     phase: 'idle',
     error: null,
+    refundDenied: false,
+    notice: null,
     usage: { tier: 'free', kind: 'lifetime', limit: 3, used: 1, remaining: 2 },
     proposal: null,
     noChanges: false,
@@ -116,6 +118,7 @@ describe('AiSection', () => {
                 changes: ['добавлен email'],
                 diff: diffDiagrams(before, after),
                 proposed: after,
+                base: before,
             },
         });
         render(<AiSection />);
@@ -162,6 +165,7 @@ describe('AiSection', () => {
             changes: ['добавлен x'],
             diff: diffDiagrams(before, after),
             proposed: after,
+            base: before,
         };
     };
 
@@ -227,5 +231,89 @@ describe('AiSection', () => {
         } finally {
             vi.useRealTimers();
         }
+    });
+
+    it('shows a prominent warning when the proposal removes tables', () => {
+        const before = diagram([
+            table('a', [field('id')]),
+            table('b', [field('id')]),
+        ]);
+        const after = diagram([table('a', [field('id')])]);
+        api.current = baseApi({
+            phase: 'review',
+            proposal: {
+                mode: 'review',
+                generationId: 'g1',
+                diagramId: 'd1',
+                changes: [],
+                diff: diffDiagrams(before, after),
+                proposed: after,
+                base: before,
+            },
+        });
+        render(<AiSection />);
+        fireEvent.click(screen.getByRole('tab', { name: 'Улучшить' }));
+        const alert = screen.getByRole('alert');
+        expect(alert.textContent).toContain(
+            'ИИ предлагает удалить таблиц: 1 — b.'
+        );
+        expect(alert.textContent).toContain('Убедитесь, что это нужно');
+    });
+
+    it('does not show the removal warning for additions only', () => {
+        api.current = baseApi({ phase: 'review', proposal: reviewProposal() });
+        render(<AiSection />);
+        fireEvent.click(screen.getByRole('tab', { name: 'Улучшить' }));
+        expect(screen.queryByRole('alert')).toBeNull();
+    });
+
+    it('shows the stale-schema notice', () => {
+        api.current = baseApi({
+            phase: 'review',
+            proposal: reviewProposal(),
+            notice: 'schema_changed',
+        });
+        render(<AiSection />);
+        fireEvent.click(screen.getByRole('tab', { name: 'Улучшить' }));
+        expect(
+            screen.getByText(/Схема изменилась, пока вы смотрели предложение/)
+        ).toBeTruthy();
+    });
+
+    it.each(['parse', 'apply', 'incomplete'] as const)(
+        'renders the refunded and denied variants for %s',
+        (error) => {
+            api.current = baseApi({ error });
+            const { unmount } = render(<AiSection />);
+            fireEvent.click(screen.getByRole('tab', { name: 'Улучшить' }));
+            expect(screen.getByRole('alert').textContent).toContain(
+                'Попытка возвращена.'
+            );
+            unmount();
+            api.current = baseApi({ error, refundDenied: true });
+            render(<AiSection />);
+            fireEvent.click(screen.getByRole('tab', { name: 'Улучшить' }));
+            const text = screen.getByRole('alert').textContent;
+            expect(text).toContain(
+                'Попытка списана: лимит возвратов на сегодня исчерпан.'
+            );
+            expect(text).not.toContain('Попытка возвращена');
+        }
+    );
+
+    it('shows the incomplete and too_large texts', () => {
+        api.current = baseApi({ error: 'incomplete' });
+        const { unmount } = render(<AiSection />);
+        fireEvent.click(screen.getByRole('tab', { name: 'Улучшить' }));
+        expect(screen.getByRole('alert').textContent).toContain(
+            'ИИ вернул неполную схему (часть таблиц пропала).'
+        );
+        unmount();
+        api.current = baseApi({ error: 'too_large' });
+        render(<AiSection />);
+        fireEvent.click(screen.getByRole('tab', { name: 'Улучшить' }));
+        expect(screen.getByRole('alert').textContent).toContain(
+            'примерно до 12 тыс. символов DDL'
+        );
     });
 });

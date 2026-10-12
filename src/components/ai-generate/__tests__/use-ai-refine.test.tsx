@@ -19,6 +19,12 @@ vi.mock('@/lib/ai-generate/api', async () => {
     const actual = await vi.importActual('@/lib/ai-generate/api');
     return { ...actual, finalizeGeneration, listGenerations };
 });
+vi.mock('@/lib/ai-generate/merge-diagram', async () => {
+    const actual = await vi.importActual<{
+        mergeAiDiagram: (...a: unknown[]) => unknown;
+    }>('@/lib/ai-generate/merge-diagram');
+    return { ...actual, mergeAiDiagram: vi.fn(actual.mergeAiDiagram) };
+});
 vi.mock('@/lib/ai-generate/import-ddl', () => ({ ddlToDiagram }));
 vi.mock('@/lib/sqllab-account', () => ({ trackEvent }));
 vi.mock('@/lib/data/sql-export/export-sql-script', () => ({
@@ -28,6 +34,7 @@ vi.mock('@/hooks/use-chartdb', () => ({
     useChartDB: () => ({ currentDiagram: state.current, updateDiagramData }),
 }));
 
+import { mergeAiDiagram } from '@/lib/ai-generate/merge-diagram';
 import { useAiRefine } from '../use-ai-refine';
 
 const current = diagram([
@@ -199,6 +206,9 @@ describe('useAiRefine', () => {
             status: 'parse_failed',
         });
         expect(result.current.error).toBe('apply');
+        expect(result.current.phase).toBe('idle');
+        expect(result.current.proposal).toBeNull();
+        expect(finalizeGeneration).toHaveBeenCalledTimes(1);
     });
 
     it('maps API errors and tracks the limit wall', async () => {
@@ -225,5 +235,227 @@ describe('useAiRefine', () => {
         });
         expect(result.current.error).toBe('empty_diagram');
         expect(streamRefine).not.toHaveBeenCalled();
+    });
+});
+
+const successCalls = () =>
+    finalizeGeneration.mock.calls.filter((c) => c[1].status === 'success');
+
+const deferred = <T,>() => {
+    let resolve!: (v: T) => void;
+    const promise = new Promise<T>((r) => (resolve = r));
+    return { promise, resolve };
+};
+
+const toReview = async (result: {
+    current: ReturnType<typeof useAiRefine>;
+}) => {
+    streamRefine.mockResolvedValueOnce(generated);
+    ddlToDiagram.mockResolvedValueOnce(proposed);
+    await act(async () => {
+        await result.current.run('review');
+    });
+};
+
+describe('useAiRefine state machine', () => {
+    it('apply that throws in mergeAiDiagram refunds once and releases busy', async () => {
+        const { result } = renderHook(() => useAiRefine());
+        await toReview(result);
+        vi.mocked(mergeAiDiagram).mockImplementationOnce(() => {
+            throw new Error('merge');
+        });
+        await act(async () => {
+            await result.current.apply();
+        });
+        expect(result.current.phase).toBe('idle');
+        expect(result.current.error).toBe('apply');
+        expect(result.current.proposal).toBeNull();
+        expect(finalizeGeneration).toHaveBeenCalledTimes(1);
+        expect(finalizeGeneration).toHaveBeenCalledWith('g1', {
+            status: 'parse_failed',
+        });
+
+        streamRefine.mockResolvedValueOnce({
+            ...generated,
+            generationId: 'g2',
+        });
+        ddlToDiagram.mockResolvedValueOnce(proposed);
+        await act(async () => {
+            await result.current.run('review');
+        });
+        expect(result.current.phase).toBe('review');
+    });
+
+    it('ignores run() while a proposal is pending', async () => {
+        const { result } = renderHook(() => useAiRefine());
+        await toReview(result);
+        await act(async () => {
+            await result.current.run('review');
+        });
+        expect(streamRefine).toHaveBeenCalledTimes(1);
+        expect(result.current.phase).toBe('review');
+    });
+
+    it('settles a pending proposal once when the diagram is switched', async () => {
+        const { result, rerender } = renderHook(() => useAiRefine());
+        await toReview(result);
+        state.current = diagram(
+            [table('orders', [field('id')], { id: 'o' })],
+            [],
+            { id: 'd2' }
+        );
+        rerender();
+        await waitFor(() => expect(result.current.proposal).toBeNull());
+        expect(result.current.phase).toBe('idle');
+        expect(successCalls()).toHaveLength(1);
+        expect(finalizeGeneration).toHaveBeenCalledTimes(1);
+        expect(trackEvent).toHaveBeenCalledWith(
+            'erd2_ai_success',
+            expect.any(String),
+            expect.objectContaining({ applied: false })
+        );
+    });
+
+    it('aborts on switch during running and settles a late result once', async () => {
+        const d = deferred<typeof generated>();
+        streamRefine.mockReturnValueOnce(d.promise);
+        const { result, rerender } = renderHook(() => useAiRefine());
+        let running!: Promise<void>;
+        act(() => {
+            running = result.current.run('review');
+        });
+        const signal = streamRefine.mock.calls[0][0].signal as AbortSignal;
+        expect(signal.aborted).toBe(false);
+        state.current = diagram([table('orders', [field('id')])], [], {
+            id: 'd2',
+        });
+        rerender();
+        expect(signal.aborted).toBe(true);
+        await act(async () => {
+            d.resolve(generated);
+            await running;
+        });
+        expect(result.current.proposal).toBeNull();
+        expect(result.current.phase).toBe('idle');
+        expect(finalizeGeneration).toHaveBeenCalledTimes(1);
+        expect(successCalls()).toHaveLength(1);
+        expect(ddlToDiagram).not.toHaveBeenCalled();
+    });
+
+    it('discard twice finalizes once', async () => {
+        const { result } = renderHook(() => useAiRefine());
+        await toReview(result);
+        await act(async () => {
+            await Promise.all([
+                result.current.discard(),
+                result.current.discard(),
+            ]);
+        });
+        expect(finalizeGeneration).toHaveBeenCalledTimes(1);
+    });
+
+    it('discard then apply finalizes once and does not write', async () => {
+        const { result } = renderHook(() => useAiRefine());
+        await toReview(result);
+        await act(async () => {
+            await Promise.all([
+                result.current.discard(),
+                result.current.apply(),
+            ]);
+        });
+        expect(finalizeGeneration).toHaveBeenCalledTimes(1);
+        expect(updateDiagramData).not.toHaveBeenCalled();
+    });
+
+    it('discard during applying is ignored', async () => {
+        const w = deferred<void>();
+        updateDiagramData.mockReturnValueOnce(w.promise);
+        const { result } = renderHook(() => useAiRefine());
+        await toReview(result);
+        let applying!: Promise<void>;
+        act(() => {
+            applying = result.current.apply();
+        });
+        await act(async () => {
+            await result.current.discard();
+        });
+        await act(async () => {
+            w.resolve();
+            await applying;
+        });
+        expect(finalizeGeneration).toHaveBeenCalledTimes(1);
+        expect(successCalls()).toHaveLength(1);
+    });
+
+    it('aborts the in-flight request on unmount', async () => {
+        const d = deferred<typeof generated>();
+        streamRefine.mockReturnValueOnce(d.promise);
+        const { result, unmount } = renderHook(() => useAiRefine());
+        act(() => {
+            void result.current.run('review');
+        });
+        const signal = streamRefine.mock.calls[0][0].signal as AbortSignal;
+        unmount();
+        expect(signal.aborted).toBe(true);
+    });
+
+    it('cancel() with an AbortError returns to idle without an error', async () => {
+        streamRefine.mockRejectedValueOnce(new DOMException('x', 'AbortError'));
+        const { result } = renderHook(() => useAiRefine());
+        await act(async () => {
+            await result.current.run('review');
+        });
+        expect(result.current.phase).toBe('idle');
+        expect(result.current.error).toBeNull();
+    });
+
+    it('maps provider_error and the daily ceiling', async () => {
+        streamRefine.mockResolvedValueOnce({
+            status: 'provider_error',
+            remaining: 2,
+        });
+        const { result } = renderHook(() => useAiRefine());
+        await act(async () => {
+            await result.current.run('review');
+        });
+        expect(result.current.error).toBe('provider');
+
+        streamRefine.mockRejectedValueOnce(
+            new AiApiError(429, 'daily_ceiling')
+        );
+        await act(async () => {
+            await result.current.run('review');
+        });
+        expect(result.current.error).toBe('limit_daily');
+    });
+
+    it('tracks erd2_ai_success with applied true after apply and false after discard', async () => {
+        const { result } = renderHook(() => useAiRefine());
+        await toReview(result);
+        await act(async () => {
+            await result.current.apply();
+        });
+        expect(trackEvent).toHaveBeenCalledWith(
+            'erd2_ai_success',
+            expect.any(String),
+            {
+                kind: 'review',
+                applied: true,
+                changes: 1,
+            }
+        );
+        await toReview(result);
+        await act(async () => {
+            await result.current.discard();
+        });
+        expect(trackEvent).toHaveBeenCalledWith(
+            'erd2_ai_success',
+            expect.any(String),
+            {
+                kind: 'review',
+                applied: false,
+                changes: 1,
+            }
+        );
     });
 });

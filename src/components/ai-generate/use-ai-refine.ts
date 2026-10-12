@@ -62,8 +62,12 @@ export function useAiRefine(): AiRefineApi {
 
     const busyRef = useRef(false);
     const abortRef = useRef<AbortController | null>(null);
+    // Синхронный источник истины для предложения: state отстаёт от повторных вызовов
     const proposalRef = useRef<RefineProposal | null>(null);
-    proposalRef.current = proposal;
+    const putProposal = useCallback((p: RefineProposal | null) => {
+        proposalRef.current = p;
+        setProposal(p);
+    }, []);
 
     useEffect(() => {
         listGenerations()
@@ -71,14 +75,7 @@ export function useAiRefine(): AiRefineApi {
             .catch(() => undefined);
     }, []);
 
-    // Предложение и откат относятся к конкретной схеме: при переключении схемы сбрасываем
-    useEffect(() => {
-        setProposal(null);
-        setUndoSnapshot(null);
-        setNoChanges(false);
-        setError(null);
-        setPhase((p) => (p === 'review' ? 'idle' : p));
-    }, [currentDiagram.id]);
+    useEffect(() => () => abortRef.current?.abort(), []);
 
     const setRemaining = useCallback((remaining: number) => {
         setUsage((u) =>
@@ -118,13 +115,38 @@ export function useAiRefine(): AiRefineApi {
         []
     );
 
+    // Предложение закрыто без применения (отказ, смена схемы): попытка списывается
+    const settleDropped = useCallback(
+        async (p: RefineProposal) => {
+            await finishCharged(p.generationId, p.proposed.tables?.length ?? 0);
+            trackEvent('erd2_ai_success', page(), {
+                kind: p.mode,
+                applied: false,
+                changes: p.changes.length,
+            });
+        },
+        [finishCharged]
+    );
+
+    // Предложение, откат и запрос относятся к конкретной схеме: при переключении сбрасываем
+    useEffect(() => {
+        abortRef.current?.abort();
+        const dropped = proposalRef.current;
+        if (dropped) void settleDropped(dropped);
+        putProposal(null);
+        setUndoSnapshot(null);
+        setNoChanges(false);
+        setError(null);
+        setPhase((p) => (p === 'review' ? 'idle' : p));
+    }, [currentDiagram.id, putProposal, settleDropped]);
+
     const run = useCallback(
         async (mode: AiRefineMode, instruction = '') => {
-            if (busyRef.current) return;
+            if (busyRef.current || proposalRef.current) return;
             const current = diagramRef.current;
+            const startId = current.id;
             setError(null);
             setNoChanges(false);
-            setProposal(null);
             setUndoSnapshot(null);
             if (!current.tables?.length) {
                 setError('empty_diagram');
@@ -151,6 +173,17 @@ export function useAiRefine(): AiRefineApi {
                     onDelta: () => undefined,
                 });
                 setRemaining(outcome.remaining);
+                if (diagramRef.current.id !== startId) {
+                    // Схему сменили, пока шёл запрос: результат показать некому
+                    if (outcome.status === 'generated') {
+                        await finishCharged(
+                            outcome.generationId,
+                            current.tables.length
+                        );
+                    }
+                    setPhase('idle');
+                    return;
+                }
                 if (outcome.status === 'provider_error') {
                     fail('provider', mode);
                     return;
@@ -167,18 +200,27 @@ export function useAiRefine(): AiRefineApi {
                 }
 
                 let next: Diagram;
+                let diff: DiagramDiff;
                 try {
                     next = await ddlToDiagram({
                         ddl: outcome.ddl,
                         dialect,
                         prompt: current.name,
                     });
+                    diff = diffDiagrams(current, next);
                 } catch {
                     await refund(outcome.generationId);
                     fail('parse', mode);
                     return;
                 }
-                const diff = diffDiagrams(current, next);
+                if (diagramRef.current.id !== startId) {
+                    await finishCharged(
+                        outcome.generationId,
+                        current.tables.length
+                    );
+                    setPhase('idle');
+                    return;
+                }
                 if (diff.isEmpty) {
                     await finishCharged(
                         outcome.generationId,
@@ -193,7 +235,7 @@ export function useAiRefine(): AiRefineApi {
                     });
                     return;
                 }
-                setProposal({
+                putProposal({
                     mode,
                     generationId: outcome.generationId,
                     diagramId: current.id,
@@ -214,62 +256,73 @@ export function useAiRefine(): AiRefineApi {
                 abortRef.current = null;
             }
         },
-        [fail, finishCharged, refund, setRemaining]
+        [fail, finishCharged, putProposal, refund, setRemaining]
     );
 
     const apply = useCallback(async () => {
+        if (busyRef.current) return;
         const p = proposalRef.current;
-        if (!p || busyRef.current) return;
+        if (!p) return;
+        putProposal(null);
         const snapshot = diagramRef.current;
         if (snapshot.id !== p.diagramId) {
-            setProposal(null);
+            await settleDropped(p);
             setPhase('idle');
             return;
         }
         busyRef.current = true;
         setPhase('applying');
-        const merged = mergeAiDiagram(snapshot, p.proposed);
         try {
-            await updateDiagramData(merged);
-        } catch {
-            // Запись могла пройти частично: возвращаем прежнее состояние
-            await updateDiagramData(snapshot).catch(() => undefined);
-            await refund(p.generationId);
-            setProposal(null);
-            fail('apply', p.mode);
+            let merged: Diagram;
+            try {
+                merged = mergeAiDiagram(snapshot, p.proposed);
+                await updateDiagramData(merged);
+            } catch {
+                // Запись могла пройти частично: возвращаем прежнее состояние
+                await updateDiagramData(snapshot).catch(() => undefined);
+                await refund(p.generationId);
+                fail('apply', p.mode);
+                return;
+            }
+            await finishCharged(p.generationId, merged.tables?.length ?? 0);
+            trackEvent('erd2_ai_success', page(), {
+                kind: p.mode,
+                applied: true,
+                changes: p.changes.length,
+            });
+            setUndoSnapshot(snapshot);
+            setPhase('idle');
+        } finally {
             busyRef.current = false;
-            return;
         }
-        await finishCharged(p.generationId, merged.tables?.length ?? 0);
-        trackEvent('erd2_ai_success', page(), {
-            kind: p.mode,
-            applied: true,
-            changes: p.changes.length,
-        });
-        setUndoSnapshot(snapshot);
-        setProposal(null);
-        setPhase('idle');
-        busyRef.current = false;
-    }, [fail, finishCharged, refund, updateDiagramData]);
+    }, [
+        fail,
+        finishCharged,
+        putProposal,
+        refund,
+        settleDropped,
+        updateDiagramData,
+    ]);
 
     const discard = useCallback(async () => {
+        if (busyRef.current) return;
         const p = proposalRef.current;
         if (!p) return;
-        setProposal(null);
+        putProposal(null);
         setPhase('idle');
-        await finishCharged(p.generationId, p.proposed.tables?.length ?? 0);
-        trackEvent('erd2_ai_success', page(), {
-            kind: p.mode,
-            applied: false,
-            changes: p.changes.length,
-        });
-    }, [finishCharged]);
+        await settleDropped(p);
+    }, [putProposal, settleDropped]);
 
+    // Возвращает снимок до применения и перезаписывает правки, сделанные после него
+    // (при смене схемы снимок сбрасывается эффектом по id схемы).
     const undo = useCallback(async () => {
         if (!undoSnapshot) return;
-        const snapshot = undoSnapshot;
-        setUndoSnapshot(null);
-        await updateDiagramData(snapshot).catch(() => setError('apply'));
+        try {
+            await updateDiagramData(undoSnapshot);
+            setUndoSnapshot(null);
+        } catch {
+            setError('apply');
+        }
     }, [undoSnapshot, updateDiagramData]);
 
     const cancel = useCallback(() => abortRef.current?.abort(), []);

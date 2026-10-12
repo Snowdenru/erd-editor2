@@ -37,7 +37,7 @@ const TYPE_ALIASES: Record<string, string> = {
     'character varying': 'varchar',
     character: 'char',
 };
-const typeKey = (name: string): string => {
+export const typeKey = (name: string): string => {
     const k = key(name);
     return TYPE_ALIASES[k] ?? k;
 };

@@ -6,6 +6,7 @@ import { diffDiagrams } from '../diagram-diff';
 import { toDatabaseType } from '../dialect';
 import { ddlToDiagram } from '../import-ddl';
 import { mergeAiDiagram } from '../merge-diagram';
+import { sanitizeDdlForAi } from '../sanitize-ddl';
 import type { AiDialect } from '../types';
 import { diagram, field, relationship, table } from './fixtures';
 
@@ -31,10 +32,6 @@ const buildDiagram = (dialect: AiDialect): Diagram => {
     const text = { id: t.text, name: t.text };
     const ts = { id: t.ts, name: t.ts };
     const withSchema = dialect === 'postgresql' || dialect === 'mssql';
-    // Что экспорт/импорт не переживает, в фикстуру не кладём (см. LOSSES ниже)
-    const fieldComments = dialect !== 'mssql';
-    const lengths = dialect !== 'sqlite';
-    const indexes = dialect === 'postgresql' || dialect === 'mssql';
 
     const users = table(
         'users',
@@ -44,14 +41,14 @@ const buildDiagram = (dialect: AiDialect): Diagram => {
                 primaryKey: true,
                 nullable: false,
                 unique: true,
-                ...(fieldComments ? { comments: 'Идентификатор' } : {}),
+                comments: 'Идентификатор',
             }),
             uf('users', 'email', {
                 type: text,
-                ...(lengths ? { characterMaximumLength: '255' } : {}),
+                characterMaximumLength: '255',
                 nullable: false,
                 unique: true,
-                ...(fieldComments ? { comments: 'Почта' } : {}),
+                comments: 'Почта',
             }),
             uf('users', 'age', { type: int }),
             uf('users', 'created_at', { type: ts, nullable: false }),
@@ -79,7 +76,7 @@ const buildDiagram = (dialect: AiDialect): Diagram => {
             uf('profiles', 'user_id', { type: int, nullable: false }),
             uf('profiles', 'bio', {
                 type: text,
-                ...(lengths ? { characterMaximumLength: '500' } : {}),
+                characterMaximumLength: '500',
             }),
         ],
         { x: 450, y: 60, createdAt: 2 }
@@ -97,17 +94,15 @@ const buildDiagram = (dialect: AiDialect): Diagram => {
         ],
         { x: 100, y: 400, createdAt: 3 }
     );
-    orders.indexes = !indexes
-        ? []
-        : [
-              {
-                  id: 'ix1',
-                  name: 'idx_orders_user',
-                  unique: false,
-                  fieldIds: [orders.fields[1].id],
-                  createdAt: 1,
-              },
-          ];
+    orders.indexes = [
+        {
+            id: 'ix1',
+            name: 'idx_orders_user',
+            unique: false,
+            fieldIds: [orders.fields[1].id],
+            createdAt: 1,
+        },
+    ];
     const tags = table(
         'tags',
         [uf('tags', 'id', { type: int, primaryKey: true, nullable: false })],
@@ -142,15 +137,9 @@ const buildDiagram = (dialect: AiDialect): Diagram => {
     );
 };
 
-// Потери экспорт → импорт, найденные этим тестом (поэтому они вынесены из фикстуры):
-// - mssql: колонка, перед которой стоит строка `-- комментарий`, пропадает при импорте (экспорт пишет
-//   комментарии полей именно так), поэтому комментарии полей в фикстуре mssql не используются;
-// - mysql: CREATE INDEX и комментарии (COMMENT '...') не импортируются;
-// - sqlite: CREATE INDEX не импортируется, длина типов (VARCHAR(40), TEXT(255)) теряется;
-// - postgresql: COMMENT ON TABLE/COLUMN не импортируется;
-// - во всех: схема без имени приходит как '', FK 1:1 экспортируется в обратную сторону,
-//   у PRIMARY KEY появляется безымянный уникальный индекс, integer приходит как int;
-// sqlite: DATETIME импортируется как timestamp, поэтому в фикстуре сразу timestamp.
+// Что импорт не умеет читать (индексы mysql/sqlite, комментарии, длины sqlite, поле после `-- ...` в mssql),
+// слияние берёт из текущей схемы: поэтому фикстура здесь полная, без исключений.
+// Остаётся одно: sqlite отдаёт DATETIME как timestamp, поэтому в фикстуре sqlite сразу timestamp.
 const stripUpdated = (d: Diagram) => ({ ...d, updatedAt: undefined });
 
 describe.each(['postgresql', 'mysql', 'mssql', 'sqlite'] as AiDialect[])(
@@ -158,18 +147,22 @@ describe.each(['postgresql', 'mysql', 'mssql', 'sqlite'] as AiDialect[])(
     (dialect) => {
         const roundtrip = async (d: Diagram): Promise<Diagram> =>
             ddlToDiagram({
-                ddl: exportBaseSQL({
-                    diagram: structuredClone(d),
-                    targetDatabaseType: d.databaseType,
-                }),
+                // как в хуке: экспорт → очистка DDL → импорт
+                ddl: sanitizeDdlForAi(
+                    exportBaseSQL({
+                        diagram: structuredClone(d),
+                        targetDatabaseType: d.databaseType,
+                    }),
+                    dialect
+                ),
                 dialect,
                 prompt: d.name,
             });
 
-        it('diffDiagrams не видит различий', async () => {
+        it('слияние с собственным экспортом не меняет схему: diff пуст', async () => {
             const d = buildDiagram(dialect);
-            const back = await roundtrip(d);
-            expect(diffDiagrams(d, back)).toEqual({
+            const merged = mergeAiDiagram(d, await roundtrip(d));
+            expect(diffDiagrams(d, merged)).toEqual({
                 tables: [],
                 addedRelationships: [],
                 removedRelationships: [],
@@ -177,41 +170,12 @@ describe.each(['postgresql', 'mysql', 'mssql', 'sqlite'] as AiDialect[])(
             });
         });
 
-        it('mergeAiDiagram сохраняет всё, чего нет в экспорте', async () => {
+        it('слияние с собственным экспортом равно исходной схеме (кроме updatedAt)', async () => {
             const d = buildDiagram(dialect);
             const back = await roundtrip(d);
             const merged = mergeAiDiagram(d, back);
-
-            expect(merged.tables!.map((t) => t.id).sort()).toEqual(
-                d.tables!.map((t) => t.id).sort()
-            );
-            const view = merged.tables!.find((t) => t.isView)!;
-            expect(view).toEqual(d.tables!.find((t) => t.isView));
-            expect(merged.relationships!.find((r) => r.id === 'r-mn')).toEqual(
-                d.relationships!.find((r) => r.id === 'r-mn')
-            );
-            expect(
-                merged.relationships!.find((r) => r.id === 'r-view')
-            ).toEqual(d.relationships!.find((r) => r.id === 'r-view'));
-
-            for (const old of d.tables!) {
-                const now = merged.tables!.find((t) => t.id === old.id)!;
-                expect(now.schema).toEqual(old.schema);
-                expect(now.comments ?? undefined).toEqual(
-                    old.comments ?? undefined
-                );
-                expect([now.x, now.y]).toEqual([old.x, old.y]);
-                expect(now.fields.map((f) => f.id)).toEqual(
-                    old.fields.map((f) => f.id)
-                );
-                for (const f of old.fields) {
-                    const nf = now.fields.find((x) => x.id === f.id)!;
-                    expect(nf.comments ?? undefined).toEqual(
-                        f.comments ?? undefined
-                    );
-                }
-            }
-            // слияние с самим собой по схеме идемпотентно (кроме updatedAt)
+            expect(stripUpdated(merged)).toEqual(stripUpdated(d));
+            // и идемпотентно
             expect(stripUpdated(mergeAiDiagram(merged, back))).toEqual(
                 stripUpdated(merged)
             );

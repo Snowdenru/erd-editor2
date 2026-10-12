@@ -393,4 +393,240 @@ describe('mergeAiDiagram', () => {
             ).toBe('public');
         });
     });
+
+    describe('политика слияния: основа — текущая схема', () => {
+        const proposalOf = (
+            fields: ReturnType<typeof field>[],
+            extra: Parameters<typeof table>[2] = {}
+        ) => diagram([table('users', fields, { id: 'p-users', ...extra })]);
+
+        it('атрибуты поля переживают предложение, в котором их нет', () => {
+            const current = diagram([
+                table('users', [
+                    field('email', {
+                        id: 'e',
+                        type: { id: 'varchar', name: 'varchar' },
+                        characterMaximumLength: '255',
+                        default: "'a@b.c'",
+                        comments: 'Почта',
+                        check: "email <> ''",
+                        collation: 'C',
+                    }),
+                ]),
+            ]);
+            const proposed = proposalOf([
+                field('email', {
+                    id: 'pe',
+                    type: { id: 'varchar', name: 'varchar' },
+                    characterMaximumLength: '',
+                    default: null,
+                    comments: '',
+                    check: undefined,
+                }),
+            ]);
+            const f = mergeAiDiagram(current, proposed).tables![0].fields[0];
+            expect(f).toMatchObject({
+                id: 'e',
+                characterMaximumLength: '255',
+                default: "'a@b.c'",
+                comments: 'Почта',
+                check: "email <> ''",
+                collation: 'C',
+            });
+        });
+
+        it('смена типа берёт тип и длину предложения; синонимы типом не считаются', () => {
+            const current = diagram([
+                table('users', [
+                    field('a', {
+                        id: 'a',
+                        type: { id: 'varchar', name: 'varchar' },
+                        characterMaximumLength: '255',
+                    }),
+                    field('b', {
+                        id: 'b',
+                        type: { id: 'integer', name: 'integer' },
+                    }),
+                ]),
+            ]);
+            const proposed = proposalOf([
+                field('a', {
+                    id: 'pa',
+                    type: { id: 'text', name: 'text' },
+                    characterMaximumLength: undefined,
+                }),
+                field('b', { id: 'pb', type: { id: 'int', name: 'int' } }),
+            ]);
+            const [a, b] = mergeAiDiagram(current, proposed).tables![0].fields;
+            expect(a.type.name).toBe('text');
+            expect(a.characterMaximumLength).toBeUndefined();
+            expect(b.type).toEqual({ id: 'integer', name: 'integer' });
+        });
+
+        it('осознанное изменение nullable применяется', () => {
+            const current = diagram([
+                table('users', [field('age', { id: 'age', nullable: true })]),
+            ]);
+            const proposed = proposalOf([
+                field('age', { id: 'p', nullable: false }),
+            ]);
+            expect(
+                mergeAiDiagram(current, proposed).tables![0].fields[0].nullable
+            ).toBe(false);
+        });
+
+        it('индексы: старые остаются, новый добавляется, дубль и PK-индекс игнорируются', () => {
+            const id = field('id', {
+                id: 'id',
+                primaryKey: true,
+                nullable: false,
+            });
+            const email = field('email', { id: 'email' });
+            const city = field('city', { id: 'city' });
+            const current = diagram([
+                table('users', [id, email, city], {
+                    indexes: [
+                        {
+                            id: 'ix-old',
+                            name: 'idx_email',
+                            unique: false,
+                            fieldIds: ['email'],
+                            createdAt: 1,
+                        },
+                    ],
+                }),
+            ]);
+            const pid = field('id', {
+                id: 'pid',
+                primaryKey: true,
+                nullable: false,
+            });
+            const pemail = field('email', { id: 'pemail' });
+            const pcity = field('city', { id: 'pcity' });
+            const proposed = proposalOf([pid, pemail, pcity], {
+                indexes: [
+                    // то же самое под другим именем
+                    {
+                        id: 'p1',
+                        name: 'renamed',
+                        unique: false,
+                        fieldIds: ['pemail'],
+                        createdAt: 1,
+                    },
+                    {
+                        id: 'p2',
+                        name: 'idx_city',
+                        unique: false,
+                        fieldIds: ['pcity'],
+                        createdAt: 1,
+                    },
+                    // безымянный уникальный индекс по PK, который добавляет импорт
+                    {
+                        id: 'p3',
+                        name: '',
+                        unique: true,
+                        fieldIds: ['pid'],
+                        createdAt: 1,
+                    },
+                ],
+            });
+            const merged = mergeAiDiagram(current, proposed).tables![0];
+            expect(merged.indexes.map((i) => i.name)).toEqual([
+                'idx_email',
+                'idx_city',
+            ]);
+            expect(merged.indexes[0].id).toBe('ix-old');
+            expect(merged.indexes[1].fieldIds).toEqual(['city']);
+        });
+
+        it('индекс по удалённому полю пропадает вместе с полем', () => {
+            const current = diagram([
+                table(
+                    'users',
+                    [field('a', { id: 'a' }), field('b', { id: 'b' })],
+                    {
+                        indexes: [
+                            {
+                                id: 'ix',
+                                name: 'idx_b',
+                                unique: false,
+                                fieldIds: ['b'],
+                                createdAt: 1,
+                            },
+                        ],
+                    }
+                ),
+            ]);
+            const proposed = proposalOf([field('a', { id: 'pa' })]);
+            expect(
+                mergeAiDiagram(current, proposed).tables![0].indexes
+            ).toEqual([]);
+        });
+
+        it('комментарий таблицы и CHECK переживают пустое предложение, непустое берётся', () => {
+            const checks = [{ id: 'c1', expression: 'age >= 0', createdAt: 1 }];
+            const current = diagram([
+                table('users', [field('age')], {
+                    comments: 'Пользователи',
+                    checkConstraints: checks,
+                }),
+            ]);
+            const kept = mergeAiDiagram(
+                current,
+                proposalOf([field('age')], {
+                    comments: '',
+                    checkConstraints: [],
+                })
+            ).tables![0];
+            expect(kept.comments).toBe('Пользователи');
+            expect(kept.checkConstraints).toEqual(checks);
+
+            const changed = mergeAiDiagram(
+                current,
+                proposalOf([field('age')], {
+                    comments: 'Новый',
+                    checkConstraints: [
+                        { id: 'n', expression: 'age > 18', createdAt: 2 },
+                    ],
+                })
+            ).tables![0];
+            expect(changed.comments).toBe('Новый');
+            expect(changed.checkConstraints![0].expression).toBe('age > 18');
+        });
+
+        it('обратная запись связи 1:1 не создаёт дубль', () => {
+            const users = table('users', [field('id', { id: 'u.id' })], {
+                id: 'tu',
+            });
+            const profiles = table(
+                'profiles',
+                [field('user_id', { id: 'p.user_id' })],
+                { id: 'tp' }
+            );
+            const old = relationship(profiles, 'user_id', users, 'id', {
+                id: 'old-rel',
+                sourceCardinality: 'one',
+                targetCardinality: 'one',
+            });
+            const current = diagram([users, profiles], [old]);
+            const pu = table('users', [field('id', { id: 'pu.id' })], {
+                id: 'ptu',
+            });
+            const pp = table(
+                'profiles',
+                [field('user_id', { id: 'pp.user_id' })],
+                { id: 'ptp' }
+            );
+            const reversed = relationship(pu, 'id', pp, 'user_id', {
+                id: 'new-rel',
+                sourceCardinality: 'one',
+                targetCardinality: 'one',
+            });
+            const merged = mergeAiDiagram(
+                current,
+                diagram([pu, pp], [reversed])
+            );
+            expect(merged.relationships).toEqual([old]);
+        });
+    });
 });

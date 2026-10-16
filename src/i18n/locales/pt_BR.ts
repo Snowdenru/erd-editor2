@@ -174,6 +174,8 @@ export const pt_BR: LanguageTranslation = {
                     add_check: 'Adicionar verificação',
                     index_select_fields: 'Selecionar campos',
                     no_types_found: 'Nenhum tipo encontrado',
+                    type_search_placeholder:
+                        'Search, or type e.g. varchar(255)',
                     field_name: 'Nome',
                     field_type: 'Tipo',
                     field_actions: {

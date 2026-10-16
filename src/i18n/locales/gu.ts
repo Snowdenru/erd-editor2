@@ -175,6 +175,8 @@ export const gu: LanguageTranslation = {
                     add_check: 'ચકાસણી ઉમેરો',
                     index_select_fields: 'ફીલ્ડ્સ પસંદ કરો',
                     no_types_found: 'કોઈ પ્રકાર મળ્યા નથી',
+                    type_search_placeholder:
+                        'Search, or type e.g. varchar(255)',
                     field_name: 'નામ',
                     field_type: 'પ્રકાર',
                     field_actions: {

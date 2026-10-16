@@ -174,6 +174,8 @@ export const te: LanguageTranslation = {
                     add_check: 'తనిఖీ జోడించు',
                     index_select_fields: 'ఫీల్డ్స్ ఎంచుకోండి',
                     no_types_found: 'ప్రకృతులు కనుగొనబడలేదు',
+                    type_search_placeholder:
+                        'Search, or type e.g. varchar(255)',
                     field_name: 'పేరు',
                     field_type: 'ప్రకృతి',
                     field_actions: {

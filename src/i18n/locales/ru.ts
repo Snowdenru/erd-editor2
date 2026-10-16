@@ -171,6 +171,8 @@ export const ru: LanguageTranslation = {
                     add_check: 'Добавить проверку',
                     index_select_fields: 'Выберите поля',
                     no_types_found: 'Типы не найдены',
+                    type_search_placeholder:
+                        'Поиск или впишите, напр. varchar(255)',
                     field_name: 'Имя',
                     field_type: 'Тип',
                     field_actions: {

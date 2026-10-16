@@ -176,6 +176,8 @@ export const mr: LanguageTranslation = {
                     add_check: 'तपासणी जोडा',
                     index_select_fields: 'फील्ड निवडा',
                     no_types_found: 'कोणतेही प्रकार सापडले नाहीत',
+                    type_search_placeholder:
+                        'Search, or type e.g. varchar(255)',
                     field_name: 'नाव',
                     field_type: 'प्रकार',
                     field_actions: {

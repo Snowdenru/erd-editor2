@@ -56,6 +56,24 @@ export const TableFieldPopover: React.FC<TableFieldPopoverProps> = ({
     const { t } = useTranslation();
     const [localField, setLocalField] = React.useState<DBField>(field);
     const [internalOpen, setInternalOpen] = React.useState(false);
+    const lengthInputRef = React.useRef<HTMLInputElement>(null);
+    const focusLengthOnRender = React.useRef(false);
+
+    // After choosing "Custom" the length field appears: focus it and select
+    // the prefilled value so a new number can be typed right away. The select
+    // returns focus to its trigger when it closes, hence the short delay.
+    React.useEffect(() => {
+        if (!focusLengthOnRender.current || !lengthInputRef.current) {
+            return;
+        }
+        focusLengthOnRender.current = false;
+        const input = lengthInputRef.current;
+        const timer = setTimeout(() => {
+            input.focus();
+            input.select();
+        }, 50);
+        return () => clearTimeout(timer);
+    }, [localField.characterMaximumLength]);
 
     const isOpen = useMemo(
         () => controlledOpen ?? internalOpen,
@@ -286,6 +304,7 @@ export const TableFieldPopover: React.FC<TableFieldPopoverProps> = ({
                                                         })
                                                     );
                                                 } else if (value === 'custom') {
+                                                    focusLengthOnRender.current = true;
                                                     setLocalField(
                                                         (current) => ({
                                                             ...current,
@@ -324,6 +343,7 @@ export const TableFieldPopover: React.FC<TableFieldPopoverProps> = ({
                                         localField.characterMaximumLength !==
                                             'max' ? (
                                             <Input
+                                                ref={lengthInputRef}
                                                 value={
                                                     localField.characterMaximumLength
                                                 }

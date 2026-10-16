@@ -173,6 +173,8 @@ export const vi: LanguageTranslation = {
                     add_check: 'Thêm kiểm tra',
                     index_select_fields: 'Chọn trường',
                     no_types_found: 'Không tìm thấy',
+                    type_search_placeholder:
+                        'Search, or type e.g. varchar(255)',
                     field_name: 'Tên trường',
                     field_type: 'Loại trường',
                     field_actions: {

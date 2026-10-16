@@ -173,6 +173,8 @@ export const ko_KR: LanguageTranslation = {
                     add_check: '체크 추가',
                     index_select_fields: '필드 선택',
                     no_types_found: '타입을 찾을 수 없습니다.',
+                    type_search_placeholder:
+                        'Search, or type e.g. varchar(255)',
                     field_name: '이름',
                     field_type: '타입',
                     field_actions: {

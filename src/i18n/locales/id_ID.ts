@@ -173,6 +173,8 @@ export const id_ID: LanguageTranslation = {
                     add_check: 'Tambah Pemeriksaan',
                     index_select_fields: 'Pilih kolom',
                     no_types_found: 'Tidak ada tipe yang ditemukan',
+                    type_search_placeholder:
+                        'Search, or type e.g. varchar(255)',
                     field_name: 'Nama',
                     field_type: 'Tipe',
                     field_actions: {

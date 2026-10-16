@@ -171,6 +171,8 @@ export const hr: LanguageTranslation = {
                     add_check: 'Dodaj provjeru',
                     index_select_fields: 'Odaberi polja',
                     no_types_found: 'Nema pronađenih tipova',
+                    type_search_placeholder:
+                        'Search, or type e.g. varchar(255)',
                     field_name: 'Naziv',
                     field_type: 'Tip',
                     field_actions: {

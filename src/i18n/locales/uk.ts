@@ -172,6 +172,8 @@ export const uk: LanguageTranslation = {
                     add_check: 'Додати перевірку',
                     index_select_fields: 'Виберіть поля',
                     no_types_found: 'Типи не знайдено',
+                    type_search_placeholder:
+                        'Пошук або введіть, напр. varchar(255)',
                     field_name: 'Назва поля',
                     field_type: 'Тип',
                     field_actions: {

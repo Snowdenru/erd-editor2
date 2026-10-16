@@ -173,6 +173,8 @@ export const ar: LanguageTranslation = {
                     add_check: 'إضافة تحقق',
                     index_select_fields: 'حدد الحقول',
                     no_types_found: 'لا يوجد أنواع',
+                    type_search_placeholder:
+                        'Search, or type e.g. varchar(255)',
                     field_name: 'الإسم',
                     field_type: 'النوع',
                     field_actions: {

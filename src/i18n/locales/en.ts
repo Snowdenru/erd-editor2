@@ -170,6 +170,8 @@ export const en = {
                     add_check: 'Add Check',
                     index_select_fields: 'Select fields',
                     no_types_found: 'No types found',
+                    type_search_placeholder:
+                        'Search, or type e.g. varchar(255)',
                     field_name: 'Name',
                     field_type: 'Type',
                     field_actions: {

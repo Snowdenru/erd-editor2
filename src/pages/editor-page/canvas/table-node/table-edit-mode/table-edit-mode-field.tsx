@@ -130,6 +130,9 @@ export const TableEditModeField: React.FC<TableEditModeFieldProps> = React.memo(
                                         generateFieldSuffix(option.value)
                                     }
                                     onChange={handleDataTypeChange}
+                                    inputPlaceholder={t(
+                                        'side_panel.tables_section.table.type_search_placeholder'
+                                    )}
                                     emptyPlaceholder={t(
                                         'side_panel.tables_section.table.no_types_found'
                                     )}

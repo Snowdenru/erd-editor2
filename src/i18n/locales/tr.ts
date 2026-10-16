@@ -173,6 +173,8 @@ export const tr: LanguageTranslation = {
                     add_check: 'Kontrol Ekle',
                     index_select_fields: 'Alanları Seç',
                     no_types_found: 'Tür bulunamadı',
+                    type_search_placeholder:
+                        'Search, or type e.g. varchar(255)',
                     field_name: 'Ad',
                     field_type: 'Tür',
                     field_actions: {

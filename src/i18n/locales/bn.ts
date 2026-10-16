@@ -174,6 +174,8 @@ export const bn: LanguageTranslation = {
                     add_check: 'চেক যোগ করুন',
                     index_select_fields: 'ফিল্ড নির্বাচন করুন',
                     no_types_found: 'কোনো ধরন পাওয়া যায়নি',
+                    type_search_placeholder:
+                        'Search, or type e.g. varchar(255)',
                     field_name: 'নাম',
                     field_type: 'ধরন',
                     field_actions: {

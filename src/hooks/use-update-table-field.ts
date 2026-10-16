@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { useChartDB } from './use-chartdb';
 import { useDebounce } from './use-debounce-v2';
-import type { DatabaseType, DBField, DBTable } from '@/lib/domain';
+import type { DBField, DBTable } from '@/lib/domain';
 import type {
     SelectBoxOption,
     SelectBoxProps,
@@ -14,62 +14,10 @@ import {
     requiresNotNull,
 } from '@/lib/data/data-types/data-types';
 import { generateDBFieldSuffix } from '@/lib/domain/db-field';
-import type { DataTypeData } from '@/lib/data/data-types/data-types';
-
-const generateFieldRegexPatterns = (
-    dataType: DataTypeData,
-    databaseType: DatabaseType
-): {
-    regex?: string;
-    extractRegex?: RegExp;
-} => {
-    const typeName = dataType.name;
-    const supportsArrays = supportsArrayDataType(dataType.id, databaseType);
-    const arrayPattern = supportsArrays ? '(\\[\\])?' : '';
-
-    if (!dataType.fieldAttributes) {
-        // For types without field attributes, support plain type + optional array notation
-        return {
-            regex: `^${typeName}${arrayPattern}$`,
-            extractRegex: new RegExp(`^${typeName}${arrayPattern}$`),
-        };
-    }
-
-    const fieldAttributes = dataType.fieldAttributes;
-
-    if (fieldAttributes.hasCharMaxLength) {
-        if (fieldAttributes.hasCharMaxLengthOption) {
-            return {
-                regex: `^${typeName}\\((\\d+|[mM][aA][xX])\\)${arrayPattern}$`,
-                extractRegex: supportsArrays
-                    ? /\((\d+|max)\)(\[\])?/i
-                    : /\((\d+|max)\)/i,
-            };
-        }
-        return {
-            regex: `^${typeName}\\(\\d+\\)${arrayPattern}$`,
-            extractRegex: supportsArrays ? /\((\d+)\)(\[\])?/ : /\((\d+)\)/,
-        };
-    }
-
-    if (fieldAttributes.precision && fieldAttributes.scale) {
-        return {
-            regex: `^${typeName}\\s*\\(\\s*\\d+\\s*(?:,\\s*\\d+\\s*)?\\)${arrayPattern}$`,
-            extractRegex: new RegExp(
-                `${typeName}\\s*\\(\\s*(\\d+)\\s*(?:,\\s*(\\d+)\\s*)?\\)${arrayPattern}`
-            ),
-        };
-    }
-
-    if (fieldAttributes.precision) {
-        return {
-            regex: `^${typeName}\\s*\\(\\s*\\d+\\s*\\)${arrayPattern}$`,
-            extractRegex: supportsArrays ? /\((\d+)\)(\[\])?/ : /\((\d+)\)/,
-        };
-    }
-
-    return { regex: undefined, extractRegex: undefined };
-};
+import {
+    generateFieldRegexPatterns,
+    getDefaultCharLength,
+} from '@/lib/data/data-types/field-type-patterns';
 
 export const useUpdateTableField = (
     table: DBTable,
@@ -229,6 +177,12 @@ export const useUpdateTableField = (
                     field.characterMaximumLength
                 ) {
                     characterMaximumLength = field.characterMaximumLength;
+                } else if (dataType.fieldAttributes) {
+                    // Picked from the list without a length: prefill it.
+                    characterMaximumLength = getDefaultCharLength(
+                        dataType,
+                        databaseType
+                    );
                 }
 
                 if (dataType?.fieldAttributes?.precision && field.precision) {

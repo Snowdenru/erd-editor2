@@ -170,6 +170,8 @@ export const zh_TW: LanguageTranslation = {
                     add_check: '新增檢查',
                     index_select_fields: '選擇欄位',
                     no_types_found: '未找到類型',
+                    type_search_placeholder:
+                        'Search, or type e.g. varchar(255)',
                     field_name: '名稱',
                     field_type: '類型',
                     field_actions: {

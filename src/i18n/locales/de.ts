@@ -174,6 +174,8 @@ export const de: LanguageTranslation = {
                     add_check: 'Prüfung hinzufügen',
                     index_select_fields: 'Felder auswählen',
                     no_types_found: 'Keine Datentypen gefunden',
+                    type_search_placeholder:
+                        'Search, or type e.g. varchar(255)',
                     field_name: 'Name',
                     field_type: 'Datentyp',
                     field_actions: {

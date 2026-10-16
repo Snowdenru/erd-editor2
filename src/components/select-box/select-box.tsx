@@ -234,7 +234,8 @@ export const SelectBox = React.forwardRef<HTMLInputElement, SelectBoxProps>(
                     Array.isArray(value) && value.includes(option.value);
 
                 const isRegexMatch =
-                    option.regex && new RegExp(option.regex)?.test(searchTerm);
+                    option.regex &&
+                    new RegExp(option.regex, 'i').test(searchTerm);
 
                 const matches = option.extractRegex
                     ? searchTerm.match(option.extractRegex)
@@ -402,13 +403,24 @@ export const SelectBox = React.forwardRef<HTMLInputElement, SelectBoxProps>(
                                         keyword
                                             .toLowerCase()
                                             .includes(searchLower) ||
-                                        new RegExp(keyword).test(search)
+                                        new RegExp(keyword, 'i').test(search)
                                 )
                             ) {
                                 return 1;
                             }
 
-                            return value.toLowerCase().includes(searchLower)
+                            // While a length is still being typed, e.g.
+                            // "varchar(1", keep the base type in the list.
+                            const typingArguments =
+                                searchLower.includes('(') &&
+                                !searchLower.includes(')');
+                            const baseSearch = typingArguments
+                                ? searchLower.split('(')[0].trim()
+                                : searchLower;
+
+                            return value
+                                .toLowerCase()
+                                .includes(baseSearch || searchLower)
                                 ? 1
                                 : 0;
                         }}

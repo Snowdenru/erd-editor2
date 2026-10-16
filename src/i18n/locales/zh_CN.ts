@@ -170,6 +170,8 @@ export const zh_CN: LanguageTranslation = {
                     add_check: '添加检查',
                     index_select_fields: '选择字段',
                     no_types_found: '未找到类型',
+                    type_search_placeholder:
+                        'Search, or type e.g. varchar(255)',
                     field_name: '名称',
                     field_type: '类型',
                     field_actions: {

@@ -174,6 +174,8 @@ export const hi: LanguageTranslation = {
                     add_check: 'जाँच जोड़ें',
                     index_select_fields: 'फ़ील्ड्स चुनें',
                     no_types_found: 'कोई प्रकार नहीं मिला',
+                    type_search_placeholder:
+                        'Search, or type e.g. varchar(255)',
                     field_name: 'नाम',
                     field_type: 'प्रकार',
                     field_actions: {

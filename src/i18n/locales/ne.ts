@@ -174,6 +174,8 @@ export const ne: LanguageTranslation = {
                     add_check: 'जाँच थप्नुहोस्',
                     index_select_fields: 'क्षेत्रहरू चयन गर्नुहोस्',
                     no_types_found: 'कुनै प्रकारहरू फेला परेनन्',
+                    type_search_placeholder:
+                        'Search, or type e.g. varchar(255)',
                     field_name: 'नाम',
                     field_type: 'प्रकार',
                     field_actions: {

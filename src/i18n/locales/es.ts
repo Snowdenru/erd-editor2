@@ -175,6 +175,8 @@ export const es: LanguageTranslation = {
                     field_name: 'Nombre',
                     field_type: 'Tipo',
                     no_types_found: 'No se encontraron tipos',
+                    type_search_placeholder:
+                        'Search, or type e.g. varchar(255)',
                     field_actions: {
                         title: 'Atributos del Campo',
                         unique: 'Único',

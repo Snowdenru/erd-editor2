@@ -176,6 +176,8 @@ export const ja: LanguageTranslation = {
                     add_check: 'チェックを追加',
                     index_select_fields: 'フィールドを選択',
                     no_types_found: 'タイプが見つかりません',
+                    type_search_placeholder:
+                        'Search, or type e.g. varchar(255)',
                     field_name: '名前',
                     field_type: 'タイプ',
                     field_actions: {

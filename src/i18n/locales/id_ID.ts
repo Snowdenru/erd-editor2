@@ -533,13 +533,6 @@ export const id_ID: LanguageTranslation = {
             cancel: 'Batal',
         },
 
-        star_us_dialog: {
-            title: 'Bantu kami meningkatkan!',
-            description:
-                'Apakah Anda ingin menambahkan bintang di GitHub? Cukup klik!',
-            close: 'Tidak sekarang',
-            confirm: 'Tentu saja!',
-        },
 
         export_diagram_dialog: {
             title: 'Ekspor Diagram',

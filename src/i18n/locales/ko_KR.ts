@@ -533,13 +533,6 @@ export const ko_KR: LanguageTranslation = {
             cancel: '취소',
         },
 
-        star_us_dialog: {
-            title: '개선할 수 있도록 도와주세요!',
-            description:
-                'GitHub에 별을 찍어주시겠습니까? 클릭 한번이면 됩니다!',
-            close: '아직은 괜찮아요',
-            confirm: '당연하죠!',
-        },
         export_diagram_dialog: {
             title: '다이어그램 내보내기',
             description: '내보낼 형식을 선택해주세요:',

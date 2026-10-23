@@ -541,13 +541,6 @@ export const mr: LanguageTranslation = {
             cancel: 'रद्द करा',
         },
 
-        star_us_dialog: {
-            title: 'आम्हाला सुधारण्यास मदत करा!',
-            description:
-                'तुम्हाला GitHub वर आम्हाला स्टार करायचे आहे का? हे फक्त एक क्लिक दूर आहे!',
-            close: 'आता नाही',
-            confirm: 'नक्कीच!',
-        },
 
         // TODO: Add translations
         export_diagram_dialog: {

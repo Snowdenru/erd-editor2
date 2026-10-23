@@ -13,7 +13,6 @@ import { ImportDatabaseDialog } from '@/dialogs/import-database-dialog/import-da
 import type { TableSchemaDialogProps } from '@/dialogs/table-schema-dialog/table-schema-dialog';
 import { TableSchemaDialog } from '@/dialogs/table-schema-dialog/table-schema-dialog';
 import { emptyFn } from '@/lib/utils';
-import { StarUsDialog } from '@/dialogs/star-us-dialog/star-us-dialog';
 import { ExportDiagramDialog } from '@/dialogs/export-diagram-dialog/export-diagram-dialog';
 import { ImportDiagramDialog } from '@/dialogs/import-diagram-dialog/import-diagram-dialog';
 
@@ -57,8 +56,6 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
             },
             [setOpenCreateRelationshipDialog]
         );
-
-    const [openStarUsDialog, setOpenStarUsDialog] = useState(false);
 
     // Import database dialog
     const [openImportDatabaseDialog, setOpenImportDatabaseDialog] =
@@ -119,8 +116,6 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
                 },
                 openTableSchemaDialog: openTableSchemaDialogHandler,
                 closeTableSchemaDialog: () => setOpenTableSchemaDialog(false),
-                openStarUsDialog: () => setOpenStarUsDialog(true),
-                closeStarUsDialog: () => setOpenStarUsDialog(false),
                 openExportDiagramDialog: () => setOpenExportDiagramDialog(true),
                 closeExportDiagramDialog: () =>
                     setOpenExportDiagramDialog(false),
@@ -150,7 +145,6 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
                 dialog={{ open: openTableSchemaDialog }}
                 {...tableSchemaDialogParams}
             />
-            <StarUsDialog dialog={{ open: openStarUsDialog }} />
             <ExportDiagramDialog dialog={{ open: openExportDiagramDialog }} />
             <ImportDiagramDialog dialog={{ open: openImportDiagramDialog }} />
         </dialogContext.Provider>

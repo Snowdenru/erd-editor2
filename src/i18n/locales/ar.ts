@@ -528,12 +528,6 @@ export const ar: LanguageTranslation = {
             cancel: 'إلغاء',
         },
 
-        star_us_dialog: {
-            title: '!ساعدنا على التحسن',
-            description: '؟! إنها مجرد نقرة واحدةGITHUB هل ترغب في تقييمنا على',
-            close: 'ليس الآن',
-            confirm: '!بالتأكيد',
-        },
         export_diagram_dialog: {
             title: 'تصدير المخطط',
             description: ':اختر التنسيق للتصدير',

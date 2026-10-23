@@ -525,13 +525,6 @@ export const en = {
             cancel: 'Cancel',
         },
 
-        star_us_dialog: {
-            title: 'Help us improve!',
-            description:
-                "Would you like to star us on GitHub? It's just a click away!",
-            close: 'Not now',
-            confirm: 'Of course!',
-        },
         export_diagram_dialog: {
             title: 'Export Diagram',
             description: 'Choose the format for export:',

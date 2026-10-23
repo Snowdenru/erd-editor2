@@ -534,13 +534,6 @@ export const ru: LanguageTranslation = {
             cancel: 'Отменить',
         },
 
-        star_us_dialog: {
-            title: 'Помогите нам стать лучше!',
-            description:
-                'Хотите отметить нас на GitHub? Это всего лишь один клик!',
-            close: 'Не сейчас',
-            confirm: 'Конечно!',
-        },
         export_diagram_dialog: {
             title: 'Экспорт кода диаграммы',
             description: 'Выберите формат экспорта:',

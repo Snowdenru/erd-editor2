@@ -535,12 +535,6 @@ export const uk: LanguageTranslation = {
             cancel: 'Скасувати',
         },
 
-        star_us_dialog: {
-            title: 'Допоможіть нам покращитися!',
-            description: 'Поставне на зірку на GitHub? Це лише один клік!',
-            close: 'Не зараз',
-            confirm: 'Звісно!',
-        },
         export_diagram_dialog: {
             title: 'Експорт Діаграми',
             description: 'Оберіть формат експорту:',

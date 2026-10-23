@@ -529,13 +529,6 @@ export const hr: LanguageTranslation = {
             cancel: 'Odustani',
         },
 
-        star_us_dialog: {
-            title: 'Pomozite nam da se poboljšamo!',
-            description:
-                'Želite li nam dati zvjezdicu na GitHubu? Samo je jedan klik!',
-            close: 'Ne sada',
-            confirm: 'Naravno!',
-        },
         export_diagram_dialog: {
             title: 'Izvezi dijagram',
             description: 'Odaberite format za izvoz:',

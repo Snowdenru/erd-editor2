@@ -537,13 +537,6 @@ export const pt_BR: LanguageTranslation = {
             cancel: 'Cancelar',
         },
 
-        star_us_dialog: {
-            title: 'Ajude-nos a melhorar!',
-            description:
-                'Gostaria de nos avaliar com uma estrela no GitHub? É apenas um clique!',
-            close: 'Agora não',
-            confirm: 'Claro!',
-        },
         // TODO: Translate
         export_diagram_dialog: {
             title: 'Export Diagram',

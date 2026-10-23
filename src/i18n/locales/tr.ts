@@ -524,13 +524,6 @@ export const tr: LanguageTranslation = {
             create: 'Oluştur',
             cancel: 'İptal',
         },
-        star_us_dialog: {
-            title: 'Bize yardım et!',
-            description:
-                "Bizi GitHub'da yıldızlamak ister misiniz? Sadece bir tık uzakta!",
-            close: 'Şimdi Değil',
-            confirm: 'Tabii ki!',
-        },
         // TODO: Translate
         export_diagram_dialog: {
             title: 'Export Diagram',

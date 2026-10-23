@@ -12,7 +12,6 @@ import { AiRefineProvider } from '@/components/ai-generate/ai-refine-provider';
 import { ReviewHost } from '@/components/review/review-host';
 import { SaveToCloudPrompt } from '@/components/save-to-cloud-prompt/save-to-cloud-prompt';
 import { useBreakpoint } from '@/hooks/use-breakpoint';
-import { useLocalConfig } from '@/hooks/use-local-config';
 import { FullScreenLoaderProvider } from '@/context/full-screen-spinner-context/full-screen-spinner-provider';
 import { LayoutProvider } from '@/context/layout-context/layout-provider';
 import { LocalConfigProvider } from '@/context/local-config-context/local-config-provider';
@@ -30,7 +29,6 @@ import { Spinner } from '@/components/spinner/spinner';
 import { Helmet } from 'react-helmet-async';
 import { AlertProvider } from '@/context/alert-context/alert-provider';
 import { CanvasProvider } from '@/context/canvas-context/canvas-provider';
-import { HIDE_CHARTDB_CLOUD } from '@/lib/env';
 import { useDiagramLoader } from './use-diagram-loader';
 import { DiffProvider } from '@/context/diff-context/diff-provider';
 import { TopNavbarMock } from './top-navbar/top-navbar-mock';
@@ -59,9 +57,6 @@ const initialDeepLink = (() => {
 })();
 let deepLinkHandled = false;
 
-const OPEN_STAR_US_AFTER_SECONDS = 30;
-const SHOW_STAR_US_AGAIN_AFTER_DAYS = 1;
-
 export const EditorDesktopLayoutLazy = React.lazy(
     () => import('./editor-desktop-layout')
 );
@@ -72,10 +67,8 @@ export const EditorMobileLayoutLazy = React.lazy(
 
 const EditorPageComponent: React.FC = () => {
     const { diagramName, currentDiagram } = useChartDB();
-    const { openStarUsDialog, openCreateDiagramDialog } = useDialog();
+    const { openCreateDiagramDialog } = useDialog();
     const { isMd: isDesktop } = useBreakpoint('md');
-    const { starUsDialogLastOpen, setStarUsDialogLastOpen, githubRepoOpened } =
-        useLocalConfig();
     const { initialDiagram } = useDiagramLoader();
     const { selectSidebarSection, showSidePanel } = useLayout();
 
@@ -104,31 +97,6 @@ const EditorPageComponent: React.FC = () => {
         openCreateDiagramDialog,
         selectSidebarSection,
         showSidePanel,
-    ]);
-
-    useEffect(() => {
-        if (HIDE_CHARTDB_CLOUD) {
-            return;
-        }
-
-        if (!currentDiagram?.id || githubRepoOpened) {
-            return;
-        }
-
-        if (
-            new Date().getTime() - starUsDialogLastOpen >
-            1000 * 60 * 60 * 24 * SHOW_STAR_US_AGAIN_AFTER_DAYS
-        ) {
-            const lastOpen = new Date().getTime();
-            setStarUsDialogLastOpen(lastOpen);
-            setTimeout(openStarUsDialog, OPEN_STAR_US_AFTER_SECONDS * 1000);
-        }
-    }, [
-        currentDiagram?.id,
-        githubRepoOpened,
-        openStarUsDialog,
-        setStarUsDialogLastOpen,
-        starUsDialogLastOpen,
     ]);
 
     return (

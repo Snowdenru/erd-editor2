@@ -538,13 +538,6 @@ export const hi: LanguageTranslation = {
             cancel: 'रद्द करें',
         },
 
-        star_us_dialog: {
-            title: 'हमें सुधारने में मदद करें!',
-            description:
-                'क्या आप हमें GitHub पर स्टार देना चाहेंगे? यह बस एक क्लिक की दूरी पर है!',
-            close: 'अभी नहीं',
-            confirm: 'बिलकुल!',
-        },
         // TODO: Translate
         export_diagram_dialog: {
             title: 'Export Diagram',

@@ -533,13 +533,6 @@ export const vi: LanguageTranslation = {
             cancel: 'Hủy',
         },
 
-        star_us_dialog: {
-            title: 'Hãy giúp chúng tôi cải thiện!',
-            description:
-                'Bạn có muốn ủng hộ chúng tôi bằng cách gắn sao trên GitHub không? Chỉ cần một cú nhấp chuột là được!',
-            close: 'Chưa phải bây giờ',
-            confirm: 'Dĩ nhiên rồi!',
-        },
         export_diagram_dialog: {
             title: 'Xuất sơ đồ',
             description: 'Chọn định dạng để xuất:',

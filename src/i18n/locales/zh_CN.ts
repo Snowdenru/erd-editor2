@@ -525,12 +525,6 @@ export const zh_CN: LanguageTranslation = {
             cancel: '取消',
         },
 
-        star_us_dialog: {
-            title: '帮助我们改进！',
-            description: '您想在 GitHub 上为我们加注星标吗？只需点击一下即可！',
-            close: '以后再说',
-            confirm: '当然！',
-        },
         export_diagram_dialog: {
             title: '导出关系图',
             description: '选择导出格式：',

@@ -40,8 +40,6 @@ export interface DialogContext {
     closeTableSchemaDialog: () => void;
 
     // Star us dialog
-    openStarUsDialog: () => void;
-    closeStarUsDialog: () => void;
 
     // Export diagram dialog
     openExportDiagramDialog: (
@@ -67,8 +65,6 @@ export const dialogContext = createContext<DialogContext>({
     closeImportDatabaseDialog: emptyFn,
     openTableSchemaDialog: emptyFn,
     closeTableSchemaDialog: emptyFn,
-    openStarUsDialog: emptyFn,
-    closeStarUsDialog: emptyFn,
     openExportDiagramDialog: emptyFn,
     closeExportDiagramDialog: emptyFn,
     openImportDiagramDialog: emptyFn,

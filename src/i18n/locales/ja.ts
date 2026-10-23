@@ -538,13 +538,6 @@ export const ja: LanguageTranslation = {
             cancel: 'キャンセル',
         },
 
-        star_us_dialog: {
-            title: '改善をサポートしてください！',
-            description:
-                'GitHubでスターを付けていただけますか？ クリックするだけです！',
-            close: '今はしない',
-            confirm: 'もちろん！',
-        },
         // TODO: Translate
         export_diagram_dialog: {
             title: 'Export Diagram',

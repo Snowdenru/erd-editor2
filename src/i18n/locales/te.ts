@@ -536,13 +536,6 @@ export const te: LanguageTranslation = {
             cancel: 'రద్దు',
         },
 
-        star_us_dialog: {
-            title: 'మా సహాయంతో మెరుగుపరచండి!',
-            description:
-                'మీకు GitHub‌లో మాకు స్టార్ ఇవ్వాలనుకుంటున్నారా? కేవలం ఒక క్లిక్ మాత్రమే!',
-            close: 'ఇప్పుడు కాదు',
-            confirm: 'ఖచ్చితంగా!',
-        },
 
         // TODO: Translate
         export_diagram_dialog: {

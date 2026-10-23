@@ -525,12 +525,6 @@ export const zh_TW: LanguageTranslation = {
             cancel: '取消',
         },
 
-        star_us_dialog: {
-            title: '協助我們改善！',
-            description: '請在 GitHub 上給我們一顆星，只需點擊一下！',
-            close: '先不要',
-            confirm: '當然！',
-        },
         export_diagram_dialog: {
             title: '匯出圖表',
             description: '選擇匯出格式：',

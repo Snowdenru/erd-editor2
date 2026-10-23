@@ -537,13 +537,6 @@ export const ne: LanguageTranslation = {
             cancel: 'रद्द गर्नुहोस्',
         },
 
-        star_us_dialog: {
-            title: 'हामीलाई अझ राम्रो हुन मदत गर्नुहोस!',
-            description:
-                'के तपाईं हामीलाई GitHub मा स्टार गर्न चाहनुहुन्छ? यो केवल एक क्लिक पर छ!',
-            close: 'अहिले हैन',
-            confirm: 'अवस्य!',
-        },
         export_diagram_dialog: {
             title: 'डायाग्राम निर्यात गर्नुहोस्',
             description: 'निर्यात गर्नका लागि निर्यात फरम्याट छान्नुहोस:',

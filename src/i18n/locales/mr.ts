@@ -541,7 +541,6 @@ export const mr: LanguageTranslation = {
             cancel: 'रद्द करा',
         },
 
-
         // TODO: Add translations
         export_diagram_dialog: {
             title: 'Export Diagram',

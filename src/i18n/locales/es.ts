@@ -536,7 +536,6 @@ export const es: LanguageTranslation = {
             cancel: 'Cancelar',
         },
 
-
         // TODO: Translate
         export_diagram_dialog: {
             title: 'Export Diagram',

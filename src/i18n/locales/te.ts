@@ -536,7 +536,6 @@ export const te: LanguageTranslation = {
             cancel: 'రద్దు',
         },
 
-
         // TODO: Translate
         export_diagram_dialog: {
             title: 'Export Diagram',

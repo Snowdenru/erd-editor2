@@ -484,7 +484,6 @@ export const fr: LanguageTranslation = {
             confirm: 'Confirmer',
         },
 
-
         update_table_schema_dialog: {
             title: 'Modifier le Schéma',
             description: 'Mettre à jour le schéma de la table "{{tableName}}"',

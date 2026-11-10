@@ -533,7 +533,6 @@ export const id_ID: LanguageTranslation = {
             cancel: 'Batal',
         },
 
-
         export_diagram_dialog: {
             title: 'Ekspor Diagram',
             description: 'Pilih format untuk ekspor:',

@@ -534,7 +534,6 @@ export const gu: LanguageTranslation = {
             cancel: 'રદ કરો',
         },
 
-
         export_diagram_dialog: {
             title: 'ડાયાગ્રામ નિકાસ કરો',
             description: 'નિકાસ માટે ફોર્મેટ પસંદ કરો:',

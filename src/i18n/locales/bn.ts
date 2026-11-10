@@ -536,7 +536,6 @@ export const bn: LanguageTranslation = {
             cancel: 'বাতিল করুন',
         },
 
-
         export_diagram_dialog: {
             title: 'চিত্র রপ্তানি করুন',
             description: 'রপ্তানির জন্য ফরম্যাট নির্বাচন করুন:',

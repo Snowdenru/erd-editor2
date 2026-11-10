@@ -20,10 +20,11 @@ export interface TableEditModeFieldProps {
     field: DBField;
     focused?: boolean;
     databaseType: DatabaseType;
+    onEnter?: (fieldId: string) => void;
 }
 
 export const TableEditModeField: React.FC<TableEditModeFieldProps> = React.memo(
-    ({ table, field, focused = false, databaseType }) => {
+    ({ table, field, focused = false, databaseType, onEnter }) => {
         const { t } = useTranslation();
         const [showHighlight, setShowHighlight] = React.useState(false);
 
@@ -49,6 +50,7 @@ export const TableEditModeField: React.FC<TableEditModeFieldProps> = React.memo(
             if (focused) {
                 const timer = setTimeout(() => {
                     setShowHighlight(true);
+                    inputRef.current?.focus();
                     inputRef.current?.select();
 
                     setTimeout(() => {
@@ -87,6 +89,16 @@ export const TableEditModeField: React.FC<TableEditModeFieldProps> = React.memo(
                                         handleNameChange(e.target.value)
                                     }
                                     autoFocus={focused}
+                                    onKeyDown={(e) => {
+                                        if (
+                                            e.key === 'Enter' &&
+                                            !e.nativeEvent.isComposing &&
+                                            onEnter
+                                        ) {
+                                            e.preventDefault();
+                                            onEnter(field.id);
+                                        }
+                                    }}
                                 />
                             </TooltipTrigger>
                             <TooltipContent>{fieldName}</TooltipContent>

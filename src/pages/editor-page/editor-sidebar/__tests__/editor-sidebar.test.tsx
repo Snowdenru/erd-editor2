@@ -6,6 +6,7 @@ import { DatabaseType } from '@/lib/domain/database-type';
 import { SidebarProvider } from '@/components/sidebar/sidebar';
 import * as reviewEvents from '@/lib/review-events';
 import * as exportEvents from '@/lib/export-dialog-events';
+import * as shareEvents from '@/lib/share-dialog-events';
 
 // Основная гарантия этого изменения: клик по кнопке «Новая» в сайдбаре
 // создаёт пустую диаграмму напрямую (createEmptyDiagram), а не открывает
@@ -94,6 +95,22 @@ describe('EditorSidebar', () => {
         );
 
         fireEvent.click(screen.getByText('Экспорт'));
+
+        expect(spy).toHaveBeenCalledWith();
+        spy.mockRestore();
+    });
+
+    it('opens the share dialog from the sidebar', () => {
+        const spy = vi
+            .spyOn(shareEvents, 'emitOpenShare')
+            .mockImplementation(() => undefined);
+        render(
+            <SidebarProvider>
+                <EditorSidebar />
+            </SidebarProvider>
+        );
+
+        fireEvent.click(screen.getByText('Поделиться'));
 
         expect(spy).toHaveBeenCalledWith();
         spy.mockRestore();

@@ -20,8 +20,10 @@ import {
     Sparkles,
     Star,
     FileOutput,
+    Share2,
 } from 'lucide-react';
 import { emitOpenExport } from '@/lib/export-dialog-events';
+import { emitOpenShare } from '@/lib/share-dialog-events';
 import { emitReviewSignal } from '@/lib/review-events';
 import { Table, Workflow } from 'lucide-react';
 import { useLayout } from '@/hooks/use-layout';
@@ -158,6 +160,14 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
                 icon: FileOutput,
                 onClick: () => {
                     emitOpenExport();
+                },
+                active: false,
+            },
+            {
+                title: 'Поделиться',
+                icon: Share2,
+                onClick: () => {
+                    emitOpenShare();
                 },
                 active: false,
             },

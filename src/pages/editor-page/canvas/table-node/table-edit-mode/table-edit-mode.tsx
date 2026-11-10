@@ -158,6 +158,20 @@ export const TableEditMode: React.FC<TableEditModeProps> = React.memo(
             }
         }, [createField, table.id]);
 
+        // Enter в имени колонки: к следующей колонке, а на последней — новая
+        const handleFieldEnter = useCallback(
+            (fieldId: string) => {
+                const index = table.fields.findIndex((f) => f.id === fieldId);
+                const next = table.fields[index + 1];
+                if (next) {
+                    setFocusFieldId(next.id);
+                } else {
+                    void handleAddField();
+                }
+            },
+            [table.fields, handleAddField]
+        );
+
         const handleColorChange = useCallback(
             (newColor: string) => {
                 updateTable(table.id, { color: newColor });
@@ -317,6 +331,7 @@ export const TableEditMode: React.FC<TableEditModeProps> = React.memo(
                                 table={table}
                                 field={field}
                                 focused={focusFieldId === field.id}
+                                onEnter={handleFieldEnter}
                                 databaseType={databaseType}
                             />
                         </div>

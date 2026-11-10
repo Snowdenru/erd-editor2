@@ -45,6 +45,8 @@ export interface SidebarItem {
     onClick: () => void;
     active: boolean;
     badge?: string;
+    /** Полное название для подсказки, если подпись под иконкой сокращена */
+    hint?: string;
 }
 
 export interface EditorSidebarProps {}
@@ -164,7 +166,8 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
                 active: false,
             },
             {
-                title: 'Поделиться',
+                title: 'Ссылка',
+                hint: 'Поделиться',
                 icon: Share2,
                 onClick: () => {
                     emitOpenShare();
@@ -220,7 +223,11 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
                                         isActive={item.active}
                                         asChild
                                     >
-                                        <button onClick={item.onClick}>
+                                        <button
+                                            onClick={item.onClick}
+                                            title={item.hint}
+                                            aria-label={item.hint}
+                                        >
                                             <item.icon />
                                             <span>
                                                 {item.title
@@ -245,7 +252,11 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
                                         isActive={item.active}
                                         asChild
                                     >
-                                        <button onClick={item.onClick}>
+                                        <button
+                                            onClick={item.onClick}
+                                            title={item.hint}
+                                            aria-label={item.hint}
+                                        >
                                             <item.icon />
                                             <span>
                                                 {item.title

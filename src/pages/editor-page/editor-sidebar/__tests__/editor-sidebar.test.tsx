@@ -110,7 +110,7 @@ describe('EditorSidebar', () => {
             </SidebarProvider>
         );
 
-        fireEvent.click(screen.getByText('Поделиться'));
+        fireEvent.click(screen.getByLabelText('Поделиться'));
 
         expect(spy).toHaveBeenCalledWith();
         spy.mockRestore();
